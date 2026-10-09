@@ -6,8 +6,18 @@
 Displays cinematic biome titles when entering a biome, with a large first-visit title and a compact title on later visits.
 
 > **Status: work in progress.**
-> This project is still the prepared mod template: the cinematic biome title system is
-> **experimental and not implemented yet**, so there is nothing to see in game at the moment.
+> Two title reveals are implemented and playable on 26.3: the cinematic reveal and a programmatic
+> corner title. The biome triggered titles described below are still **not implemented yet**.
+
+## What works right now
+
+Both reveals live in the **Wanderer's Titles** category of the controls screen, so both can be
+rebound there.
+
+| Key | Title | Behaviour |
+| --- | --- | --- |
+| `T` | cinematic reveal | Plays the 187 frame clip as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
+| `K` | corner title | Draws `pale garden` with the game font in bold in the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
 
 ## What the mod is meant to do
 
@@ -32,8 +42,8 @@ assets shipped with the mod are original work of this project.
 
 | Minecraft | Status |
 | --- | --- |
-| **26.3** | enabled - active development target for the biome title feature |
-| **1.20.1** | enabled - core project, builds the shared template code without the feature |
+| **26.3** | enabled - core project and active development target for the Wanderer's Titles feature |
+| **1.20.1** | disabled for now, configuration kept so it can be re-enabled later |
 | all other versions | disabled for now, configuration kept so they can be re-enabled later |
 
 - `settings.json` contains the enabled build matrix (`versions`) and the versions that are currently

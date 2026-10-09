@@ -27,24 +27,31 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 
 /**
- * Plays the cinematic title reveal as a full screen overlay, triggered by a key mapping.
+ * The title reveals of the mod, each one bound to its own key mapping.
  *
- * The clip is stored as a numbered PNG sequence (see the {@code title} texture folder), because
- * Minecraft cannot play video. Every frame is a pre keyed image: the original footage was a bright
- * reveal on a pure black background, and the black was turned into real transparency, so the
- * overlay composites on top of the world instead of covering it with a black rectangle.
+ * The first one plays the cinematic title reveal as a full screen overlay. The clip is stored as a
+ * numbered PNG sequence (see the {@code title} texture folder), because Minecraft cannot play video.
+ * Every frame is a pre keyed image: the original footage was a bright reveal on a pure black
+ * background, and the black was turned into real transparency, so the overlay composites on top of
+ * the world instead of covering it with a black rectangle. The sequence is played back on real time
+ * ({@link Util#getMillis()}) so it runs at the same speed regardless of the frame rate, and it stops
+ * by itself at the end of the clip.
  *
- * The sequence is played back on real time ({@link Util#getMillis()}) so it runs at the same speed
- * regardless of the frame rate, and it stops by itself at the end of the clip.
+ * The second one is purely programmatic, i.e. it uses no texture at all: the text is drawn with the
+ * game font in bold, like the cinematic reveal, and it fades in, holds and fades out in the lower
+ * left corner.
  */
 public final class TitleOverlay
 {
@@ -56,6 +63,22 @@ public final class TitleOverlay
 
 	private static final String TEXTURE_FOLDER = "textures/title/";
 
+	/** Corner title properties: the text, and the timing of its fade in, hold and fade out. */
+	private static final String CORNER_TITLE_TEXT = "pale garden";
+	private static final long CORNER_FADE_IN_MS = 400L;
+	private static final long CORNER_HOLD_MS = 1600L;
+	private static final long CORNER_FADE_OUT_MS = 900L;
+	private static final long CORNER_ANIMATION_MS = CORNER_FADE_IN_MS + CORNER_HOLD_MS + CORNER_FADE_OUT_MS;
+
+	/** Distance between the corner title and the lower left corner of the screen, in gui pixels. */
+	private static final int CORNER_MARGIN = 6;
+
+	/** The color of the corner title: pure white, only its alpha is animated by the fade. */
+	private static final int CORNER_TEXT_RGB = 0xFFFFFF;
+
+	/** The corner title text itself, bold like the cinematic reveal, drawn by the game font. */
+	private static final Component CORNER_TITLE = Component.literal(CORNER_TITLE_TEXT).withStyle(ChatFormatting.BOLD);
+
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
 
@@ -65,8 +88,17 @@ public final class TitleOverlay
 			InputConstants.KEY_T,
 			CATEGORY));
 
+	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+			"key.wanderers_titles.show_pale_garden",
+			InputConstants.Type.KEYBOARD,
+			InputConstants.KEY_K,
+			CATEGORY));
+
 	/** Wall clock time at which the current playback started, or 0 while nothing is playing. */
 	private static long startedAt = 0L;
+
+	/** Wall clock time at which the corner title animation started, or 0 while it is not playing. */
+	private static long cornerStartedAt = 0L;
 
 	private TitleOverlay()
 	{
@@ -74,7 +106,7 @@ public final class TitleOverlay
 
 	public static void initialize()
 	{
-		// render right before the chat, so the reveal sits on top of the world and the HUD
+		// render right before the chat, so the titles sit on top of the world and the HUD
 		HudElementRegistry.attachElementBefore(
 				VanillaHudElements.CHAT,
 				Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_overlay"),
@@ -86,10 +118,22 @@ public final class TitleOverlay
 			{
 				startedAt = Util.getMillis();
 			}
+
+			while (SHOW_CORNER_TITLE.consumeClick())
+			{
+				cornerStartedAt = Util.getMillis();
+			}
 		});
 	}
 
 	private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker)
+	{
+		renderSequence(graphics);
+		renderCornerTitle(graphics);
+	}
+
+	/** Draws the current frame of the cinematic reveal, as long as a playback is running. */
+	private static void renderSequence(GuiGraphicsExtractor graphics)
 	{
 		if (startedAt == 0L)
 		{
@@ -119,5 +163,46 @@ public final class TitleOverlay
 				width, height,
 				FRAME_WIDTH, FRAME_HEIGHT,
 				FRAME_WIDTH, FRAME_HEIGHT);
+	}
+
+	/** Draws the programmatic corner title, as long as its fade in, hold and fade out are running. */
+	private static void renderCornerTitle(GuiGraphicsExtractor graphics)
+	{
+		if (cornerStartedAt == 0L)
+		{
+			return;
+		}
+
+		long elapsedMs = Util.getMillis() - cornerStartedAt;
+		if (elapsedMs >= CORNER_ANIMATION_MS)
+		{
+			cornerStartedAt = 0L;
+			return;
+		}
+
+		Minecraft client = Minecraft.getInstance();
+		Font font = client.font;
+		int x = CORNER_MARGIN;
+		int y = client.getWindow().getGuiScaledHeight() - CORNER_MARGIN - font.lineHeight;
+
+		graphics.text(font, CORNER_TITLE, x, y, (cornerAlpha(elapsedMs) << 24) | CORNER_TEXT_RGB, true);
+	}
+
+	/** The alpha of the corner title at {@code elapsedMs} of its animation: fade in, hold, fade out. */
+	private static int cornerAlpha(long elapsedMs)
+	{
+		if (elapsedMs < CORNER_FADE_IN_MS)
+		{
+			return (int) (255L * elapsedMs / CORNER_FADE_IN_MS);
+		}
+
+		long fadeOutElapsedMs = elapsedMs - CORNER_FADE_IN_MS - CORNER_HOLD_MS;
+		if (fadeOutElapsedMs <= 0L)
+		{
+			return 255;
+		}
+
+		long remainingMs = CORNER_FADE_OUT_MS - fadeOutElapsedMs;
+		return remainingMs <= 0L ? 0 : (int) (255L * remainingMs / CORNER_FADE_OUT_MS);
 	}
 }

@@ -24,16 +24,14 @@ preprocess {
 	//   - versions/mainProject     (the core project, whose sources are the root src/ folder)
 	//
 	// Currently ENABLED:
-	//   1.20.1 = core project  -> src/ is written for 1.20.1, every other version is derived from it
-	//   26.3   = active development target (prepared for the upcoming Wanderer's Titles feature)
+	//   26.3 = core project and active development target for the Wanderer's Titles feature ->
+	//          src/ is written for 26.3, and it is the only version that is built right now
 	//
 	// Everything else is DISABLED for now, see the commented block below.
-	def mc1201 = createNode('1.20.1', 1_20_01, '')
-	def mc2603 = createNode('26.3', 26_03_00, null)
+	def mc2603 = createNode('26.3', 26_03_00, '')
 
-	// Sources are derived from the core project (versions/mainProject) to the newer versions,
-	// therefore every enabled node needs an enabled node as its parent.
-	mc1201.link(mc2603, null)
+	// 26.3 is the only enabled node, so it is the root of the version chain and has no parent.
+	// A disabled version is re-enabled by hanging it off an enabled node, see the block below.
 
 	// ---------------------------------------------------------------------------------------------
 	// DISABLED for now - kept so that they can be re-enabled later without rewriting anything
@@ -46,6 +44,7 @@ preprocess {
 	//      re-enabled version can never hang off a disabled one.
 	//   4. check versions/<version>/gradle.properties and set versions/mainProject if the core changes
 	/*
+	def mc1201 = createNode('1.20.1', 1_20_01, '')
 	def mc114  = createNode('1.14.4', 1_14_04, '')
 	def mc115  = createNode('1.15.2', 1_15_02, '')
 	def mc116  = createNode('1.16.5', 1_16_05, '')
@@ -65,12 +64,13 @@ preprocess {
 	def mc2601 = createNode('26.1.2', 26_01_02, null)
 	def mc2602 = createNode('26.2', 26_02_00, null)
 
-	mc1201.link(mc114 , null)   // older than the core project
-	mc1201.link(mc115 , null)   // older than the core project
-	mc1201.link(mc116 , null)   // older than the core project
-	mc1201.link(mc117 , null)   // older than the core project
-	mc1201.link(mc118 , null)   // older than the core project
-	mc1201.link(mc119 , null)   // older than the core project
+	mc2603.link(mc1201, null)   // 1.20.1 is disabled too, so it hangs off the core project now
+	mc1201.link(mc114 , null)   // older than 1.20.1
+	mc1201.link(mc115 , null)   // older than 1.20.1
+	mc1201.link(mc116 , null)   // older than 1.20.1
+	mc1201.link(mc117 , null)   // older than 1.20.1
+	mc1201.link(mc118 , null)   // older than 1.20.1
+	mc1201.link(mc119 , null)   // older than 1.20.1
 	mc1201.link(mc1202, null)
 	mc1202.link(mc1204, null)
 	mc1204.link(mc1206, null)
@@ -83,7 +83,7 @@ preprocess {
 	mc12110.link(mc12111, null)
 	mc12111.link(mc2601, null)
 	mc2601.link(mc2602, null)
-	mc2602.link(mc2603, null)
+	// 26.3 is the core project, so it is the root of the chain and no longer a child of 26.2
 	*/
 
 	// See https://github.com/Fallen-Breath/fabric-mod-template/blob/1d72d77a1c5ce0bf060c2501270298a12adab679/build.gradle#L55-L63
