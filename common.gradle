@@ -82,7 +82,7 @@ dependencies {
 	if (mcVersion >= 260300) {
 		[
 				'fabric-api-base',
-				'fabric-key-binding-api-v1',
+				'fabric-key-mapping-api-v1',
 				'fabric-lifecycle-events-v1',
 				'fabric-rendering-v1',
 		].each { module ->
