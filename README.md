@@ -16,8 +16,8 @@ rebound there.
 
 | Key | Title | Behaviour |
 | --- | --- | --- |
-| `T` | cinematic reveal | Plays the 187 frame clip as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
-| `K` | corner title | Draws `pale garden` with the game font in bold in the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
+| `T` | cinematic reveal | Plays the 187 frame clip at its full 1920x960 resolution as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. Only the frames still in use are held in video memory. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
+| `K` | corner title | Draws `PALE GARDEN` with the game font in bold, three times the normal size, a little above the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
 
 ## What the mod is meant to do
 
