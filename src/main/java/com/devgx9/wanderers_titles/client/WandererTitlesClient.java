@@ -26,13 +26,10 @@ import net.fabricmc.api.ClientModInitializer;
 /**
  * Client entrypoint of the mod, referenced by the {@code client} entrypoint in fabric.mod.json.
  *
- * The cinematic title reveal itself is implemented per Minecraft version: it needs the Fabric HUD
- * and key mapping APIs plus the client rendering classes of that version, and those changed a lot
- * over time. The implementation for the currently supported target lives in
- * {@code versions/26.3/src/main/java/.../client/TitleOverlay.java} and is wired up below.
- *
- * On the versions that do not carry an implementation yet this class simply does nothing, so the
- * shared code still builds and the mod still loads there.
+ * The title reveals need the Fabric HUD and key mapping APIs plus the client rendering classes of
+ * the core Minecraft version (26.3), so their implementation lives right next to this class in
+ * {@code TitleOverlay} and is wired up below. Those APIs changed a lot over time, so an older
+ * version would need a port of the overlay before it can be re-enabled in the build matrix.
  */
 public class WandererTitlesClient implements ClientModInitializer
 {
@@ -40,7 +37,7 @@ public class WandererTitlesClient implements ClientModInitializer
 	public void onInitializeClient()
 	{
 		//#if MC >= 26.3
-		//$$ TitleOverlay.initialize();
+		TitleOverlay.initialize();
 		//#endif
 
 		WandererTitles.LOGGER.info("{} v{} client initialized", WandererTitles.MOD_NAME, WandererTitles.MOD_VERSION);

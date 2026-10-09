@@ -44,6 +44,8 @@ preprocess {
 	//      line. The preprocessor inherits the sources of an enabled project to its child nodes, so a
 	//      re-enabled version can never hang off a disabled one.
 	//   4. check versions/<version>/gradle.properties and set versions/mainProject if the core changes
+	//   5. guard or port the 26.3 client feature code in src/: the core sources are compiled as they
+	//      are, so an older child needs //#if guards around it to keep compiling
 	/*
 	def mc1201 = createNode('1.20.1', 1_20_01, '')
 	def mc114  = createNode('1.14.4', 1_14_04, '')

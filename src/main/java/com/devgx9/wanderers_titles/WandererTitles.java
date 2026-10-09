@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 /**
  * Entrypoint of the mod.
  *
- * The cinematic biome title system itself is not implemented yet, this is still the prepared
- * Wanderer's Titles template (see README.md).
+ * The biome triggered titles are not implemented yet (see README.md); the two key bound reveals
+ * that do exist live in the client package, see {@code TitleOverlay}.
  */
 public class WandererTitles implements ModInitializer
 {

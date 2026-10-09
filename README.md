@@ -52,6 +52,9 @@ assets shipped with the mod are original work of this project.
   the disabled versions, together with the steps needed to re-enable one.
 - `versions/mainProject` names the core project, i.e. the version whose sources are the root `src/` folder
   and from which the other enabled versions are derived.
+- The core project compiles the root `src/` folder as it is, and a `versions/<version>/src` folder is only
+  compiled for child versions. Since 26.3 is the core project right now, all of the mod code, including
+  the title reveals, lives in `src/`.
 
 ## Building
 
