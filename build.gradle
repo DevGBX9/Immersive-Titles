@@ -1,0 +1,122 @@
+plugins {
+	id 'maven-publish'
+	id 'com.github.hierynomus.license' version '0.16.1' apply false
+	id 'net.fabricmc.fabric-loom' version '1.18-SNAPSHOT' apply false
+	id 'net.fabricmc.fabric-loom-remap' version '1.18-SNAPSHOT' apply false
+
+	// https://github.com/ReplayMod/preprocessor
+	// https://github.com/Fallen-Breath/preprocessor
+	id 'com.replaymod.preprocess' version '7973f848a8'
+
+	// https://github.com/Fallen-Breath/yamlang
+	id 'me.fallenbreath.yamlang' version '1.5.0' apply false
+}
+
+preprocess {
+	strictExtraMappings = false
+
+	// ---------------------------------------------------------------------------------------------
+	// Version matrix
+	// ---------------------------------------------------------------------------------------------
+	// This block is the single place that defines which Minecraft versions exist as gradle projects.
+	// It has to stay in sync with:
+	//   - settings.json            ("versions" = the enabled build matrix, "disabled_versions" = kept for later)
+	//   - versions/mainProject     (the core project, whose sources are the root src/ folder)
+	//
+	// Currently ENABLED:
+	//   1.20.1 = core project  -> src/ is written for 1.20.1, every other version is derived from it
+	//   26.3   = active development target (prepared for the upcoming Wanderer's Titles feature)
+	//
+	// Everything else is DISABLED for now, see the commented block below.
+	def mc1201 = createNode('1.20.1', 1_20_01, '')
+	def mc2603 = createNode('26.3', 26_03_00, null)
+
+	// Sources are derived from the core project (versions/mainProject) to the newer versions,
+	// therefore every enabled node needs an enabled node as its parent.
+	mc1201.link(mc2603, null)
+
+	// ---------------------------------------------------------------------------------------------
+	// DISABLED for now - kept so that they can be re-enabled later without rewriting anything
+	// ---------------------------------------------------------------------------------------------
+	// How to re-enable a version:
+	//   1. add it to the "versions" list in settings.json (and remove it from "disabled_versions")
+	//   2. uncomment its createNode(...) line and its link(s) below
+	//   3. make sure that it has an enabled parent, i.e. some enabled version X has an X.link(version, ...)
+	//      line. The preprocessor inherits the sources of an enabled project to its child nodes, so a
+	//      re-enabled version can never hang off a disabled one.
+	//   4. check versions/<version>/gradle.properties and set versions/mainProject if the core changes
+	/*
+	def mc114  = createNode('1.14.4', 1_14_04, '')
+	def mc115  = createNode('1.15.2', 1_15_02, '')
+	def mc116  = createNode('1.16.5', 1_16_05, '')
+	def mc117  = createNode('1.17.1', 1_17_01, '')
+	def mc118  = createNode('1.18.2', 1_18_02, '')
+	def mc119  = createNode('1.19.4', 1_19_04, '')
+	def mc1202 = createNode('1.20.2', 1_20_02, '')
+	def mc1204 = createNode('1.20.4', 1_20_04, '')
+	def mc1206 = createNode('1.20.6', 1_20_06, '')
+	def mc1211 = createNode('1.21.1', 1_21_01, '')
+	def mc1213 = createNode('1.21.3', 1_21_03, '')
+	def mc1214 = createNode('1.21.4', 1_21_04, '')
+	def mc1215 = createNode('1.21.5', 1_21_05, '')
+	def mc1218 = createNode('1.21.8', 1_21_08, '')
+	def mc12110 = createNode('1.21.10', 1_21_10, '')
+	def mc12111 = createNode('1.21.11', 1_21_11, '')
+	def mc2601 = createNode('26.1.2', 26_01_02, null)
+	def mc2602 = createNode('26.2', 26_02_00, null)
+
+	mc1201.link(mc114 , null)   // older than the core project
+	mc1201.link(mc115 , null)   // older than the core project
+	mc1201.link(mc116 , null)   // older than the core project
+	mc1201.link(mc117 , null)   // older than the core project
+	mc1201.link(mc118 , null)   // older than the core project
+	mc1201.link(mc119 , null)   // older than the core project
+	mc1201.link(mc1202, null)
+	mc1202.link(mc1204, null)
+	mc1204.link(mc1206, null)
+	mc1206.link(mc1211, null)
+	mc1211.link(mc1213, null)
+	mc1213.link(mc1214, null)
+	mc1214.link(mc1215, null)
+	mc1215.link(mc1218, null)
+	mc1218.link(mc12110, null)
+	mc12110.link(mc12111, null)
+	mc12111.link(mc2601, null)
+	mc2601.link(mc2602, null)
+	mc2602.link(mc2603, null)
+	*/
+
+	// See https://github.com/Fallen-Breath/fabric-mod-template/blob/1d72d77a1c5ce0bf060c2501270298a12adab679/build.gradle#L55-L63
+	for (final def node in getNodes()) {
+		def nodeProject = findProject(node.project)
+		// disabled versions have no gradle project, so they are skipped here
+		if (nodeProject != null) {
+			nodeProject.ext.mcVersion = node.mcVersion
+		}
+	}
+}
+
+tasks.register('buildAndGather') {
+	subprojects {
+		dependsOn project.tasks.named('build').get()
+	}
+	doFirst {
+		println 'Gathering builds'
+		def buildLibs = {
+			p -> p.buildDir.toPath().resolve('libs')
+		}
+		delete fileTree(buildLibs(rootProject)) {
+			include '*'
+		}
+		subprojects {
+			copy {
+				from(buildLibs(project)) {
+					include '*.jar'
+					exclude '*-dev.jar', '*-sources.jar', '*-shadow.jar'
+				}
+				into buildLibs(rootProject)
+				duplicatesStrategy = DuplicatesStrategy.INCLUDE
+			}
+		}
+	}
+}
