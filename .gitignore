@@ -35,3 +35,12 @@ run/
 # agent tooling
 
 .freebuff/
+
+# python tools for the template assets
+__pycache__/
+*.pyc
+
+# output of those tools: the frame sets the mod ships are the ones in src/main/resources
+templates/*/frames/
+templates/*/sheet.png
+templates/*/proof.png

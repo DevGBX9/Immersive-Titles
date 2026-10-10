@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>title_plate - frames over different backgrounds</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; background: #101214; color: #ddd;
+         font: 13px/1.5 ui-monospace, Consolas, monospace; }
+  h1 { font-size: 15px; margin: 0 0 4px; font-weight: 600; }
+  p.note { margin: 0 0 12px; color: #9aa4ad; max-width: 900px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  button { background: #23282d; color: #ddd; border: 1px solid #3a4149; border-radius: 4px;
+           padding: 4px 10px; font: inherit; cursor: pointer; }
+  button.on { background: #2f6f4f; border-color: #3f8f66; }
+  input[type=range] { width: 420px; }
+  .stage { position: relative; width: 100%; max-width: 1152px; aspect-ratio: 2/1;
+           border: 1px solid #2c3238; overflow: hidden; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .bg-dark { background: #1a2818; }
+  .bg-white { background: #ffffff; }
+  .bg-black { background: #000000; }
+  .bg-check { background-image:
+      linear-gradient(45deg, #999 25%, transparent 25%, transparent 75%, #999 75%),
+      linear-gradient(45deg, #999 25%, transparent 25%, transparent 75%, #999 75%);
+      background-size: 16px 16px; background-position: 0 0, 8px 8px; background-color: #666; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  .zoom { border: 1px solid #2c3238; image-rendering: pixelated; background: #000; }
+  img.sheet { max-width: 1152px; width: 100%; border: 1px solid #2c3238; }
+  .k { color: #7fd1a0; }
+  .g { color: #9aa4ad; }
+</style>
+</head>
+<body>
+<h1>title_plate &mdash; 187 frames, 1440&times;720, RGB white + alpha</h1>
+<p class="note">The frame set carries no background at all: every pixel the render left black
+(and the encoder noise on top of it, 88.4% of all pixels) is fully transparent. Switch the
+backdrop to prove it &mdash; a black plate would show up instantly on white or on the checkerboard.
+The zoom box follows the mouse over the stage at 1:1.</p>
+
+<div class="bar">
+  <button id="play">pause</button>
+  <button id="loop" class="on">loop</button>
+  <span class="g">frame <span class="k" id="n">1</span>/187</span>
+  <input type="range" id="slider" min="1" max="187" value="1">
+  <span class="g">backdrop</span>
+  <button data-bg="bg-dark" class="on">dark green</button>
+  <button data-bg="bg-white">white</button>
+  <button data-bg="bg-check">checker</button>
+  <button data-bg="bg-black">black</button>
+</div>
+
+<div class="row">
+  <div class="stage bg-dark" id="stage">
+    <canvas id="cv" width="1440" height="720"></canvas>
+  </div>
+  <div>
+    <div class="g" id="zi">zoom</div>
+    <canvas class="zoom" id="zoom" width="480" height="240"></canvas>
+  </div>
+</div>
+
+<h1 style="margin-top:20px">contact sheet (top rows on dark green, bottom rows on checkerboard)</h1>
+<img class="sheet" src="sheet.png" alt="contact sheet">
+
+<script>
+const N = 187, FPS = 30;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const zoom = document.getElementById('zoom'), zctx = zoom.getContext('2d');
+const slider = document.getElementById('slider'), nOut = document.getElementById('n');
+const stage = document.getElementById('stage');
+const frames = [];
+let loaded = 0, cur = 0, playing = true, loop = true, last = 0;
+
+for (let i = 1; i <= N; i++) {
+  const img = new Image();
+  img.onload = () => { loaded++; };
+  img.src = `frames/frame_${String(i).padStart(4, '0')}.png`;
+  frames.push(img);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const img = frames[cur];
+  if (img && img.complete && img.naturalWidth) ctx.drawImage(img, 0, 0);
+  slider.value = cur + 1;
+  nOut.textContent = cur + 1;
+  drawZoom();
+}
+
+function drawZoom() {
+  const img = frames[cur];
+  zctx.fillStyle = '#000';
+  zctx.fillRect(0, 0, zoom.width, zoom.height);
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const zx = Math.max(0, Math.min(1440 - zoom.width, zoom.x === undefined ? 704 : zoom.x));
+  const zy = Math.max(0, Math.min(720 - zoom.height, zoom.y === undefined ? 240 : zoom.y));
+  zctx.drawImage(img, zx, zy, zoom.width, zoom.height, 0, 0, zoom.width, zoom.height);
+}
+
+stage.addEventListener('mousemove', e => {
+  const r = stage.getBoundingClientRect();
+  zoom.x = Math.round((e.clientX - r.left) / r.width * 1440 - 240);
+  zoom.y = Math.round((e.clientY - r.top) / r.height * 720 - 120);
+  document.getElementById('zi').textContent =
+    `zoom 1:1 @ ${Math.max(0, Math.min(1440 - zoom.width, zoom.x))},${Math.max(0, Math.min(720 - zoom.height, zoom.y))}`;
+  drawZoom();
+});
+
+function tick(t) {
+  if (playing && t - last >= 1000 / FPS) {
+    last = t;
+    cur++;
+    if (cur >= N) { if (loop) cur = 0; else { cur = N - 1; playing = false; syncPlay(); } }
+    draw();
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+function syncPlay() { document.getElementById('play').textContent = playing ? 'pause' : 'play'; }
+document.getElementById('play').onclick = () => { playing = !playing; syncPlay(); };
+document.getElementById('loop').onclick = e => { loop = !loop; e.target.classList.toggle('on', loop); };
+slider.oninput = e => { cur = +e.target.value - 1; playing = false; syncPlay(); draw(); };
+document.querySelectorAll('[data-bg]').forEach(b => b.onclick = () => {
+  stage.className = 'stage ' + b.dataset.bg;
+  document.querySelectorAll('[data-bg]').forEach(o => o.classList.toggle('on', o === b));
+});
+draw();
+</script>
+</body>
+</html>

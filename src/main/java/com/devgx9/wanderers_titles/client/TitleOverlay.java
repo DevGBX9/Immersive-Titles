@@ -47,38 +47,90 @@ import java.util.Deque;
  * The title reveals of the mod, each one bound to its own key mapping.
  *
  * The first one plays the cinematic title reveal as a full screen overlay. The clip is stored as a
- * numbered PNG sequence at its full 1920x960 resolution (see the {@code title} texture folder),
- * because Minecraft cannot play video. Every frame is a pre keyed image: the original footage was a
- * bright reveal on a pure black background, so the frames carry the brightness of the original as
- * their alpha channel and pure white as their color. Drawn over the world that reproduces the
- * original picture exactly on a black background and lets the reveal glow over any other one,
- * instead of covering the world with a black rectangle. The sequence is played back on real time
- * ({@link Util#getMillis()}) so it runs at the same speed regardless of the frame rate, and it stops
- * by itself at the end of the clip. A full resolution frame is about 7 MiB in video memory, so only
- * the frames that are still needed are kept loaded and the ones that have been drawn are released
- * again.
+ * numbered PNG sequence at its full 1440x720 resolution (see the {@code title} texture folder),
+ * because Minecraft cannot play video. Every frame is a pre keyed image: the footage was a bright
+ * reveal on pure black, so the frames carry the brightness of the original as their alpha channel
+ * and pure white as their color, and every pixel the render left black - 88% of them - is fully
+ * transparent. Drawn over the world that reproduces the original picture and lets the reveal glow
+ * over any background, instead of covering the world with a black rectangle. The sequence is played
+ * back on real time ({@link Util#getMillis()}) so it runs at the same speed regardless of the frame
+ * rate, and it stops by itself at the end of the clip. A full resolution frame is about 4 MiB in
+ * video memory and there are 187 of them, so only the frames that are still needed are kept loaded
+ * and the ones that have been drawn are released again.
  *
- * The second one is purely programmatic, i.e. it uses no texture at all: the text is drawn with the
- * game font in bold, like the cinematic reveal, and it fades in, holds and fades out in the lower
- * left corner.
+ * The biome name is not part of the clip: the plate leaves an empty box in its middle, and the name
+ * is drawn into it with the game font, scaled to the box and faded in and out in step with the
+ * clip (see {@link #nameAlpha}). So the reveal works for any biome name, at any length.
+ *
+ * The second reveal is purely programmatic, i.e. it uses no texture at all: the text is drawn with
+ * the game font in bold, like the cinematic reveal, and it fades in, holds and fades out in the
+ * lower left corner.
  */
 public final class TitleOverlay
 {
-	/** Source clip properties: 187 full resolution frames exported from a 30 fps export. */
+	/** Clip properties: 187 full resolution frames exported from a 30 fps render. */
 	private static final int FRAME_COUNT = 187;
 	private static final int FRAME_FPS = 30;
-	private static final int FRAME_WIDTH = 1920;
-	private static final int FRAME_HEIGHT = 960;
+	private static final int FRAME_WIDTH = 1440;
+	private static final int FRAME_HEIGHT = 720;
 
 	private static final String TEXTURE_FOLDER = "textures/title/";
 
 	/**
-	 * How many frame textures stay loaded at the same time. A full resolution frame costs about 7 MiB
-	 * of video memory, and the whole clip would cost more than 1 GiB, so the frames that have already
-	 * been drawn are released again. The window is kept at a few frames because a queued blit only
-	 * runs later in the same frame.
+	 * How many frame textures stay loaded at the same time. A full resolution frame costs about
+	 * 4 MiB of video memory and the whole clip would cost about 750 MiB, so the frames that have
+	 * already been drawn are released again. The window is kept at a few frames because a queued
+	 * blit only runs later in the same frame.
 	 */
 	private static final int FRAMES_KEPT_LOADED = 4;
+
+	// ---------------------------------------------------------------------------------------------
+	// The biome name inside the plate
+	// ---------------------------------------------------------------------------------------------
+
+	/**
+	 * The empty box of the plate, in frame pixels. The plate is symmetrical and leaves its middle
+	 * free for the name: the ornaments occupy rows 147 to 196 and 342 to 430, and the box of the
+	 * original render maps onto this one exactly.
+	 */
+	private static final int NAME_BOX_X = 324;
+	private static final int NAME_BOX_Y = 198;
+	private static final int NAME_BOX_WIDTH = 807;
+	private static final int NAME_BOX_HEIGHT = 120;
+
+	/** How much of the box the name may fill, so a long biome name still fits inside the plate. */
+	private static final float NAME_MAX_HEIGHT = 0.70F;
+	private static final float NAME_MAX_WIDTH = 0.94F;
+
+	/** Cap height of the game font at scale 1, used to size and centre the name. */
+	private static final float FONT_CAP_HEIGHT = 7.0F;
+
+	/**
+	 * The name is invisible while the opening flash is still covering the plate, and appears exactly
+	 * as the flash clears, which is what makes the reveal read as "the flash reveals the name".
+	 *
+	 * The table is the brightness of the empty box measured in the clip itself, 0..255, sampled
+	 * every second frame starting at the fifth frame, which is the peak of the flash. The alpha of
+	 * the name is the complement of it, so the name is drawn fully opaque exactly where the flash
+	 * has already cleared.
+	 */
+	private static final int VEIL_FIRST_FRAME = 4;
+	private static final int[] VEIL = {254, 240, 199, 144, 83, 48, 28, 15, 12, 8, 7, 4, 3, 1};
+	private static final int VEIL_LAST_FRAME = VEIL_FIRST_FRAME + (VEIL.length - 1) * 2;
+
+	/** The plate dissolves here, so the name goes with it. */
+	private static final int NAME_FADE_OUT_FROM = 140;
+	private static final int NAME_FADE_OUT_TO = 152;
+
+	/**
+	 * How many ticks between two biome checks. The title is a reveal for entering a biome, so half a
+	 * second of latency is fine and it keeps the per tick cost of the check irrelevant.
+	 */
+	private static final int BIOME_CHECK_INTERVAL_TICKS = 10;
+
+	// ---------------------------------------------------------------------------------------------
+	// The corner title
+	// ---------------------------------------------------------------------------------------------
 
 	/** Corner title properties: the text, its size, and the timing of its fade in, hold and fade out. */
 	private static final String CORNER_TITLE_TEXT = "PALE GARDEN";
@@ -91,11 +143,14 @@ public final class TitleOverlay
 	/** Distance between the corner title and the lower left corner of the screen, in gui pixels. */
 	private static final int CORNER_MARGIN = 20;
 
-	/** The color of the corner title: pure white, only its alpha is animated by the fade. */
-	private static final int CORNER_TEXT_RGB = 0xFFFFFF;
+	/** The color of the titles: pure white, only its alpha is animated by the fades. */
+	private static final int TITLE_TEXT_RGB = 0xFFFFFF;
 
 	/** The corner title text itself, bold like the cinematic reveal, drawn by the game font. */
 	private static final Component CORNER_TITLE = Component.literal(CORNER_TITLE_TEXT).withStyle(ChatFormatting.BOLD);
+
+	/** Used when there is no biome to name, e.g. while the reveal is triggered from the main menu. */
+	private static final Component FALLBACK_NAME = Component.literal(CORNER_TITLE_TEXT).withStyle(ChatFormatting.BOLD);
 
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
@@ -118,6 +173,15 @@ public final class TitleOverlay
 	/** Wall clock time at which the corner title animation started, or 0 while it is not playing. */
 	private static long cornerStartedAt = 0L;
 
+	/** The name the running playback writes into the plate, or null while nothing is playing. */
+	private static Component playingName = null;
+
+	/** The biome the player was in when it was last checked, to notice a change. */
+	private static String lastBiomeId = null;
+
+	/** Ticks left until the biome is checked again. */
+	private static int ticksUntilBiomeCheck = 0;
+
 	/** The frame textures that are currently loaded, oldest first. */
 	private static final Deque<Identifier> LOADED_FRAMES = new ArrayDeque<>();
 
@@ -133,18 +197,60 @@ public final class TitleOverlay
 				Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_overlay"),
 				TitleOverlay::render);
 
-		ClientTickEvents.END_CLIENT_TICK.register(client ->
-		{
-			while (PLAY_TITLE.consumeClick())
-			{
-				startedAt = Util.getMillis();
-			}
+		ClientTickEvents.END_CLIENT_TICK.register(TitleOverlay::tick);
+	}
 
-			while (SHOW_CORNER_TITLE.consumeClick())
-			{
-				cornerStartedAt = Util.getMillis();
-			}
-		});
+	private static void tick(Minecraft client)
+	{
+		while (PLAY_TITLE.consumeClick())
+		{
+			startReveal(BiomeNames.of(client).orElse(FALLBACK_NAME));
+		}
+
+		while (SHOW_CORNER_TITLE.consumeClick())
+		{
+			cornerStartedAt = Util.getMillis();
+		}
+
+		checkBiome(client);
+	}
+
+	/**
+	 * Plays the reveal when the player enters another biome, which is what the title is for. The
+	 * biome the player is in when a world is joined counts as entered as well.
+	 */
+	private static void checkBiome(Minecraft client)
+	{
+		if (ticksUntilBiomeCheck > 0)
+		{
+			ticksUntilBiomeCheck--;
+			return;
+		}
+
+		ticksUntilBiomeCheck = BIOME_CHECK_INTERVAL_TICKS;
+
+		String biomeId = BiomeNames.id(client).orElse(null);
+		if (biomeId == null)
+		{
+			// back in a menu: the next world starts over
+			lastBiomeId = null;
+			return;
+		}
+
+		if (biomeId.equals(lastBiomeId))
+		{
+			return;
+		}
+
+		lastBiomeId = biomeId;
+		startReveal(BiomeNames.of(client).orElse(FALLBACK_NAME));
+	}
+
+	/** Starts the cinematic reveal, writing {@code name} into the plate for the length of the clip. */
+	private static void startReveal(Component name)
+	{
+		playingName = name;
+		startedAt = Util.getMillis();
 	}
 
 	private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker)
@@ -161,12 +267,10 @@ public final class TitleOverlay
 			return;
 		}
 
-		int elapsedMs = (int) (Util.getMillis() - startedAt);
-		int frame = elapsedMs * FRAME_FPS / 1000;
+		int frame = (int) ((Util.getMillis() - startedAt) * FRAME_FPS / 1000L);
 		if (frame >= FRAME_COUNT)
 		{
-			startedAt = 0L;
-			releaseFrameTextures();
+			stopPlayback();
 			return;
 		}
 
@@ -176,16 +280,89 @@ public final class TitleOverlay
 		keepFrameTexture(texture);
 
 		Window window = Minecraft.getInstance().getWindow();
-		int width = window.getGuiScaledWidth();
-		int height = window.getGuiScaledHeight();
+		int screenWidth = window.getGuiScaledWidth();
+		int screenHeight = window.getGuiScaledHeight();
+
+		// the clip is 2:1, so fit it into the screen instead of stretching it to the screen shape
+		float scale = Math.min(screenWidth / (float) FRAME_WIDTH, screenHeight / (float) FRAME_HEIGHT);
+		int width = Math.max(1, Math.round(FRAME_WIDTH * scale));
+		int height = Math.max(1, Math.round(FRAME_HEIGHT * scale));
+		int x = (screenWidth - width) / 2;
+		int y = (screenHeight - height) / 2;
 
 		graphics.blit(
 				RenderPipelines.GUI_TEXTURED,
 				texture,
-				0, 0, 0, 0,
+				x, y, 0, 0,
 				width, height,
 				FRAME_WIDTH, FRAME_HEIGHT,
 				FRAME_WIDTH, FRAME_HEIGHT);
+
+		renderName(graphics, x, y, scale, frame);
+	}
+
+	/**
+	 * Draws the biome name into the empty box of the plate, in the same coordinates the plate was
+	 * drawn in so the two stay in step at any screen size and gui scale.
+	 */
+	private static void renderName(GuiGraphicsExtractor graphics, int plateX, int plateY, float scale, int frame)
+	{
+		int alpha = nameAlpha(frame);
+		if (alpha <= 0 || playingName == null)
+		{
+			return;
+		}
+
+		Font font = Minecraft.getInstance().font;
+		float boxX = plateX + NAME_BOX_X * scale;
+		float boxY = plateY + NAME_BOX_Y * scale;
+		float boxWidth = NAME_BOX_WIDTH * scale;
+		float boxHeight = NAME_BOX_HEIGHT * scale;
+
+		float textScale = Math.min(
+				boxHeight * NAME_MAX_HEIGHT / FONT_CAP_HEIGHT,
+				boxWidth * NAME_MAX_WIDTH / Math.max(1, font.width(playingName)));
+		float textWidth = font.width(playingName) * textScale;
+		float textHeight = FONT_CAP_HEIGHT * textScale;
+
+		Matrix3x2fStack pose = graphics.pose();
+		pose.pushMatrix();
+		pose.translate(boxX + (boxWidth - textWidth) / 2.0F, boxY + (boxHeight - textHeight) / 2.0F);
+		pose.scale(textScale, textScale);
+		graphics.text(font, playingName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
+		pose.popMatrix();
+	}
+
+	/**
+	 * The alpha of the name at {@code frame} of the clip: hidden while the opening flash covers the
+	 * plate, revealed as the flash clears, held while the plate holds, and faded out with it.
+	 */
+	private static int nameAlpha(int frame)
+	{
+		if (frame <= VEIL_FIRST_FRAME)
+		{
+			return 0;
+		}
+
+		if (frame < VEIL_LAST_FRAME)
+		{
+			int index = (frame - VEIL_FIRST_FRAME) / 2;
+			int offset = (frame - VEIL_FIRST_FRAME) % 2;
+			int veil = VEIL[index] + (VEIL[index + 1] - VEIL[index]) * offset / 2;
+			return 256 - veil;
+		}
+
+		if (frame <= NAME_FADE_OUT_FROM)
+		{
+			return 255;
+		}
+
+		if (frame >= NAME_FADE_OUT_TO)
+		{
+			return 0;
+		}
+
+		return 255 * (NAME_FADE_OUT_TO - frame) / (NAME_FADE_OUT_TO - NAME_FADE_OUT_FROM);
 	}
 
 	/** Draws the programmatic corner title, as long as its fade in, hold and fade out are running. */
@@ -212,7 +389,7 @@ public final class TitleOverlay
 		pose.pushMatrix();
 		pose.translate(x, y);
 		pose.scale(CORNER_TEXT_SCALE, CORNER_TEXT_SCALE);
-		graphics.text(font, CORNER_TITLE, 0, 0, (cornerAlpha(elapsedMs) << 24) | CORNER_TEXT_RGB, true);
+		graphics.text(font, CORNER_TITLE, 0, 0, (cornerAlpha(elapsedMs) << 24) | TITLE_TEXT_RGB, true);
 		pose.popMatrix();
 	}
 
@@ -232,6 +409,14 @@ public final class TitleOverlay
 
 		long remainingMs = CORNER_FADE_OUT_MS - fadeOutElapsedMs;
 		return remainingMs <= 0L ? 0 : (int) (255L * remainingMs / CORNER_FADE_OUT_MS);
+	}
+
+	/** Ends a playback and drops the frame textures it was still holding. */
+	private static void stopPlayback()
+	{
+		startedAt = 0L;
+		playingName = null;
+		releaseFrameTextures();
 	}
 
 	/**
