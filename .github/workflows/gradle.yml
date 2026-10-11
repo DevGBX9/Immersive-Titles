@@ -2,7 +2,7 @@
 #
 # The build matrix currently only contains:
 #   26.3 = core project (see versions/mainProject) and active development target for the
-#          Wanderer's Titles feature
+#          Immersive Titles feature
 #
 # Every other configured Minecraft version is disabled for now, see the "disabled_versions" list
 # in settings.json and the commented block in build.gradle.

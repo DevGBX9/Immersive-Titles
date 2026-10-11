@@ -1,7 +1,7 @@
-# Wanderer's Titles
+# Immersive Titles
 
-[![Dev Builds](https://github.com/DevGBX9/Wanderer-s-Titles-/actions/workflows/gradle.yml/badge.svg)](https://github.com/DevGBX9/Wanderer-s-Titles-/actions/workflows/gradle.yml)
-[![License](https://img.shields.io/github/license/DevGBX9/Wanderer-s-Titles-.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
+[![Dev Builds](https://github.com/DevGBX9/Wanderers-Titles/actions/workflows/gradle.yml/badge.svg)](https://github.com/DevGBX9/Wanderers-Titles/actions/workflows/gradle.yml)
+[![License](https://img.shields.io/github/license/DevGBX9/Wanderers-Titles.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
 
 Displays cinematic biome titles when entering a biome, with a large first-visit title and a compact title on later visits.
 
@@ -11,7 +11,7 @@ Displays cinematic biome titles when entering a biome, with a large first-visit 
 
 ## What works right now
 
-Both title reveals live in the **Wanderer's Titles** category of the controls screen, so both can be
+Both title reveals live in the **Immersive Titles** category of the controls screen, so both can be
 rebound there.
 
 | Key | Title | Behaviour |
@@ -63,7 +63,7 @@ reveal again, and deleting the folder starts over everywhere.
 
 ## What the mod is meant to do
 
-Wanderer's Titles is planned as a client side mod that treats every biome like a discovered location:
+Immersive Titles is planned as a client side mod that treats every biome like a discovered location:
 
 - **First discovery of a biome** - a large cinematic title card is presented in the middle of the screen,
   with elegant ornaments and its own multi step animation: an entrance, a slight overshoot, a settle,
@@ -85,7 +85,7 @@ assets shipped with the mod are original work of this project.
 
 | Minecraft | Status |
 | --- | --- |
-| **26.3** | enabled - core project and active development target for the Wanderer's Titles feature |
+| **26.3** | enabled - core project and active development target for the Immersive Titles feature |
 | **1.20.1** | disabled for now, configuration kept so it can be re-enabled later |
 | all other versions | disabled for now, configuration kept so they can be re-enabled later |
 
@@ -102,7 +102,7 @@ assets shipped with the mod are original work of this project.
 ## Building
 
 The authoritative build environment is GitHub Actions: every push is built there through the
-[Dev Builds workflow](https://github.com/DevGBX9/Wanderer-s-Titles-/actions/workflows/gradle.yml).
+[Dev Builds workflow](https://github.com/DevGBX9/Wanderers-Titles/actions/workflows/gradle.yml).
 The build matrix only contains the enabled versions listed above, and the enabled/disabled matrix is
 printed into the run summary of every build.
 

@@ -24,7 +24,7 @@ preprocess {
 	//   - versions/mainProject     (the core project, whose sources are the root src/ folder)
 	//
 	// Currently ENABLED:
-	//   26.3 = core project and active development target for the Wanderer's Titles feature ->
+	//   26.3 = core project and active development target for the Immersive Titles feature ->
 	//          src/ is written for 26.3, and it is the only version that is built right now
 	//
 	// Everything else is DISABLED for now, see the commented block below.

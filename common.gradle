@@ -74,7 +74,7 @@ dependencies {
 //		include("io.github.llamalad7:mixinextras-fabric:${project.mixinextras_version}")
 //	}
 
-	// Wanderer's Titles client features: the cinematic title reveal and the programmatic corner
+	// Immersive Titles client features: the cinematic title reveal and the programmatic corner
 	// title, each with its own key mapping. The implementation only exists for the 26.x client APIs
 	// (see src/main/java/com/devgx9/wanderers_titles/client/TitleOverlay.java), so Fabric API is
 	// only pulled in for the versions that actually carry it. Enabling an older version means
