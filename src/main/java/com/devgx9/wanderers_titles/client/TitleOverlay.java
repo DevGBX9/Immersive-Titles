@@ -50,11 +50,12 @@ import java.util.Set;
  * The two title reveals of the mod and when each of them plays.
  *
  * A biome gets its big cinematic reveal the first time the player enters it, and only the small
- * corner title on every later entry. The set of biomes that have had their reveal lives for as long
- * as the player stays in the world, so joining a world again starts a new round of discoveries.
- * While a world is being joined the titles wait until the player actually moves, so the first title
- * is about the biome the player ends up standing in once they are playing instead of about whatever
- * the camera saw while the world was still loading.
+ * corner title on every later entry. Which biomes those are is remembered per world and written to
+ * disk (see {@link DiscoveredBiomes}), so the reveal is a discovery of that world: leaving it and
+ * joining it again later only brings the corner title back, while another world still has its own
+ * first visits to hand out. While a world is being joined the titles wait until the player actually
+ * moves, so the first title is about the biome the player ends up standing in once they are playing
+ * instead of about whatever the camera saw while the world was still loading.
  *
  * The big reveal draws the clip stored as a numbered PNG sequence at its 1440x720 resolution (see
  * the {@code title} texture folder) minus the two strips of rows {@link #FRAME_CROP} describes,
@@ -214,8 +215,13 @@ public final class TitleOverlay
 	/** The name the corner title shows. */
 	private static Component cornerName = null;
 
-	/** The biomes that already had their reveal, so entering them again only gets the corner title. */
+	/** The biomes of the current world that already had their reveal, so entering them again only
+	 * gets the corner title. Loaded when the world is joined and written to disk as a biome is
+	 * discovered, see {@link DiscoveredBiomes}. */
 	private static final Set<String> VISITED_BIOMES = new HashSet<>();
+
+	/** The world {@link #VISITED_BIOMES} belongs to, or null while there is no world. */
+	private static String worldKey = null;
 
 	/** The biome the player was in when it was last checked, to notice a change. */
 	private static String lastBiomeId = null;
@@ -278,19 +284,26 @@ public final class TitleOverlay
 
 		if (client.level == null || client.player == null)
 		{
-			// back in a menu: the next world starts a new round of discoveries
+			// back in a menu: the discoveries of the world that was left are on disk, so the next
+			// world loads its own
 			inWorld = false;
 			joinPosition = null;
 			lastBiomeId = null;
+			worldKey = null;
 			VISITED_BIOMES.clear();
 			return;
 		}
 
 		if (!inWorld)
 		{
-			// the world has just been joined, wait for the player to actually start moving
+			// the world has just been joined: pick up the discoveries of this world - a biome that
+			// had its reveal in an earlier session is not a discovery again - and wait for the
+			// player to actually start moving
 			inWorld = true;
 			joinPosition = client.player.position();
+			worldKey = WorldIdentity.of(client).orElse(null);
+			VISITED_BIOMES.clear();
+			VISITED_BIOMES.addAll(DiscoveredBiomes.load(worldKey));
 			return;
 		}
 
@@ -310,6 +323,7 @@ public final class TitleOverlay
 
 		if (VISITED_BIOMES.add(biomeId))
 		{
+			DiscoveredBiomes.remember(worldKey, biomeId);
 			startReveal(name);
 		}
 		else

@@ -52,9 +52,14 @@ The biome the player is in is checked twice a second, which is why the check is 
 - Leaving and re-entering a biome counts as an entry again, which is what brings up the corner title.
 
 The names come from the game's own biome translations, so they follow the language of the client; a
-biome without a translation falls back to its id with underscores as spaces. Which biomes have
-already had their reveal is remembered for as long as the player stays in the world, so joining a
-world again starts a new round of discoveries; persisting them across sessions is still to come.
+biome without a translation falls back to its id with underscores as spaces.
+
+Which biomes have already had their reveal is remembered per world, so the reveal belongs to the
+world it happened in: leaving a world and joining it again later only brings the corner title back
+for everything already seen, while another world still has its own first visits to hand out. The
+client keeps that in `config/wanderers_titles/discovered`, one plain text file per world with one
+biome id per line, written as a biome is discovered. Deleting a line gives that single biome its
+reveal again, and deleting the folder starts over everywhere.
 
 ## What the mod is meant to do
 
