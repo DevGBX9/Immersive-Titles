@@ -38,33 +38,41 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3x2fStack;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * The title reveals of the mod, each one bound to its own key mapping.
+ * The two title reveals of the mod and when each of them plays.
  *
- * The first one plays the cinematic title reveal as a full screen overlay. The clip is stored as a
- * numbered PNG sequence at its full 1440x720 resolution (see the {@code title} texture folder),
- * because Minecraft cannot play video. Every frame is a pre keyed image: the footage was a bright
- * reveal on pure black, so the frames carry the brightness of the original as their alpha channel
- * and pure white as their color, and every pixel the render left black - 88% of them - is fully
- * transparent. Drawn over the world that reproduces the original picture and lets the reveal glow
- * over any background, instead of covering the world with a black rectangle. The sequence is played
- * back on real time ({@link Util#getMillis()}) so it runs at the same speed regardless of the frame
- * rate, and it stops by itself at the end of the clip. A full resolution frame is about 4 MiB in
- * video memory and there are 187 of them, so only the frames that are still needed are kept loaded
- * and the ones that have been drawn are released again.
+ * A biome gets its big cinematic reveal the first time the player enters it, and only the small
+ * corner title on every later entry. The set of biomes that have had their reveal lives for as long
+ * as the player stays in the world, so joining a world again starts a new round of discoveries.
+ * While a world is being joined the titles wait until the player actually moves, so the first title
+ * is about the biome the player ends up standing in once they are playing instead of about whatever
+ * the camera saw while the world was still loading.
+ *
+ * The big reveal draws the clip stored as a numbered PNG sequence at its full 1440x720 resolution
+ * (see the {@code title} texture folder), because Minecraft cannot play video. Every frame is a pre
+ * keyed image: the footage was a bright reveal on pure black, so the frames carry the brightness of
+ * the original as their alpha channel and pure white as their color, and every pixel the render left
+ * black - 88% of them - is fully transparent. Drawn over the world that reproduces the original
+ * picture and lets the reveal glow over any background, instead of covering the world with a black
+ * rectangle. The sequence is played back on real time ({@link Util#getMillis()}) so it runs at the
+ * same speed regardless of the frame rate, and it stops by itself at the end of the clip. A full
+ * resolution frame is about 4 MiB in video memory and there are 187 of them, so only the frames that
+ * are still needed are kept loaded and the ones that have been drawn are released again.
  *
  * The biome name is not part of the clip: the plate leaves an empty box in its middle, and the name
- * is drawn into it with the game font, scaled to the box and faded in and out in step with the
- * clip (see {@link #nameAlpha}). So the reveal works for any biome name, at any length.
+ * is drawn into it with the game font, scaled to the box and faded in and out in step with the clip
+ * (see {@link #nameAlpha}). So the reveal works for any biome name, at any length.
  *
- * The second reveal is purely programmatic, i.e. it uses no texture at all: the text is drawn with
- * the game font in bold, like the cinematic reveal, and it fades in, holds and fades out in the
- * lower left corner.
+ * The corner title is purely programmatic, i.e. it uses no texture at all: the text is drawn with
+ * the game font in bold and it fades in, holds and fades out in the lower left corner.
  */
 public final class TitleOverlay
 {
@@ -122,19 +130,29 @@ public final class TitleOverlay
 	private static final int NAME_FADE_OUT_FROM = 140;
 	private static final int NAME_FADE_OUT_TO = 152;
 
+	// ---------------------------------------------------------------------------------------------
+	// When a title plays
+	// ---------------------------------------------------------------------------------------------
+
 	/**
 	 * How many ticks between two biome checks. The title is a reveal for entering a biome, so half a
 	 * second of latency is fine and it keeps the per tick cost of the check irrelevant.
 	 */
 	private static final int BIOME_CHECK_INTERVAL_TICKS = 10;
 
+	/**
+	 * How far the player has to move after joining a world before the titles start, in blocks
+	 * squared: one block is enough to tell "the world is loaded and the player is playing" from the
+	 * first frames of a join.
+	 */
+	private static final double MOVED_DISTANCE_SQR = 1.0D;
+
 	// ---------------------------------------------------------------------------------------------
 	// The corner title
 	// ---------------------------------------------------------------------------------------------
 
-	/** Corner title properties: the text, its size, and the timing of its fade in, hold and fade out. */
-	private static final String CORNER_TITLE_TEXT = "PALE GARDEN";
-	private static final float CORNER_TEXT_SCALE = 3.0F;
+	/** Corner title properties: its size, and the timing of its fade in, hold and fade out. */
+	private static final float CORNER_TEXT_SCALE = 2.5F;
 	private static final long CORNER_FADE_IN_MS = 400L;
 	private static final long CORNER_HOLD_MS = 1600L;
 	private static final long CORNER_FADE_OUT_MS = 900L;
@@ -146,11 +164,8 @@ public final class TitleOverlay
 	/** The color of the titles: pure white, only its alpha is animated by the fades. */
 	private static final int TITLE_TEXT_RGB = 0xFFFFFF;
 
-	/** The corner title text itself, bold like the cinematic reveal, drawn by the game font. */
-	private static final Component CORNER_TITLE = Component.literal(CORNER_TITLE_TEXT).withStyle(ChatFormatting.BOLD);
-
-	/** Used when there is no biome to name, e.g. while the reveal is triggered from the main menu. */
-	private static final Component FALLBACK_NAME = Component.literal(CORNER_TITLE_TEXT).withStyle(ChatFormatting.BOLD);
+	/** Used when there is no biome to name, e.g. while a title is triggered from the main menu. */
+	private static final Component FALLBACK_NAME = Component.literal("PALE GARDEN").withStyle(ChatFormatting.BOLD);
 
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
@@ -162,7 +177,7 @@ public final class TitleOverlay
 			CATEGORY));
 
 	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-			"key.wanderers_titles.show_pale_garden",
+			"key.wanderers_titles.show_corner_title",
 			InputConstants.Type.KEYBOARD,
 			InputConstants.KEY_K,
 			CATEGORY));
@@ -173,11 +188,23 @@ public final class TitleOverlay
 	/** Wall clock time at which the corner title animation started, or 0 while it is not playing. */
 	private static long cornerStartedAt = 0L;
 
-	/** The name the running playback writes into the plate, or null while nothing is playing. */
-	private static Component playingName = null;
+	/** The name the running reveal writes into the plate. */
+	private static Component revealName = null;
+
+	/** The name the corner title shows. */
+	private static Component cornerName = null;
+
+	/** The biomes that already had their reveal, so entering them again only gets the corner title. */
+	private static final Set<String> VISITED_BIOMES = new HashSet<>();
 
 	/** The biome the player was in when it was last checked, to notice a change. */
 	private static String lastBiomeId = null;
+
+	/** Where the player stood when the world was joined, until they start moving. */
+	private static Vec3 joinPosition = null;
+
+	/** Whether the player is currently in a world. */
+	private static boolean inWorld = false;
 
 	/** Ticks left until the biome is checked again. */
 	private static int ticksUntilBiomeCheck = 0;
@@ -209,15 +236,15 @@ public final class TitleOverlay
 
 		while (SHOW_CORNER_TITLE.consumeClick())
 		{
-			cornerStartedAt = Util.getMillis();
+			startCornerTitle(BiomeNames.of(client).orElse(FALLBACK_NAME));
 		}
 
 		checkBiome(client);
 	}
 
 	/**
-	 * Plays the reveal when the player enters another biome, which is what the title is for. The
-	 * biome the player is in when a world is joined counts as entered as well.
+	 * Watches the biome the player is in and plays the matching title when it changes: the reveal on
+	 * a first visit, the corner title on every visit after that.
 	 */
 	private static void checkBiome(Minecraft client)
 	{
@@ -229,28 +256,64 @@ public final class TitleOverlay
 
 		ticksUntilBiomeCheck = BIOME_CHECK_INTERVAL_TICKS;
 
-		String biomeId = BiomeNames.id(client).orElse(null);
-		if (biomeId == null)
+		if (client.level == null || client.player == null)
 		{
-			// back in a menu: the next world starts over
+			// back in a menu: the next world starts a new round of discoveries
+			inWorld = false;
+			joinPosition = null;
 			lastBiomeId = null;
+			VISITED_BIOMES.clear();
 			return;
 		}
 
-		if (biomeId.equals(lastBiomeId))
+		if (!inWorld)
+		{
+			// the world has just been joined, wait for the player to actually start moving
+			inWorld = true;
+			joinPosition = client.player.position();
+			return;
+		}
+
+		if (joinPosition != null && client.player.position().distanceToSqr(joinPosition) < MOVED_DISTANCE_SQR)
+		{
+			return;
+		}
+
+		String biomeId = BiomeNames.id(client).orElse(null);
+		if (biomeId == null || biomeId.equals(lastBiomeId))
 		{
 			return;
 		}
 
 		lastBiomeId = biomeId;
-		startReveal(BiomeNames.of(client).orElse(FALLBACK_NAME));
+		Component name = BiomeNames.of(client).orElse(FALLBACK_NAME);
+
+		if (VISITED_BIOMES.add(biomeId))
+		{
+			startReveal(name);
+		}
+		else
+		{
+			startCornerTitle(name);
+		}
 	}
 
 	/** Starts the cinematic reveal, writing {@code name} into the plate for the length of the clip. */
 	private static void startReveal(Component name)
 	{
-		playingName = name;
+		revealName = name;
 		startedAt = Util.getMillis();
+
+		// the big reveal takes over from the corner title
+		cornerName = null;
+		cornerStartedAt = 0L;
+	}
+
+	/** Starts the corner title, which fades in, holds and fades out on its own. */
+	private static void startCornerTitle(Component name)
+	{
+		cornerName = name;
+		cornerStartedAt = Util.getMillis();
 	}
 
 	private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker)
@@ -308,7 +371,7 @@ public final class TitleOverlay
 	private static void renderName(GuiGraphicsExtractor graphics, int plateX, int plateY, float scale, int frame)
 	{
 		int alpha = nameAlpha(frame);
-		if (alpha <= 0 || playingName == null)
+		if (alpha <= 0 || revealName == null)
 		{
 			return;
 		}
@@ -321,15 +384,15 @@ public final class TitleOverlay
 
 		float textScale = Math.min(
 				boxHeight * NAME_MAX_HEIGHT / FONT_CAP_HEIGHT,
-				boxWidth * NAME_MAX_WIDTH / Math.max(1, font.width(playingName)));
-		float textWidth = font.width(playingName) * textScale;
+				boxWidth * NAME_MAX_WIDTH / Math.max(1, font.width(revealName)));
+		float textWidth = font.width(revealName) * textScale;
 		float textHeight = FONT_CAP_HEIGHT * textScale;
 
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
 		pose.translate(boxX + (boxWidth - textWidth) / 2.0F, boxY + (boxHeight - textHeight) / 2.0F);
 		pose.scale(textScale, textScale);
-		graphics.text(font, playingName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
+		graphics.text(font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		pose.popMatrix();
 	}
 
@@ -365,10 +428,10 @@ public final class TitleOverlay
 		return 255 * (NAME_FADE_OUT_TO - frame) / (NAME_FADE_OUT_TO - NAME_FADE_OUT_FROM);
 	}
 
-	/** Draws the programmatic corner title, as long as its fade in, hold and fade out are running. */
+	/** Draws the small corner title of a biome the player has already seen. */
 	private static void renderCornerTitle(GuiGraphicsExtractor graphics)
 	{
-		if (cornerStartedAt == 0L)
+		if (cornerStartedAt == 0L || cornerName == null)
 		{
 			return;
 		}
@@ -377,6 +440,7 @@ public final class TitleOverlay
 		if (elapsedMs >= CORNER_ANIMATION_MS)
 		{
 			cornerStartedAt = 0L;
+			cornerName = null;
 			return;
 		}
 
@@ -389,7 +453,7 @@ public final class TitleOverlay
 		pose.pushMatrix();
 		pose.translate(x, y);
 		pose.scale(CORNER_TEXT_SCALE, CORNER_TEXT_SCALE);
-		graphics.text(font, CORNER_TITLE, 0, 0, (cornerAlpha(elapsedMs) << 24) | TITLE_TEXT_RGB, true);
+		graphics.text(font, cornerName, 0, 0, (cornerAlpha(elapsedMs) << 24) | TITLE_TEXT_RGB, true);
 		pose.popMatrix();
 	}
 
@@ -415,7 +479,7 @@ public final class TitleOverlay
 	private static void stopPlayback()
 	{
 		startedAt = 0L;
-		playingName = null;
+		revealName = null;
 		releaseFrameTextures();
 	}
 

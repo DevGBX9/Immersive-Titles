@@ -6,9 +6,8 @@
 Displays cinematic biome titles when entering a biome, with a large first-visit title and a compact title on later visits.
 
 > **Status: work in progress.**
-> The cinematic reveal is implemented and playable on 26.3, including the biome trigger and the biome
-> name in the title card. The compact corner title for revisiting a biome that the section below
-> describes is still **not implemented yet**: today every biome entry plays the full reveal.
+> Both reveals are implemented and playable on 26.3, including the biome trigger, the biome name in
+> the title card and the first visit / later visit behaviour.
 
 ## What works right now
 
@@ -18,17 +17,29 @@ rebound there.
 | Key | Title | Behaviour |
 | --- | --- | --- |
 | `T` | cinematic reveal | Plays the 187 frame clip at its full 1440x720 resolution as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. Only the frames still in use are held in video memory. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
-| `K` | corner title | Draws `PALE GARDEN` with the game font in bold, three times the normal size, a little above the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
+| `K` | corner title | Draws the name of the biome the player is in with the game font in bold, two and a half times the normal size, a little above the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
 
 While the reveal plays, the name of the biome is written into the empty middle of the ornamental
 plate with the game font, scaled so that any biome name fits between the ornaments. The name is not
 part of the clip: it comes from the clip's own light, i.e. it is hidden while the opening flash
 covers the plate and it appears as the flash clears, then it fades out with the plate.
 
-**The reveal also plays by itself when the player enters another biome**, and when a world is joined,
-with the name of that biome in the plate. That trigger is checked twice a second, which is why it is
-free. The names come from the game's own biome translations, so they follow the language of the
-client; a biome without a translation falls back to its id with underscores as spaces.
+## When a title plays
+
+The biome the player is in is checked twice a second, which is why the check is free.
+
+- **First entry into a biome** - the full cinematic reveal, with that biome's name in the plate.
+- **Every entry after that** - only the small corner title, so a biome reveal stays something that
+  happens once.
+- **Joining a world** - the titles wait until the player actually moves, one block is enough, so the
+  first title is about the biome the player ends up standing in instead of about whatever the world
+  was showing while it was still loading.
+- Leaving and re-entering a biome counts as an entry again, which is what brings up the corner title.
+
+The names come from the game's own biome translations, so they follow the language of the client; a
+biome without a translation falls back to its id with underscores as spaces. Which biomes have
+already had their reveal is remembered for as long as the player stays in the world, so joining a
+world again starts a new round of discoveries; persisting them across sessions is still to come.
 
 ## What the mod is meant to do
 
@@ -40,10 +51,9 @@ Wanderer's Titles is planned as a client side mod that treats every biome like a
   ordinary HUD notification. *(implemented: the clip and the biome name in its plate)*
 - **Later visits** - when the player leaves an already discovered biome and enters it again, the biome
   name is shown as a much smaller title near the lower-left corner, with a shortened animation.
-  *(the corner title itself already exists, the bookkeeping of visited biomes does not)*
+  *(implemented)*
 - **Triggering** - a title is shown when the player's biome actually changes, not continuously while
-  standing inside the same biome. Leaving and re-entering a biome triggers it again. *(implemented;
-  the biome is polled every 10 ticks and every entry plays the full reveal for now)*
+  standing inside the same biome. Leaving and re-entering a biome triggers it again. *(implemented)*
 - `minecraft:plains` is planned as the first experimental biome. The architecture is meant to be
   extended to all biomes later.
 
