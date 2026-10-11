@@ -24,6 +24,14 @@ plate with the game font, scaled so that any biome name fits between the ornamen
 part of the clip: it comes from the clip's own light, i.e. it is hidden while the opening flash
 covers the plate and it appears as the flash clears, then it fades out with the plate.
 
+The clip is 2:1, so it is fitted into the screen instead of being stretched to it, which leaves a
+strip of the world above and below. The opening flash fills the clip edge to edge, so that strip used
+to end the clip with a visible seam right across the screen. The overlay now continues the flash into
+it instead, with the brightness measured just inside the clip's own edges at that frame, and the
+strips that cover the top and the bottom also swallow the transparent margin the render kept there.
+That measurement pays off twice: the clip's edges are exactly 0 in every frame outside the flash, so
+the rest of the time nothing at all is drawn over the world.
+
 ## When a title plays
 
 The biome the player is in is checked twice a second, which is why the check is free.

@@ -131,6 +131,32 @@ public final class TitleOverlay
 	private static final int NAME_FADE_OUT_TO = 152;
 
 	// ---------------------------------------------------------------------------------------------
+	// The flash, beyond the clip
+	// ---------------------------------------------------------------------------------------------
+
+	/**
+	 * The render keeps a transparent margin at the top and the bottom of every frame, in frame
+	 * pixels, so the clip does not reach those two edges with any content of its own.
+	 */
+	private static final int FRAME_MARGIN_TOP = 6;
+	private static final int FRAME_MARGIN_BOTTOM = 8;
+
+	/**
+	 * The clip is 2:1 and a screen is not, so fitting the clip into the screen leaves a strip of the
+	 * world above and below it. The opening flash fills the clip edge to edge, which would make the
+	 * end of that strip a visible seam across the whole screen.
+	 *
+	 * These four tables are the brightness of the clip's own edges, measured just inside the
+	 * transparent margin, every second frame starting at the first frame of the clip. During the
+	 * flash they are what the strip has to continue with, and outside it they are exactly 0 in every
+	 * single frame of the clip, so nothing is drawn over the world at any other time.
+	 */
+	private static final int[] EDGE_TOP = {0, 0, 237, 176, 113, 67, 31, 13, 3};
+	private static final int[] EDGE_BOTTOM = {0, 0, 221, 151, 94, 53, 23, 8, 0};
+	private static final int[] EDGE_LEFT = {1, 1, 208, 140, 84, 46, 20, 7, 0};
+	private static final int[] EDGE_RIGHT = {0, 3, 209, 141, 85, 47, 21, 8, 1};
+
+	// ---------------------------------------------------------------------------------------------
 	// When a title plays
 	// ---------------------------------------------------------------------------------------------
 
@@ -353,6 +379,8 @@ public final class TitleOverlay
 		int x = (screenWidth - width) / 2;
 		int y = (screenHeight - height) / 2;
 
+		renderFlashOverflow(graphics, x, y, width, height, screenWidth, screenHeight, scale, frame);
+
 		graphics.blit(
 				RenderPipelines.GUI_TEXTURED,
 				texture,
@@ -362,6 +390,52 @@ public final class TitleOverlay
 				FRAME_WIDTH, FRAME_HEIGHT);
 
 		renderName(graphics, x, y, scale, frame);
+	}
+
+	/**
+	 * Continues the opening flash from the edge of the clip out to the edges of the screen, so the
+	 * part of the screen the 2:1 clip does not cover is lit exactly as much as the frame right next to
+	 * it. Nothing is drawn at any other time, because the clip's edges are black outside the flash.
+	 *
+	 * The strips that cover the top and the bottom also swallow the transparent margin of the clip
+	 * itself, which would otherwise show the world through the middle of the flash.
+	 */
+	private static void renderFlashOverflow(GuiGraphicsExtractor graphics, int plateX, int plateY,
+			int width, int height, int screenWidth, int screenHeight, float scale, int frame)
+	{
+		int top = edgeBrightness(EDGE_TOP, frame);
+		int bottom = edgeBrightness(EDGE_BOTTOM, frame);
+		int left = edgeBrightness(EDGE_LEFT, frame);
+		int right = edgeBrightness(EDGE_RIGHT, frame);
+
+		if (top == 0 && bottom == 0 && left == 0 && right == 0)
+		{
+			return;
+		}
+
+		// where the clip starts and stops carrying its own picture
+		int contentTop = plateY + Math.round(FRAME_MARGIN_TOP * scale);
+		int contentBottom = plateY + height - Math.round(FRAME_MARGIN_BOTTOM * scale);
+
+		if (top > 0 && contentTop > 0)
+		{
+			graphics.fill(0, 0, screenWidth, contentTop, (top << 24) | TITLE_TEXT_RGB);
+		}
+
+		if (bottom > 0 && contentBottom < screenHeight)
+		{
+			graphics.fill(0, contentBottom, screenWidth, screenHeight, (bottom << 24) | TITLE_TEXT_RGB);
+		}
+
+		if (left > 0 && plateX > 0)
+		{
+			graphics.fill(0, contentTop, plateX, contentBottom, (left << 24) | TITLE_TEXT_RGB);
+		}
+
+		if (right > 0 && plateX + width < screenWidth)
+		{
+			graphics.fill(plateX + width, contentTop, screenWidth, contentBottom, (right << 24) | TITLE_TEXT_RGB);
+		}
 	}
 
 	/**
@@ -394,6 +468,24 @@ public final class TitleOverlay
 		pose.scale(textScale, textScale);
 		graphics.text(font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		pose.popMatrix();
+	}
+
+	/** The brightness of an edge of the clip at {@code frame}, from a table sampled every 2 frames. */
+	private static int edgeBrightness(int[] table, int frame)
+	{
+		if (frame < 0)
+		{
+			return 0;
+		}
+
+		int index = frame / 2;
+		if (index >= table.length)
+		{
+			return 0;
+		}
+
+		int next = index + 1 < table.length ? table[index + 1] : 0;
+		return table[index] + (next - table[index]) * (frame % 2) / 2;
 	}
 
 	/**
