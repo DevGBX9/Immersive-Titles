@@ -56,6 +56,9 @@ final class DiscoveredBiomes
 
 	private static final String SUFFIX = ".txt";
 
+	/** The file ends every line the same way on every system, so it stays comparable and editable. */
+	private static final String LINE_SEPARATOR = "\n";
+
 	private DiscoveredBiomes()
 	{
 	}
@@ -121,7 +124,7 @@ final class DiscoveredBiomes
 		try
 		{
 			Files.createDirectories(file.getParent());
-			Files.writeString(file, biomeId + System.lineSeparator(), StandardCharsets.UTF_8,
+			Files.writeString(file, biomeId + LINE_SEPARATOR, StandardCharsets.UTF_8,
 					StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
 		}
 		catch (IOException | RuntimeException e)

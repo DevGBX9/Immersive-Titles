@@ -41,6 +41,10 @@ import java.util.Optional;
  * file name cannot contain becomes an underscore, the name is cut to a sane length, and the hash of
  * the untouched name is appended. That last part keeps two worlds apart whose names differ only in
  * the characters that were replaced or past the length limit.
+ *
+ * The path the game hands out for a level ends in the {@code "."} that {@code LevelResource.ROOT} is
+ * defined as, e.g. {@code saves/New World/.}. The name is read from the normalised path, otherwise
+ * every singleplayer world would be called {@code "."} and all of them would share one file.
  */
 final class WorldIdentity
 {
@@ -61,23 +65,63 @@ final class WorldIdentity
 
 		if (integratedServer != null)
 		{
-			Path root = integratedServer.getWorldPath(LevelResource.ROOT);
-			Path name = root == null ? null : root.getFileName();
+			Optional<String> name = saveName(integratedServer.getWorldPath(LevelResource.ROOT));
 
-			if (name != null)
+			if (name.isEmpty())
 			{
-				return Optional.of(key("sp_", name.toString()));
+				// the save folder cannot be read, so the name from the world list is the last thing
+				// left; renaming a world then starts a new round of discoveries in it
+				name = nameOf(integratedServer.getWorldData().getLevelName());
+			}
+
+			if (name.isPresent())
+			{
+				return Optional.of(key("sp_", name.get()));
 			}
 		}
 
 		ServerData server = client.getCurrentServer();
 
-		if (server != null && server.ip != null && !server.ip.isBlank())
+		if (server != null)
 		{
-			return Optional.of(key("mp_", server.ip));
+			Optional<String> address = nameOf(server.ip);
+
+			if (address.isPresent())
+			{
+				return Optional.of(key("mp_", address.get()));
+			}
 		}
 
 		return Optional.empty();
+	}
+
+	/**
+	 * The name of the save folder a level root path points at, e.g. {@code New World} for the path
+	 * {@code saves/New World} the game builds its root out of. Normalising first removes the trailing
+	 * {@code "."} of that path, and a name that is still empty or a dot is refused instead of becoming
+	 * a key that every world would share.
+	 */
+	static Optional<String> saveName(Path levelRoot)
+	{
+		if (levelRoot == null)
+		{
+			return Optional.empty();
+		}
+
+		Path name = levelRoot.normalize().getFileName();
+		return name == null ? Optional.empty() : nameOf(name.toString());
+	}
+
+	/** A name that can tell a world from another one: not null, not blank and not a bare dot. */
+	private static Optional<String> nameOf(String name)
+	{
+		if (name == null)
+		{
+			return Optional.empty();
+		}
+
+		String trimmed = name.trim();
+		return trimmed.isEmpty() || trimmed.equals(".") ? Optional.empty() : Optional.of(trimmed);
 	}
 
 	private static String key(String prefix, String name)

@@ -304,6 +304,7 @@ public final class TitleOverlay
 			worldKey = WorldIdentity.of(client).orElse(null);
 			VISITED_BIOMES.clear();
 			VISITED_BIOMES.addAll(DiscoveredBiomes.load(worldKey));
+			logWorld();
 			return;
 		}
 
@@ -329,6 +330,25 @@ public final class TitleOverlay
 		else
 		{
 			startCornerTitle(name);
+		}
+	}
+
+	/**
+	 * Says once per world which world the titles are being kept for and how much of it is already
+	 * discovered, so a world that cannot be told apart from another one shows up in the log instead
+	 * of quietly sharing, or losing, its discoveries.
+	 */
+	private static void logWorld()
+	{
+		if (worldKey == null)
+		{
+			WandererTitles.LOGGER.warn("This world cannot be identified; the biome reveals of this"
+					+ " session will be remembered in this session only");
+		}
+		else
+		{
+			WandererTitles.LOGGER.info("Biome reveals of world {}: {} already discovered",
+					worldKey, VISITED_BIOMES.size());
 		}
 	}
 
