@@ -16,7 +16,7 @@ rebound there.
 
 | Key | Title | Behaviour |
 | --- | --- | --- |
-| `T` | cinematic reveal | Plays the 187 frame clip at its full 1440x720 resolution as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. Only the frames still in use are held in video memory. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
+| `T` | cinematic reveal | Plays the 187 frame clip at its native resolution as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. Only the frames still in use are held in video memory. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
 | `K` | corner title | Draws the name of the biome the player is in with the game font in bold, two and a half times the normal size, a little above the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
 
 While the reveal plays, the name of the biome is written into the empty middle of the ornamental
@@ -25,12 +25,19 @@ part of the clip: it comes from the clip's own light, i.e. it is hidden while th
 covers the plate and it appears as the flash clears, then it fades out with the plate.
 
 The clip is 2:1, so it is fitted into the screen instead of being stretched to it, which leaves a
-strip of the world above and below. The opening flash fills the clip edge to edge, so that strip used
-to end the clip with a visible seam right across the screen. The overlay now continues the flash into
-it instead, with the brightness measured just inside the clip's own edges at that frame, and the
-strips that cover the top and the bottom also swallow the transparent margin the render kept there.
-That measurement pays off twice: the clip's edges are exactly 0 in every frame outside the flash, so
-the rest of the time nothing at all is drawn over the world.
+strip of the world above and below. The opening flash fills the clip edge to edge, so those strips
+used to end the clip with a visible seam right across the screen. The overlay now continues the flash
+into them with the row of the clip right inside its edge, stretched across the strip: the clip's own
+pixels, because its picture is not uniform along that edge - the flash is brighter in the middle than
+at the sides - and no single colour can match it.
+
+The clip also carries a one pixel bright rind along the top and the bottom of its picture, where the
+opening flash was cut off: the outermost row of the picture is up to fifty levels brighter than the
+rows right inside it and drew a hard white line across the screen. The first and the last nine rows
+of every frame are therefore left out of the picture that is drawn, which removes the rind, drops the
+transparent margin the render kept there with it and costs nothing of the glow. Outside the flash the
+edge of the clip is transparent in every frame, so nothing is drawn over the world the rest of the
+time.
 
 ## When a title plays
 

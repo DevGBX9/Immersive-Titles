@@ -56,8 +56,9 @@ import java.util.Set;
  * is about the biome the player ends up standing in once they are playing instead of about whatever
  * the camera saw while the world was still loading.
  *
- * The big reveal draws the clip stored as a numbered PNG sequence at its full 1440x720 resolution
- * (see the {@code title} texture folder), because Minecraft cannot play video. Every frame is a pre
+ * The big reveal draws the clip stored as a numbered PNG sequence at its 1440x720 resolution (see
+ * the {@code title} texture folder) minus the two strips of rows {@link #FRAME_CROP} describes,
+ * because Minecraft cannot play video. Every frame is a pre
  * keyed image: the footage was a bright reveal on pure black, so the frames carry the brightness of
  * the original as their alpha channel and pure white as their color, and every pixel the render left
  * black - 88% of them - is fully transparent. Drawn over the world that reproduces the original
@@ -131,30 +132,23 @@ public final class TitleOverlay
 	private static final int NAME_FADE_OUT_TO = 152;
 
 	// ---------------------------------------------------------------------------------------------
-	// The flash, beyond the clip
+	// The part of the clip that is drawn, and the flash beyond it
 	// ---------------------------------------------------------------------------------------------
 
 	/**
-	 * The render keeps a transparent margin at the top and the bottom of every frame, in frame
-	 * pixels, so the clip does not reach those two edges with any content of its own.
-	 */
-	private static final int FRAME_MARGIN_TOP = 6;
-	private static final int FRAME_MARGIN_BOTTOM = 8;
-
-	/**
-	 * The clip is 2:1 and a screen is not, so fitting the clip into the screen leaves a strip of the
-	 * world above and below it. The opening flash fills the clip edge to edge, which would make the
-	 * end of that strip a visible seam across the whole screen.
+	 * The clip carries a one pixel bright rind along the top and the bottom of its picture: the
+	 * opening flash was cut off there, so the outermost row of the picture is up to fifty levels
+	 * brighter than the rows right inside it, measured on the frames themselves. Drawn as it is, that
+	 * rind reads as a hard white line across the screen along the top and the bottom of the picture.
 	 *
-	 * These four tables are the brightness of the clip's own edges, measured just inside the
-	 * transparent margin, every second frame starting at the first frame of the clip. During the
-	 * flash they are what the strip has to continue with, and outside it they are exactly 0 in every
-	 * single frame of the clip, so nothing is drawn over the world at any other time.
+	 * The first and the last {@code FRAME_CROP} rows are therefore left out of the picture and the
+	 * remaining {@link #CONTENT_WIDTH} x {@link #CONTENT_HEIGHT} pixels are what the overlay draws.
+	 * Away from the rind the glow is smooth, so nothing of the picture is lost by this, and the
+	 * transparent margins the clip keeps at its top and its bottom go with it.
 	 */
-	private static final int[] EDGE_TOP = {0, 0, 237, 176, 113, 67, 31, 13, 3};
-	private static final int[] EDGE_BOTTOM = {0, 0, 221, 151, 94, 53, 23, 8, 0};
-	private static final int[] EDGE_LEFT = {1, 1, 208, 140, 84, 46, 20, 7, 0};
-	private static final int[] EDGE_RIGHT = {0, 3, 209, 141, 85, 47, 21, 8, 1};
+	private static final int FRAME_CROP = 9;
+	private static final int CONTENT_WIDTH = FRAME_WIDTH;
+	private static final int CONTENT_HEIGHT = FRAME_HEIGHT - 2 * FRAME_CROP;
 
 	// ---------------------------------------------------------------------------------------------
 	// When a title plays
@@ -372,70 +366,86 @@ public final class TitleOverlay
 		int screenWidth = window.getGuiScaledWidth();
 		int screenHeight = window.getGuiScaledHeight();
 
-		// the clip is 2:1, so fit it into the screen instead of stretching it to the screen shape
-		float scale = Math.min(screenWidth / (float) FRAME_WIDTH, screenHeight / (float) FRAME_HEIGHT);
-		int width = Math.max(1, Math.round(FRAME_WIDTH * scale));
-		int height = Math.max(1, Math.round(FRAME_HEIGHT * scale));
+		// the clip is 2:1 and a screen is not, so fit it into the screen instead of stretching it to
+		// the screen shape
+		float scale = Math.min(screenWidth / (float) CONTENT_WIDTH, screenHeight / (float) CONTENT_HEIGHT);
+		int width = Math.max(1, Math.round(CONTENT_WIDTH * scale));
+		int height = Math.max(1, Math.round(CONTENT_HEIGHT * scale));
 		int x = (screenWidth - width) / 2;
 		int y = (screenHeight - height) / 2;
 
-		renderFlashOverflow(graphics, x, y, width, height, screenWidth, screenHeight, scale, frame);
+		renderClipSeam(graphics, texture, x, y, width, height, screenWidth, screenHeight);
 
 		graphics.blit(
 				RenderPipelines.GUI_TEXTURED,
 				texture,
-				x, y, 0, 0,
+				x, y, 0, FRAME_CROP,
 				width, height,
-				FRAME_WIDTH, FRAME_HEIGHT,
+				CONTENT_WIDTH, CONTENT_HEIGHT,
 				FRAME_WIDTH, FRAME_HEIGHT);
 
 		renderName(graphics, x, y, scale, frame);
 	}
 
 	/**
-	 * Continues the opening flash from the edge of the clip out to the edges of the screen, so the
-	 * part of the screen the 2:1 clip does not cover is lit exactly as much as the frame right next to
-	 * it. Nothing is drawn at any other time, because the clip's edges are black outside the flash.
+	 * Covers the part of the screen the clip does not reach - the clip is 2:1 and a screen is not -
+	 * with the row or the column of the clip right inside the crop, stretched across the strip.
 	 *
-	 * The strips that cover the top and the bottom also swallow the transparent margin of the clip
-	 * itself, which would otherwise show the world through the middle of the flash.
+	 * The clip's own pixels are used instead of a solid colour because its picture is not uniform
+	 * along its edge: the flash is brighter in its middle than at its sides, by up to fifty levels,
+	 * so any single colour would step against the clip somewhere along the line. Sampling the clip
+	 * keeps the strip and the picture it continues within a few levels of each other at every column,
+	 * on every screen shape, which is the difference between a seam and no seam.
+	 *
+	 * At a frame whose edge sample is transparent - every frame outside the opening flash - nothing is
+	 * drawn, so the world is untouched by all of this at any other time.
 	 */
-	private static void renderFlashOverflow(GuiGraphicsExtractor graphics, int plateX, int plateY,
-			int width, int height, int screenWidth, int screenHeight, float scale, int frame)
+	private static void renderClipSeam(GuiGraphicsExtractor graphics, Identifier texture, int plateX,
+			int plateY, int width, int height, int screenWidth, int screenHeight)
 	{
-		int top = edgeBrightness(EDGE_TOP, frame);
-		int bottom = edgeBrightness(EDGE_BOTTOM, frame);
-		int left = edgeBrightness(EDGE_LEFT, frame);
-		int right = edgeBrightness(EDGE_RIGHT, frame);
+		int right = plateX + width;
+		int bottom = plateY + height;
 
-		if (top == 0 && bottom == 0 && left == 0 && right == 0)
+		// the strips above and below the clip: one row of the clip, stretched sideways
+		if (plateY > 0)
 		{
-			return;
+			blitBand(graphics, texture, 0, 0, screenWidth, plateY, 0.0F, FRAME_CROP, FRAME_WIDTH, 1);
 		}
 
-		// where the clip starts and stops carrying its own picture
-		int contentTop = plateY + Math.round(FRAME_MARGIN_TOP * scale);
-		int contentBottom = plateY + height - Math.round(FRAME_MARGIN_BOTTOM * scale);
-
-		if (top > 0 && contentTop > 0)
+		if (bottom < screenHeight)
 		{
-			graphics.fill(0, 0, screenWidth, contentTop, (top << 24) | TITLE_TEXT_RGB);
+			blitBand(graphics, texture, 0, bottom, screenWidth, screenHeight,
+					0.0F, FRAME_HEIGHT - FRAME_CROP - 1, FRAME_WIDTH, 1);
 		}
 
-		if (bottom > 0 && contentBottom < screenHeight)
+		// the strips left and right of the clip: one column of the clip, stretched downwards, and
+		// only over the clip's own rows so they leave the two strips above alone
+		if (plateX > 0)
 		{
-			graphics.fill(0, contentBottom, screenWidth, screenHeight, (bottom << 24) | TITLE_TEXT_RGB);
+			blitBand(graphics, texture, 0, plateY, plateX, bottom, 0.0F, FRAME_CROP, 1, CONTENT_HEIGHT);
 		}
 
-		if (left > 0 && plateX > 0)
+		if (right < screenWidth)
 		{
-			graphics.fill(0, contentTop, plateX, contentBottom, (left << 24) | TITLE_TEXT_RGB);
+			blitBand(graphics, texture, right, plateY, screenWidth, bottom,
+					FRAME_WIDTH - 1.0F, FRAME_CROP, 1, CONTENT_HEIGHT);
 		}
+	}
 
-		if (right > 0 && plateX + width < screenWidth)
-		{
-			graphics.fill(plateX + width, contentTop, screenWidth, contentBottom, (right << 24) | TITLE_TEXT_RGB);
-		}
+	/**
+	 * Draws the {@code bandWidth} x {@code bandHeight} pixels of the clip at ({@code u}, {@code v})
+	 * into the screen rectangle from ({@code x0}, {@code y0}) to ({@code x1}, {@code y1}).
+	 */
+	private static void blitBand(GuiGraphicsExtractor graphics, Identifier texture, int x0, int y0,
+			int x1, int y1, float u, float v, int bandWidth, int bandHeight)
+	{
+		graphics.blit(
+				RenderPipelines.GUI_TEXTURED,
+				texture,
+				x0, y0, u, v,
+				x1 - x0, y1 - y0,
+				bandWidth, bandHeight,
+				FRAME_WIDTH, FRAME_HEIGHT);
 	}
 
 	/**
@@ -452,7 +462,7 @@ public final class TitleOverlay
 
 		Font font = Minecraft.getInstance().font;
 		float boxX = plateX + NAME_BOX_X * scale;
-		float boxY = plateY + NAME_BOX_Y * scale;
+		float boxY = plateY + (NAME_BOX_Y - FRAME_CROP) * scale;
 		float boxWidth = NAME_BOX_WIDTH * scale;
 		float boxHeight = NAME_BOX_HEIGHT * scale;
 
@@ -468,24 +478,6 @@ public final class TitleOverlay
 		pose.scale(textScale, textScale);
 		graphics.text(font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		pose.popMatrix();
-	}
-
-	/** The brightness of an edge of the clip at {@code frame}, from a table sampled every 2 frames. */
-	private static int edgeBrightness(int[] table, int frame)
-	{
-		if (frame < 0)
-		{
-			return 0;
-		}
-
-		int index = frame / 2;
-		if (index >= table.length)
-		{
-			return 0;
-		}
-
-		int next = index + 1 < table.length ? table[index + 1] : 0;
-		return table[index] + (next - table[index]) * (frame % 2) / 2;
 	}
 
 	/**
