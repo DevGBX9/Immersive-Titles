@@ -97,13 +97,21 @@ the list, and the nether and the end are below them. Which biome belongs where i
 reading, written out by hand, because the game has no opinion on how rare a biome is. A biome from a
 mod is listed with the name of the mod it comes from, after the biomes the list knows.
 
+The list is narrower than the screen and centred, with the room at its sides left empty for two small
+buttons of the mod's own: the one on the left keeps only the biomes that were discovered, the one on
+the right only the ones that are left to find, and pressing the one that is already on puts the list
+back to every biome. Each carries the mark its filter is about - the check the list uses for a found
+biome, and a question mark for one that is still waiting - dim while off and lit while on, and says
+what it does in a tooltip.
+
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
 resource pack that redraws them: every biome is drawn as one of the game's buttons, a biome that was
 discovered is drawn as one of its disabled buttons, dimmed and checked, the panel behind the list is
 the colour the game's own lists sit on inside a world, and the two lines framing it and the scrollbar
 are the ones the game's own lists are framed and scrolled with. The rows are drawn rather than made
 of buttons that work, because there is nothing to press on a biome: they cannot be clicked, hovered
-into a highlight or focused.
+into a highlight or focused. The scrollbar, on the other hand, is a scrollbar: it can be taken with
+the mouse and dragged, and the list follows the hand exactly.
 
 Scrolling is smooth. The wheel and the keys say where the list is going, and the drawn list eases
 after them, so the rows slide up and down instead of jumping. The slide is measured against the clock
