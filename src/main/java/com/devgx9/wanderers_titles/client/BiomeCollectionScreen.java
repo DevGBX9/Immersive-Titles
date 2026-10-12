@@ -31,7 +31,11 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+import net.minecraft.util.Util;
 
 import java.util.List;
 import java.util.Set;
@@ -50,6 +54,31 @@ import java.util.Set;
  * take a portal or a search (see {@link BiomeCatalog}), because a list that starts with the biomes
  * everyone has is a list that says something: what is left below them is what is left to find.
  *
+ * Everything the screen is made of is the game's own, so it looks like the menus it sits next to
+ * and follows a resource pack that redraws them:
+ *
+ * - every biome is a row drawn with the game's own button sprite, and a biome that was discovered
+ *   is drawn with the sprite the game draws a button it will not let anyone press in, dimmed with
+ *   its name and marked with a check,
+ * - the panel the rows sit on is the colour of the game's own list background inside a world, which
+ *   is black at 44% - measured from {@code inworld_menu_list_background.png}, the one the game's
+ *   lists are drawn with,
+ * - the two lines framing the list are the separators the game's own lists are framed with
+ *   ({@link Screen#INWORLD_HEADER_SEPARATOR}), and
+ * - the scrollbar is the game's scroller, in the same six pixels of width the game draws it in.
+ *
+ * The rows are drawn rather than made of widgets, because there is nothing to press on a biome:
+ * a row that cannot be clicked should not be given a hover highlight, a click, a focus ring or a
+ * keyboard shortcut that would suggest otherwise. Everything the player can do is scroll, jump and
+ * close, and the button at the bottom is a real one of the game's.
+ *
+ * Scrolling is smooth: the wheel and the keys move where the list is going, not where it is drawn,
+ * and the drawn list eases after it (see {@link #advanceScroll}). Rows therefore slide up and down
+ * instead of jumping, by whole pixels, so the text moves without shimmering. The step is taken from
+ * the clock rather than from a fixed amount per frame, so the slide takes the same time at any
+ * frame rate, and it is capped so that a frame the game spent stalled cannot skip the list over
+ * everything it missed.
+ *
  * The screen is left at the game's own defaults wherever it matters. It does not override
  * {@code isPauseScreen}, which is true for a screen in this version of the game, so opening it
  * pauses a single player world exactly like the escape menu does, and it does not draw a background
@@ -63,11 +92,42 @@ import java.util.Set;
  */
 final class BiomeCollectionScreen extends Screen
 {
-	/** Height of one row, i.e. of one biome, in gui pixels. */
+	/** Height of one row, i.e. of one biome: the height of a button of the game. */
 	private static final int ROW_HEIGHT = 20;
+
+	/** Room left between two rows: the spacing the game leaves between two of its own buttons. */
+	private static final int ROW_SPACING = 4;
+
+	/** How far apart two rows are drawn, i.e. a row and the room under it. */
+	private static final int ROW_PITCH = ROW_HEIGHT + ROW_SPACING;
 
 	/** How far one turn of the wheel, or one arrow key, moves the list, in rows. */
 	private static final int SCROLL_STEP = 2;
+
+	/**
+	 * How long the drawn list takes to catch up with where the wheel has put it, in milliseconds.
+	 * It is the time constant of the easing: after this much time a little under two thirds of the
+	 * way is covered and what is left is a short glide, so a turn of the wheel reads as the rows
+	 * sliding rather than as the list being somewhere else.
+	 */
+	private static final double SCROLL_EASE_MS = 90.0D;
+
+	/**
+	 * The longest step the slide takes from one drawn frame to the next, in milliseconds. A frame
+	 * that took longer than this - the game stalling, the world being loaded in the background -
+	 * counts as a tenth of a second instead of letting the list jump over everything it missed.
+	 */
+	private static final double MAX_SCROLL_STEP_MS = 100.0D;
+
+	/** How close to where it is going the list has to be before it is simply put there, in rows. */
+	private static final double SCROLL_SETTLED_ROWS = 0.01D;
+
+	/** Where the title of the screen, and the line counting the discoveries, are drawn. */
+	private static final int TITLE_Y = 8;
+	private static final int PROGRESS_Y = 20;
+
+	/** Where the list starts, under the title and the line counting the discoveries. */
+	private static final int LIST_TOP = 36;
 
 	/** How wide the panel of the list is kept away from the edges of the screen. */
 	private static final int PANEL_MARGIN = 20;
@@ -75,20 +135,61 @@ final class BiomeCollectionScreen extends Screen
 	/** Room the list leaves for the hint and the button below it. */
 	private static final int FOOTER_HEIGHT = 54;
 
+	/** How high the two lines framing the list are drawn, and the texture they are cut from. */
+	private static final int SEPARATOR_HEIGHT = 2;
+	private static final int SEPARATOR_TEXTURE_WIDTH = 32;
+
+	/** The strip at the right end of the list the scrollbar is drawn in, in gui pixels. */
+	private static final int SCROLLBAR_WIDTH = 6;
+
+	/** How far the rows stop before that strip, so the scrollbar is never drawn over a row. */
+	private static final int SCROLLBAR_MARGIN = 4;
+
+	/**
+	 * The shortest the scrollbar thumb is allowed to be, and the room it keeps from the bottom of
+	 * its track: the two ends of the game's own scroller height, which is as much of the track as
+	 * the list is of its content, between a floor of its own and the bottom of the list.
+	 */
+	private static final int SCROLLBAR_MIN_HEIGHT = 32;
+	private static final int SCROLLBAR_BOTTOM_MARGIN = 8;
+
+	/** Where the check of a discovered biome and its name sit inside a row, from its left end. */
+	private static final int CHECK_X = 9;
+	private static final int NAME_X = 22;
+
+	/** How far the text of a row is kept away from the right end of it. */
+	private static final int TEXT_MARGIN = 8;
+
 	/** The glyph a biome that was discovered is marked with, from the game's own font. */
 	private static final String CHECK = "\u2714";
 
-	private static final int PANEL_COLOR = 0xC0101010;
-	private static final int ROW_STRIPE_COLOR = 0x18FFFFFF;
-	private static final int ROW_HOVER_COLOR = 0x38FFFFFF;
+	/** The button of the game a row of a biome still to find is drawn with. */
+	private static final Identifier BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button");
+
+	/**
+	 * The button of the game a row of a biome that was found is drawn with: the one it draws a
+	 * button it will not let anyone press in, which is a flat, dimmed panel instead of a button.
+	 */
+	private static final Identifier DISCOVERED_BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button_disabled");
+
+	/** The game's own scroller, and the groove it runs in. */
+	private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("widget/scroller");
+	private static final Identifier SCROLLER_BACKGROUND_SPRITE =
+			Identifier.withDefaultNamespace("widget/scroller_background");
+
+	/**
+	 * What the list is drawn on: black at 44%, which is what the game's own list background inside a
+	 * world is - {@code inworld_menu_list_background.png} is a single colour, (0, 0, 0, 112), which
+	 * is the whole texture, so the game is drawing exactly this rectangle stretched over its lists.
+	 */
+	private static final int PANEL_COLOR = 0x70000000;
+
 	private static final int TITLE_COLOR = 0xFFFFFFFF;
 	private static final int MUTED_COLOR = 0xFFA0A0A0;
 	private static final int NAME_COLOR = 0xFFFFFFFF;
-	private static final int DISCOVERED_COLOR = 0xFF8C8C8C;
+	private static final int DISCOVERED_COLOR = 0xFFA0A0A0;
 	private static final int CHECK_COLOR = 0xFF55FF55;
-	private static final int SOURCE_COLOR = 0xFF6E6E6E;
-	private static final int SCROLL_TRACK_COLOR = 0x40000000;
-	private static final int SCROLL_THUMB_COLOR = 0xFF909090;
+	private static final int SOURCE_COLOR = 0xFF828282;
 
 	/** The biomes to list, in the order they are shown in. */
 	private final List<BiomeCatalog.Entry> entries;
@@ -99,8 +200,14 @@ final class BiomeCollectionScreen extends Screen
 	/** How many of {@link #entries} are in {@link #discovered}, counted once when the screen opens. */
 	private final int discoveredCount;
 
-	/** How many rows the list is scrolled down by, in rows. */
-	private int scroll;
+	/** Where the list has been told to go, in rows: what the wheel and the keys move. */
+	private double scrollTarget;
+
+	/** Where the list is drawn right now, in rows: it eases towards {@link #scrollTarget}. */
+	private double scrollCurrent;
+
+	/** Wall clock time the list was drawn at last, which the step of that easing is measured from. */
+	private long lastFrameMs;
 
 	/** The box the list is drawn in, in gui pixels. Filled in by {@link #init()}. */
 	private int listLeft;
@@ -131,11 +238,15 @@ final class BiomeCollectionScreen extends Screen
 	{
 		listLeft = PANEL_MARGIN;
 		listRight = width - PANEL_MARGIN;
-		listTop = 44;
+		listTop = LIST_TOP;
 		listBottom = height - FOOTER_HEIGHT;
 
 		// a resize can leave the list scrolled past its own end
-		scroll = clampScroll(scroll);
+		scrollTarget = clampScroll(scrollTarget);
+		scrollCurrent = clampScroll(scrollCurrent);
+
+		// the slide is measured against the clock, so the frame it starts from is this one
+		lastFrameMs = Util.getMillis();
 
 		addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
 				.bounds(width / 2 - 75, height - 28, 150, 20)
@@ -145,14 +256,20 @@ final class BiomeCollectionScreen extends Screen
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
 	{
-		drawCentered(graphics, title, 12, TITLE_COLOR);
+		advanceScroll();
+
+		drawCentered(graphics, title, TITLE_Y, TITLE_COLOR);
 		drawCentered(graphics, Component.translatable("screen.immersive_titles.collection.progress",
-				discoveredCount, entries.size()), 24, MUTED_COLOR);
+				discoveredCount, entries.size()), PROGRESS_Y, MUTED_COLOR);
 
-		graphics.fill(listLeft - 4, listTop - 4, listRight + 4, listBottom + 4, PANEL_COLOR);
+		graphics.fill(listLeft, listTop, listRight, listBottom, PANEL_COLOR);
 
-		drawRows(graphics, mouseX, mouseY);
+		drawRows(graphics);
 		drawScrollBar(graphics);
+
+		// the lines the game's own lists are framed with, one above the list and one under it
+		drawSeparator(graphics, Screen.INWORLD_HEADER_SEPARATOR, listTop - SEPARATOR_HEIGHT);
+		drawSeparator(graphics, Screen.INWORLD_FOOTER_SEPARATOR, listBottom);
 
 		drawCentered(graphics, Component.translatable("screen.immersive_titles.collection.hint"),
 				height - 44, MUTED_COLOR);
@@ -161,60 +278,87 @@ final class BiomeCollectionScreen extends Screen
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 	}
 
-	/** Draws the rows that fit into the list, marked and hovered, under a scissor of the list box. */
-	private void drawRows(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+	/**
+	 * Moves the drawn list towards where it has been told to go by the time since the last drawn
+	 * frame: no time while the two already agree, so a list nobody is scrolling costs nothing, and
+	 * the step is capped so that a stalled frame cannot skip the list over what it missed. The list
+	 * is put exactly where it is going once it is close enough, so it settles instead of crawling
+	 * the last hundredth of a row forever.
+	 */
+	private void advanceScroll()
 	{
-		int rows = visibleRows();
+		long now = Util.getMillis();
+		double elapsedMs = Math.min(now - lastFrameMs, MAX_SCROLL_STEP_MS);
+		lastFrameMs = now;
+
+		if (elapsedMs <= 0.0D || scrollCurrent == scrollTarget)
+		{
+			return;
+		}
+
+		double approach = Math.exp(-elapsedMs / SCROLL_EASE_MS);
+		double moved = scrollTarget + (scrollCurrent - scrollTarget) * approach;
+
+		scrollCurrent = Math.abs(scrollTarget - moved) < SCROLL_SETTLED_ROWS ? scrollTarget : moved;
+	}
+
+	/**
+	 * Draws the rows that are in the list right now, under a scissor of the list box: the rows slide
+	 * by the same whole number of pixels, so the text moves instead of jumping and does not shimmer
+	 * on the way.
+	 */
+	private void drawRows(GuiGraphicsExtractor graphics)
+	{
+		int slide = (int) Math.round(scrollCurrent * ROW_PITCH);
+		int rowRight = listRight - SCROLLBAR_WIDTH - SCROLLBAR_MARGIN;
+
+		// the row above the first one that is fully in the list may still be hanging into it
+		int first = Math.max(0, (int) Math.floor(scrollCurrent) - 1);
 
 		graphics.enableScissor(listLeft, listTop, listRight, listBottom);
 
-		for (int row = 0; row < rows; row++)
+		for (int index = first; index < entries.size(); index++)
 		{
-			int index = scroll + row;
-			if (index >= entries.size())
+			int y = listTop + index * ROW_PITCH - slide;
+			if (y >= listBottom)
 			{
 				break;
 			}
 
-			drawRow(graphics, entries.get(index), row, listTop + row * ROW_HEIGHT, mouseX, mouseY);
+			if (y + ROW_HEIGHT > listTop)
+			{
+				drawRow(graphics, entries.get(index), y, rowRight);
+			}
 		}
 
 		graphics.disableScissor();
 	}
 
 	/**
-	 * Draws one biome: its name, a check and a dimmed name once it was discovered, and the id of the
-	 * mod it comes from for a biome of a mod, so a long list from a modpack stays readable.
+	 * Draws one biome: the game's own button, its name, a check and a dimmed name once it was
+	 * discovered, and the id of the mod it comes from for a biome of a mod, so a long list from a
+	 * modpack stays readable.
 	 */
-	private void drawRow(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int row, int y,
-			int mouseX, int mouseY)
+	private void drawRow(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int y, int rowRight)
 	{
 		boolean found = discovered.contains(entry.id());
-		boolean hovered = mouseX >= listLeft && mouseX <= listRight && mouseY >= y && mouseY < y + ROW_HEIGHT;
-
-		if (hovered)
-		{
-			graphics.fill(listLeft, y, listRight, y + ROW_HEIGHT, ROW_HOVER_COLOR);
-		}
-		else if (row % 2 == 0)
-		{
-			graphics.fill(listLeft, y, listRight, y + ROW_HEIGHT, ROW_STRIPE_COLOR);
-		}
-
 		int textY = y + (ROW_HEIGHT - font.lineHeight) / 2;
-		int nameX = listLeft + 22;
+
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
+				found ? DISCOVERED_BUTTON_SPRITE : BUTTON_SPRITE,
+				listLeft, y, rowRight - listLeft, ROW_HEIGHT);
 
 		if (found)
 		{
-			graphics.text(font, CHECK, listLeft + 6, textY, CHECK_COLOR, false);
+			graphics.text(font, CHECK, listLeft + CHECK_X, textY, CHECK_COLOR, true);
 		}
 
-		graphics.text(font, entry.name(), nameX, textY, found ? DISCOVERED_COLOR : NAME_COLOR, false);
+		graphics.text(font, entry.name(), listLeft + NAME_X, textY, found ? DISCOVERED_COLOR : NAME_COLOR, true);
 
 		String source = source(entry.id());
 		if (source != null)
 		{
-			graphics.text(font, source, listRight - 8 - font.width(source), textY, SOURCE_COLOR, false);
+			graphics.text(font, source, rowRight - TEXT_MARGIN - font.width(source), textY, SOURCE_COLOR, true);
 		}
 	}
 
@@ -227,37 +371,47 @@ final class BiomeCollectionScreen extends Screen
 		return namespace.isEmpty() || namespace.equals("minecraft") ? null : namespace;
 	}
 
-	/** Draws where the list is: nothing at all while every biome fits on the screen. */
+	/** Draws where the list is, in the game's own scroller, while there is more of it than fits. */
 	private void drawScrollBar(GuiGraphicsExtractor graphics)
 	{
-		int rows = visibleRows();
-		int total = entries.size();
+		double maxScroll = maxScroll();
 
-		if (total <= rows)
+		if (maxScroll <= 0.0D)
 		{
+			// the whole list is on the screen: the game draws no scrollbar for that either
 			return;
 		}
 
-		int trackTop = listTop;
 		int trackHeight = listBottom - listTop;
-		int thumbHeight = Math.max(ROW_HEIGHT, trackHeight * rows / total);
-		int thumbTop = trackTop + (trackHeight - thumbHeight) * scroll / Math.max(1, total - rows);
-		int x = listRight + 1;
+		int contentHeight = entries.size() * ROW_PITCH;
+		int thumbHeight = Mth.clamp(trackHeight * trackHeight / contentHeight, SCROLLBAR_MIN_HEIGHT,
+				Math.max(SCROLLBAR_MIN_HEIGHT, trackHeight - SCROLLBAR_BOTTOM_MARGIN));
+		int thumbTop = listTop + (int) (scrollCurrent / maxScroll * Math.max(0, trackHeight - thumbHeight));
+		int x = listRight - SCROLLBAR_WIDTH;
 
-		graphics.fill(x, trackTop, x + 3, listBottom, SCROLL_TRACK_COLOR);
-		graphics.fill(x, thumbTop, x + 3, thumbTop + thumbHeight, SCROLL_THUMB_COLOR);
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_BACKGROUND_SPRITE,
+				x, listTop, SCROLLBAR_WIDTH, trackHeight);
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_SPRITE,
+				x, thumbTop, SCROLLBAR_WIDTH, thumbHeight);
+	}
+
+	/** Draws one of the two lines a list of the game is framed with, across the list it frames. */
+	private void drawSeparator(GuiGraphicsExtractor graphics, Identifier separator, int y)
+	{
+		graphics.blit(RenderPipelines.GUI_TEXTURED, separator, listLeft, y, 0.0F, 0.0F,
+				listRight - listLeft, SEPARATOR_HEIGHT, SEPARATOR_TEXTURE_WIDTH, SEPARATOR_HEIGHT);
 	}
 
 	/** Draws {@code text} centred on the screen, at {@code y}. */
 	private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color)
 	{
-		graphics.text(font, text, (width - font.width(text)) / 2, y, color, false);
+		graphics.text(font, text, (width - font.width(text)) / 2, y, color, true);
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY)
 	{
-		setScroll(scroll - (int) Math.signum(scrollY) * SCROLL_STEP);
+		scrollBy(-Math.signum(scrollY) * SCROLL_STEP);
 
 		return true;
 	}
@@ -267,37 +421,37 @@ final class BiomeCollectionScreen extends Screen
 	{
 		if (event.key() == InputConstants.KEY_DOWN)
 		{
-			setScroll(scroll + 1);
+			scrollBy(1);
 			return true;
 		}
 
 		if (event.key() == InputConstants.KEY_UP)
 		{
-			setScroll(scroll - 1);
+			scrollBy(-1);
 			return true;
 		}
 
 		if (event.key() == InputConstants.KEY_PAGEDOWN)
 		{
-			setScroll(scroll + visibleRows());
+			scrollBy(pageRows());
 			return true;
 		}
 
 		if (event.key() == InputConstants.KEY_PAGEUP)
 		{
-			setScroll(scroll - visibleRows());
+			scrollBy(-pageRows());
 			return true;
 		}
 
 		if (event.key() == InputConstants.KEY_HOME)
 		{
-			setScroll(0);
+			scrollBy(-entries.size());
 			return true;
 		}
 
 		if (event.key() == InputConstants.KEY_END)
 		{
-			setScroll(entries.size());
+			scrollBy(entries.size());
 			return true;
 		}
 
@@ -306,19 +460,32 @@ final class BiomeCollectionScreen extends Screen
 		return super.keyPressed(event);
 	}
 
-	/** How many rows of the list fit into the box {@link #init()} laid out. */
-	private int visibleRows()
+	/** Moves the list {@code rows} rows further down, letting the slide catch up with it. */
+	private void scrollBy(double rows)
 	{
-		return Math.max(1, (listBottom - listTop) / ROW_HEIGHT);
+		scrollTarget = clampScroll(scrollTarget + rows);
 	}
 
-	private void setScroll(int value)
+	/** How many rows fit into the list, which is how far a page moves it. */
+	private int pageRows()
 	{
-		scroll = clampScroll(value);
+		return Math.max(1, (listBottom - listTop) / ROW_PITCH);
 	}
 
-	private int clampScroll(int value)
+	/**
+	 * How far the list can be scrolled, in rows: its content less the rows that fit in the box.
+	 * It is a fraction of a row, so the last row of the list stops at the bottom of the box and
+	 * the top of the list is allowed to be part of a row, which is what a smooth list looks like.
+	 */
+	private double maxScroll()
 	{
-		return Math.max(0, Math.min(value, Math.max(0, entries.size() - visibleRows())));
+		double visibleRows = (listBottom - listTop) / (double) ROW_PITCH;
+
+		return Math.max(0.0D, entries.size() - visibleRows);
+	}
+
+	private double clampScroll(double value)
+	{
+		return Mth.clamp(value, 0.0D, maxScroll());
 	}
 }

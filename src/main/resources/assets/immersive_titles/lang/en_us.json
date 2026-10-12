@@ -3,7 +3,7 @@
   "key.immersive_titles.open_collection": "Open Biome Collection",
   "key.immersive_titles.play_title": "Play Title Reveal",
   "key.immersive_titles.show_corner_title": "Show Corner Title",
-  "screen.immersive_titles.collection.hint": "Press K or Escape to close",
+  "screen.immersive_titles.collection.hint": "Scroll to browse, press K or Escape to close",
   "screen.immersive_titles.collection.progress": "%s of %s biomes discovered",
   "screen.immersive_titles.collection.title": "Biome Collection"
 }
