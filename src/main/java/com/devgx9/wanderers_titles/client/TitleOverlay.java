@@ -33,6 +33,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Overlay;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -84,9 +86,12 @@ import java.util.Set;
  * the game font in bold and it fades in, holds and fades out in the lower left corner.
  *
  * The big reveal opens with a short sound of the plate arriving, see {@link #REVEAL_SOUND}. Both
- * titles stand still while a screen is open over the world - the pause menu, the inventory, any
- * other one - which is what keeps a menu from taking a reveal away: the reveal waits on the frame
- * it was showing and carries on from it once the screen is closed, see {@link #render}.
+ * titles stand still while the pause menu is open over the world, and only then: the menu the player
+ * opens with escape is what a reveal has to survive, so the reveal waits on the frame it was showing
+ * behind that menu and carries on from the same frame once it is closed, see {@link #render}. The
+ * inventory, a chest, the chat and the other screens hold nothing - the game does not pause for them
+ * either - so a reveal keeps running behind them and is further along, or already over, when they
+ * are closed.
  */
 public final class TitleOverlay
 {
@@ -241,8 +246,8 @@ public final class TitleOverlay
 	/**
 	 * How much of the clip has been shown so far, in milliseconds. The frame of the reveal is read
 	 * from this instead of from the clock: time is only ever added to it while the reveal is running,
-	 * which is what lets a screen hold the reveal on the exact frame it was showing and lets closing
-	 * the screen carry on from that frame instead of starting the clip again.
+	 * which is what lets the pause menu hold the reveal on the exact frame it was showing and lets
+	 * closing the menu carry on from that frame instead of starting the clip again.
 	 */
 	private static long revealMs = 0L;
 
@@ -251,7 +256,7 @@ public final class TitleOverlay
 
 	/**
 	 * How much of the corner title animation has been played, in milliseconds. It holds with the
-	 * reveal while a screen is open.
+	 * reveal while the pause menu is open.
 	 */
 	private static long cornerMs = 0L;
 
@@ -467,11 +472,11 @@ public final class TitleOverlay
 	/**
 	 * Draws the titles and moves them on by the time since the last drawn frame.
 	 *
-	 * That step is what holds a title still while a screen is open: no time is added while one is
+	 * That step is what holds a title still while the pause menu is open: no time is added while it is
 	 * there, so the reveal keeps standing on the exact frame it was showing - on screen, behind the
-	 * screen the player opened - and when the screen is closed the reveal carries on from that same
-	 * frame to the end of the clip instead of playing the clip from its start again. The small corner
-	 * title holds the same way.
+	 * menu the player opened - and when the menu is closed the reveal carries on from that same frame
+	 * to the end of the clip instead of playing the clip from its start again. The small corner title
+	 * holds the same way.
 	 */
 	private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker)
 	{
@@ -487,17 +492,30 @@ public final class TitleOverlay
 	}
 
 	/**
-	 * Whether a screen or an overlay is open over the world and is holding the titles still: the
-	 * pause menu that escape opens, the inventory, the chat, any other screen.
+	 * Whether the pause menu is open over the world and is holding the titles still.
 	 *
-	 * Every one of them holds the titles, not just the pause menu, because the titles are drawn
-	 * behind all of them - and the frame they hold behind an open screen is the frame the reveal
-	 * carries on from when the player is back in the world.
+	 * It is the menu that escape opens, together with the screens opened from it - what the game
+	 * itself counts as a pause screen - and nothing else. The inventory, a chest, the chat and the
+	 * other screens do not pause the game and are no reason to stop the titles, so a reveal keeps
+	 * running behind them and is further along, or already over, when they are closed, instead of
+	 * standing still for as long as a container was open.
+	 *
+	 * The pause menu is what a reveal has to survive instead, because escape is what a player presses
+	 * to step out of the game: the frame a reveal holds behind the menu is the frame it carries on
+	 * from once the menu is closed, see {@link #render}.
 	 */
 	private static boolean held()
 	{
 		Minecraft client = Minecraft.getInstance();
-		return client.gui.screen() != null || client.gui.overlay() != null;
+		Screen screen = client.gui.screen();
+
+		if (screen != null && screen.isPauseScreen())
+		{
+			return true;
+		}
+
+		Overlay overlay = client.gui.overlay();
+		return overlay != null && overlay.isPausing();
 	}
 
 	/** Draws the current frame of the cinematic reveal, as long as a playback is running. */

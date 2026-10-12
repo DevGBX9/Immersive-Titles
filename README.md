@@ -27,6 +27,12 @@ The big reveal opens with a short impact sound, `title_reveal.ogg`, at the same 
 arrives. It is played on the master channel rather than as a UI sound, so that pausing the game
 holds the sound with the picture instead of letting it run on behind the pause menu.
 
+Opening the pause menu holds a running reveal on the frame it is showing, behind the menu, and
+closing the menu carries on from that same frame instead of playing the clip from its start again;
+the small corner title holds the same way. Nothing else holds them: the inventory, a chest, the chat
+and every other screen are not an interruption - the game does not pause for them either - so a
+reveal keeps playing behind them and is further along, or already over, when they are closed.
+
 While the reveal plays, the name of the biome is written into the empty middle of the ornamental
 plate with the game font, scaled so that any biome name fits between the ornaments. The name is not
 part of the clip: it comes from the clip's own light, i.e. it is hidden while the opening flash
