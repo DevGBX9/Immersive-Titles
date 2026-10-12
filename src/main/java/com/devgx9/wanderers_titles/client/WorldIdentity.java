@@ -20,121 +20,219 @@
 
 package com.devgx9.wanderers_titles.client;
 
+import com.devgx9.wanderers_titles.WandererTitles;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.world.level.storage.LevelResource;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
- * The identity of the world the player is in, as the remembered biome discoveries need it: a name
- * that is the same every time the same world is joined again and that no other world shares.
+ * The world the player is in, as the remembered biome discoveries need it: the world's own id and
+ * the file its discoveries belong in.
  *
- * A singleplayer world is identified by the name of its save folder, e.g. {@code smp_test}. That
- * name is unique inside {@code saves} and it stays the same when the world's display name is
- * edited, which the display name itself does not. A server is identified by the address the player
- * joined it with.
+ * A world the player hosts themselves is kept at home, in the world's own folder next to its
+ * {@code level.dat}. The mod writes an id there once - a random UUID, which no other world has had
+ * or will have - and keeps the discoveries of that world in the same folder, see
+ * {@link DiscoveredBiomes}. Two things follow from that, and both of them are the point:
  *
- * The result is a usable file name: the kind of world is put in front of the name, everything a
- * file name cannot contain becomes an underscore, the name is cut to a sane length, and the hash of
- * the untouched name is appended. That last part keeps two worlds apart whose names differ only in
- * the characters that were replaced or past the length limit.
+ * - The id is a value the world carries around with it, and nothing is read from its name. Two
+ *   worlds both called {@code New World} cannot end up sharing anything, renaming a world for
+ *   whatever reason changes nothing about it, and a world that is copied brings its own discoveries
+ *   along with the copy, since they are part of what was copied. Nothing is guessed from a name, so
+ *   nothing can be guessed wrong.
+ * - The discoveries of a world sit in the world's own folder, so deleting a world takes them with it
+ *   and leaves nothing behind. No list of worlds has to be kept, no file can go stale, and a world
+ *   that is deleted and made again starts over - the new folder simply has no id and no
+ *   discoveries of its own yet.
  *
- * The path the game hands out for a level ends in the {@code "."} that {@code LevelResource.ROOT} is
- * defined as, e.g. {@code saves/New World/.}. The name is read from the normalised path, otherwise
- * every singleplayer world would be called {@code "."} and all of them would share one file.
+ * A world on a server is not the client's to write to, and the client is not told anything about one
+ * that no other server could also have: the game never sends a world id, and the seed only exists
+ * locally. That leaves the address the player joined with as the one thing to tell two servers
+ * apart, so the discoveries of a server world are kept in the config folder under that address.
  */
 final class WorldIdentity
 {
-	/** How many characters of the name are kept in front of the hash. */
-	private static final int MAX_NAME_LENGTH = 64;
+	/** The folder a hosted world keeps its own data in, inside the world's own folder. */
+	private static final String WORLD_FOLDER = "immersive_titles";
 
-	private WorldIdentity()
+	/** Below the config directory: where the discoveries of a world on a server are kept. */
+	private static final String SERVERS_FOLDER = "immersive_titles/servers";
+
+	/** The id of the world, inside {@link #WORLD_FOLDER} of a hosted world. */
+	private static final String ID_FILE = "identity.txt";
+
+	/** The name of the file the discoveries of a world are written to. */
+	static final String DISCOVERED_FILE = "discovered.txt";
+
+	/** The file ends every line the same way on every system, so it stays comparable and editable. */
+	static final String LINE_SEPARATOR = "\n";
+
+	/** How many characters of a server address are kept in front of its hash. */
+	private static final int MAX_ADDRESS_LENGTH = 64;
+
+	/** The world's own id: the UUID of a hosted world, the address of a world on a server. */
+	private final String id;
+
+	/** The file the biomes discovered in this world are written to. */
+	private final Path file;
+
+	private WorldIdentity(String id, Path file)
 	{
+		this.id = id;
+		this.file = file;
+	}
+
+	/** The id of the world, as log lines name it. Never empty, never shared with another world. */
+	String id()
+	{
+		return id;
+	}
+
+	/** The file the biomes discovered in this world are written to. */
+	Path file()
+	{
+		return file;
 	}
 
 	/**
-	 * The key of the world the client is in, or an empty optional while there is no world yet or it
-	 * cannot be told apart from another one.
+	 * The world the client is in, or an empty optional while there is no world yet or the data of the
+	 * world cannot be reached.
 	 */
-	static Optional<String> of(Minecraft client)
+	static Optional<WorldIdentity> of(Minecraft client)
 	{
-		IntegratedServer integratedServer = client.getSingleplayerServer();
+		Optional<WorldIdentity> hosted = hosted(client);
 
-		if (integratedServer != null)
+		return hosted.isPresent() ? hosted : server(client);
+	}
+
+	/**
+	 * The world this client hosts itself, as the folder the game keeps it in. The id is written into
+	 * that folder the first time the world is joined: it is made by the world, it stays in it, and it
+	 * is the same one every time that folder is played again.
+	 */
+	private static Optional<WorldIdentity> hosted(Minecraft client)
+	{
+		IntegratedServer server = client.getSingleplayerServer();
+
+		if (server == null)
 		{
-			Optional<String> name = saveName(integratedServer.getWorldPath(LevelResource.ROOT));
-
-			if (name.isEmpty())
-			{
-				// the save folder cannot be read, so the name from the world list is the last thing
-				// left; renaming a world then starts a new round of discoveries in it
-				name = nameOf(integratedServer.getWorldData().getLevelName());
-			}
-
-			if (name.isPresent())
-			{
-				return Optional.of(key("sp_", name.get()));
-			}
+			return Optional.empty();
 		}
 
+		Path root = server.getWorldPath(LevelResource.ROOT);
+
+		if (root == null)
+		{
+			return Optional.empty();
+		}
+
+		// the level root the game hands out ends in the "." that LevelResource.ROOT is defined as,
+		// so normalising it first is what turns it into the folder of the world itself
+		Path folder = root.normalize().resolve(WORLD_FOLDER);
+
+		return identity(folder, server.getWorldData().getLevelName())
+				.map(id -> new WorldIdentity(id, folder.resolve(DISCOVERED_FILE)));
+	}
+
+	/**
+	 * The id of the world in {@code folder}: the one written there before, or a fresh random UUID.
+	 *
+	 * {@code levelName} is a hint for whoever reads the log, nothing else - the id of a world is the
+	 * UUID, never its name - and the id is kept beside the discoveries so that a world carries both
+	 * of them wherever its folder is copied to.
+	 */
+	private static Optional<String> identity(Path folder, String levelName)
+	{
+		Path identity = folder.resolve(ID_FILE);
+
+		try
+		{
+			if (Files.isRegularFile(identity))
+			{
+				String stored = Files.readString(identity, StandardCharsets.UTF_8).trim();
+
+				if (!stored.isEmpty())
+				{
+					return Optional.of(describe(stored, levelName));
+				}
+			}
+
+			String id = UUID.randomUUID().toString();
+			Files.createDirectories(folder);
+			Files.writeString(identity, id + LINE_SEPARATOR, StandardCharsets.UTF_8,
+					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+					StandardOpenOption.WRITE);
+
+			return Optional.of(describe(id, levelName));
+		}
+		catch (IOException | RuntimeException e)
+		{
+			WandererTitles.LOGGER.warn("Could not read or write the id of the world in {}", identity, e);
+			return Optional.empty();
+		}
+	}
+
+	/**
+	 * The world of a server, told apart by the address the player joined it with. The world behind
+	 * that address is not the client's to write to, and the game tells a client nothing about a
+	 * server world that no other server world could also have, so the address is as far as an
+	 * identity can go here.
+	 */
+	private static Optional<WorldIdentity> server(Minecraft client)
+	{
 		ServerData server = client.getCurrentServer();
 
-		if (server != null)
+		if (server == null)
 		{
-			Optional<String> address = nameOf(server.ip);
-
-			if (address.isPresent())
-			{
-				return Optional.of(key("mp_", address.get()));
-			}
+			return Optional.empty();
 		}
 
-		return Optional.empty();
+		String address = server.ip == null ? "" : server.ip.trim();
+
+		if (address.isEmpty())
+		{
+			return Optional.empty();
+		}
+
+		Path folder = FabricLoader.getInstance().getConfigDir().resolve(SERVERS_FOLDER);
+
+		return Optional.of(new WorldIdentity(address, folder.resolve(fileName(address) + ".txt")));
+	}
+
+	/** {@code id} with the world's name behind it, as a hint for whoever reads the log. */
+	private static String describe(String id, String levelName)
+	{
+		String name = levelName == null ? "" : levelName.trim();
+
+		return name.isEmpty() ? id : id + " (" + name + ")";
 	}
 
 	/**
-	 * The name of the save folder a level root path points at, e.g. {@code New World} for the path
-	 * {@code saves/New World} the game builds its root out of. Normalising first removes the trailing
-	 * {@code "."} of that path, and a name that is still empty or a dot is refused instead of becoming
-	 * a key that every world would share.
+	 * The file name an address gets: a usable file name with everything a file name cannot contain
+	 * replaced, cut to a sane length, and the hash of the untouched address appended, so that two
+	 * addresses that differ only in the characters that were replaced, or past the length limit, still
+	 * end up in two files.
 	 */
-	static Optional<String> saveName(Path levelRoot)
+	private static String fileName(String address)
 	{
-		if (levelRoot == null)
+		StringBuilder safe = new StringBuilder(Math.min(address.length(), MAX_ADDRESS_LENGTH));
+
+		for (int i = 0; i < address.length() && safe.length() < MAX_ADDRESS_LENGTH; i++)
 		{
-			return Optional.empty();
-		}
-
-		Path name = levelRoot.normalize().getFileName();
-		return name == null ? Optional.empty() : nameOf(name.toString());
-	}
-
-	/** A name that can tell a world from another one: not null, not blank and not a bare dot. */
-	private static Optional<String> nameOf(String name)
-	{
-		if (name == null)
-		{
-			return Optional.empty();
-		}
-
-		String trimmed = name.trim();
-		return trimmed.isEmpty() || trimmed.equals(".") ? Optional.empty() : Optional.of(trimmed);
-	}
-
-	private static String key(String prefix, String name)
-	{
-		StringBuilder safe = new StringBuilder(Math.min(name.length(), MAX_NAME_LENGTH));
-
-		for (int i = 0; i < name.length() && safe.length() < MAX_NAME_LENGTH; i++)
-		{
-			char c = name.charAt(i);
+			char c = address.charAt(i);
 			safe.append(isFileNameCharacter(c) ? c : '_');
 		}
 
-		return prefix + safe + '-' + Integer.toHexString(name.hashCode());
+		return safe + "-" + Integer.toHexString(address.hashCode());
 	}
 
 	private static boolean isFileNameCharacter(char c)

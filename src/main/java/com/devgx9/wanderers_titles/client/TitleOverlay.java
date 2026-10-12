@@ -57,7 +57,9 @@ import java.util.Set;
  * corner title on every later entry. Which biomes those are is remembered per world and written to
  * disk (see {@link DiscoveredBiomes}), so the reveal is a discovery of that world: leaving it and
  * joining it again later only brings the corner title back, while another world still has its own
- * first visits to hand out. While a world is being joined the titles wait until the player actually
+ * first visits to hand out. A world is named by an id it carries itself rather than by anything
+ * read from its name, and its list of discoveries lives with it (see {@link WorldIdentity}), so no
+ * two worlds can end up sharing one and a world that is deleted takes its list along with it. While a world is being joined the titles wait until the player actually
  * moves, so the first title is about the biome the player ends up standing in once they are playing
  * instead of about whatever the camera saw while the world was still loading.
  *
@@ -171,7 +173,7 @@ public final class TitleOverlay
 	 * the mod's own {@code sounds.json} gives it.
 	 *
 	 * That entry has to spell the name out with the mod's namespace, i.e.
-	 * {@code wanderers_titles:title_reveal}, because a name without a namespace is read as one of the
+	 * {@code immersive_titles:title_reveal}, because a name without a namespace is read as one of the
 	 * game's own sounds: written as a bare {@code title_reveal} the game looks for
 	 * {@code minecraft:sounds/title_reveal.ogg}, finds nothing and drops the sound with
 	 * "File minecraft:sounds/title_reveal.ogg does not exist" - the reveal then plays in silence,
@@ -222,13 +224,13 @@ public final class TitleOverlay
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
 
 	private static final KeyMapping PLAY_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-			"key.wanderers_titles.play_title",
+			"key.immersive_titles.play_title",
 			InputConstants.Type.KEYBOARD,
 			InputConstants.KEY_T,
 			CATEGORY));
 
 	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-			"key.wanderers_titles.show_corner_title",
+			"key.immersive_titles.show_corner_title",
 			InputConstants.Type.KEYBOARD,
 			InputConstants.KEY_K,
 			CATEGORY));
@@ -278,7 +280,7 @@ public final class TitleOverlay
 	private static final Set<String> VISITED_BIOMES = new HashSet<>();
 
 	/** The world {@link #VISITED_BIOMES} belongs to, or null while there is no world. */
-	private static String worldKey = null;
+	private static WorldIdentity world = null;
 
 	/** The biome the player was in when it was last checked, to notice a change. */
 	private static String lastBiomeId = null;
@@ -349,7 +351,7 @@ public final class TitleOverlay
 			inWorld = false;
 			joinPosition = null;
 			lastBiomeId = null;
-			worldKey = null;
+			world = null;
 			VISITED_BIOMES.clear();
 			return;
 		}
@@ -361,9 +363,9 @@ public final class TitleOverlay
 			// player to actually start moving
 			inWorld = true;
 			joinPosition = client.player.position();
-			worldKey = WorldIdentity.of(client).orElse(null);
+			world = WorldIdentity.of(client).orElse(null);
 			VISITED_BIOMES.clear();
-			VISITED_BIOMES.addAll(DiscoveredBiomes.load(worldKey));
+			VISITED_BIOMES.addAll(DiscoveredBiomes.load(world));
 			logWorld();
 			return;
 		}
@@ -384,7 +386,7 @@ public final class TitleOverlay
 
 		if (VISITED_BIOMES.add(biomeId))
 		{
-			DiscoveredBiomes.remember(worldKey, biomeId);
+			DiscoveredBiomes.remember(world, biomeId);
 			startReveal(name);
 		}
 		else
@@ -395,12 +397,12 @@ public final class TitleOverlay
 
 	/**
 	 * Says once per world which world the titles are being kept for and how much of it is already
-	 * discovered, so a world that cannot be told apart from another one shows up in the log instead
-	 * of quietly sharing, or losing, its discoveries.
+	 * discovered, so a world whose own folder cannot be reached shows up in the log instead of
+	 * quietly losing its discoveries.
 	 */
 	private static void logWorld()
 	{
-		if (worldKey == null)
+		if (world == null)
 		{
 			WandererTitles.LOGGER.warn("This world cannot be identified; the biome reveals of this"
 					+ " session will be remembered in this session only");
@@ -408,7 +410,7 @@ public final class TitleOverlay
 		else
 		{
 			WandererTitles.LOGGER.info("Biome reveals of world {}: {} already discovered",
-					worldKey, VISITED_BIOMES.size());
+					world.id(), VISITED_BIOMES.size());
 		}
 	}
 

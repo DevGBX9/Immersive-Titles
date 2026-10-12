@@ -64,10 +64,23 @@ biome without a translation falls back to its id with underscores as spaces.
 
 Which biomes have already had their reveal is remembered per world, so the reveal belongs to the
 world it happened in: leaving a world and joining it again later only brings the corner title back
-for everything already seen, while another world still has its own first visits to hand out. The
-client keeps that in `config/wanderers_titles/discovered`, one plain text file per world with one
-biome id per line, written as a biome is discovered. Deleting a line gives that single biome its
-reveal again, and deleting the folder starts over everywhere.
+for everything already seen, while another world still has its own first visits to hand out.
+
+A world is named by an id it owns itself, never by anything read from its name: the first time the
+mod is in a world the player hosts, it writes a random UUID into that world's own folder, and the id
+can only ever belong to that world. Two worlds that share a name, or a world that is renamed, can
+therefore not share or lose anything - every folder carries its own id, a world that is copied takes
+its id along with the copy, and a world that is deleted takes its id and its list of discoveries
+with it, because both live in its own folder:
+
+- `<world>/immersive_titles/identity.txt` - the id of that world, written once.
+- `<world>/immersive_titles/discovered.txt` - the biomes of that world, one biome id per line,
+  appended as each one is discovered. Deleting a line gives that single biome its reveal again, and
+  deleting the file starts that world over.
+
+A world on a server is not the client's to write to, and the game tells a client nothing about a
+server world that no other server world could also have, so the discoveries of a server world are
+kept in `config/immersive_titles/servers`, one file per address the player joined with.
 
 ## What the mod is meant to do
 
@@ -115,8 +128,8 @@ The build matrix only contains the enabled versions listed above, and the enable
 printed into the run summary of every build.
 
 `./gradlew build` is the command the workflow runs for every enabled version. Each version builds
-`wanderers_titles-v<version>.jar`, i.e. the jar reports the plain version of `gradle.properties` -
-`wanderers_titles-v0.1.0.jar` right now - and the build number of the run that produced it is not
+`immersive_titles-v<version>.jar`, i.e. the jar reports the plain version of `gradle.properties` -
+`immersive_titles-v0.1.0.jar` right now - and the build number of the run that produced it is not
 part of the mod or of the jar's name. Which version a jar is for comes from the run it was
 downloaded from.
 

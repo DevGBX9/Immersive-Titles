@@ -41,7 +41,7 @@ import org.slf4j.Logger;
  */
 public final class WandererTitles
 {
-	public static final String MOD_ID = "wanderers_titles";
+	public static final String MOD_ID = "immersive_titles";
 
 	public static final Logger LOGGER =
 			//#if MC >= 1.18.2

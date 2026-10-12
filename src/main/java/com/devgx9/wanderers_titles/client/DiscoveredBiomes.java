@@ -21,7 +21,6 @@
 package com.devgx9.wanderers_titles.client;
 
 import com.devgx9.wanderers_titles.WandererTitles;
-import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,10 +35,14 @@ import java.util.Set;
  * The biomes of a world that already had their big reveal, written down on the client so that
  * leaving a world and joining it again does not make every biome a first discovery once more.
  *
- * There is one file per world in {@code config/wanderers_titles/discovered}, named after the world
- * (see {@link WorldIdentity}), and it holds one biome id per line. The format is deliberately plain:
- * the file stays readable, a user can delete one line to get a single reveal again, or delete the
- * whole folder to start over.
+ * One file per world, and where that file lives is what keeps a world's discoveries its own: for a
+ * world the player hosts themselves it sits in the world's own folder (see {@link WorldIdentity}),
+ * so it is part of the world like its {@code level.dat} - a deleted world takes its discoveries
+ * with it, and a copied one carries them along - while the discoveries of a world on a server, whose
+ * folder a client cannot write to, are kept in {@code config/immersive_titles/servers} under the
+ * address it was joined with. Either way the file holds one biome id per line, and the format is
+ * deliberately plain: the file stays readable, a user can delete one line to get a single reveal
+ * again, or delete the whole file to start over in that world.
  *
  * A discovery is appended as it happens rather than the whole set being written when the world is
  * left, because a game that crashed or was killed would otherwise lose everything found in that
@@ -51,32 +54,24 @@ import java.util.Set;
  */
 final class DiscoveredBiomes
 {
-	/** The folder below the config directory, one file per world inside it. */
-	private static final String FOLDER = "wanderers_titles/discovered";
-
-	private static final String SUFFIX = ".txt";
-
-	/** The file ends every line the same way on every system, so it stays comparable and editable. */
-	private static final String LINE_SEPARATOR = "\n";
-
 	private DiscoveredBiomes()
 	{
 	}
 
 	/**
-	 * The biomes of the world {@code worldKey} that already had their reveal, or an empty set while
-	 * the key is unknown, nothing was written down yet, or the file cannot be read.
+	 * The biomes of {@code world} that already had their reveal, or an empty set while there is no
+	 * world, nothing was written down in it yet, or the file cannot be read.
 	 */
-	static Set<String> load(String worldKey)
+	static Set<String> load(WorldIdentity world)
 	{
 		Set<String> discovered = new HashSet<>();
 
-		if (worldKey == null)
+		if (world == null)
 		{
 			return discovered;
 		}
 
-		Path file = file(worldKey);
+		Path file = world.file();
 
 		if (!Files.isRegularFile(file))
 		{
@@ -102,40 +97,35 @@ final class DiscoveredBiomes
 		catch (IOException | RuntimeException e)
 		{
 			WandererTitles.LOGGER.warn("Could not read the biomes discovered in {} from {}",
-					worldKey, file, e);
+					world.id(), file, e);
 		}
 
 		return discovered;
 	}
 
 	/**
-	 * Writes down that the biome {@code biomeId} had its reveal in the world {@code worldKey}, so
-	 * the next visit only gets the corner title. Nothing happens while the key is unknown.
+	 * Writes down that the biome {@code biomeId} had its reveal in {@code world}, so the next visit
+	 * only gets the corner title. Nothing happens while there is no world.
 	 */
-	static void remember(String worldKey, String biomeId)
+	static void remember(WorldIdentity world, String biomeId)
 	{
-		if (worldKey == null)
+		if (world == null)
 		{
 			return;
 		}
 
-		Path file = file(worldKey);
+		Path file = world.file();
 
 		try
 		{
 			Files.createDirectories(file.getParent());
-			Files.writeString(file, biomeId + LINE_SEPARATOR, StandardCharsets.UTF_8,
+			Files.writeString(file, biomeId + WorldIdentity.LINE_SEPARATOR, StandardCharsets.UTF_8,
 					StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
 		}
 		catch (IOException | RuntimeException e)
 		{
 			WandererTitles.LOGGER.warn("Could not write down the discovery of {} in {} to {}",
-					biomeId, worldKey, file, e);
+					biomeId, world.id(), file, e);
 		}
-	}
-
-	private static Path file(String worldKey)
-	{
-		return FabricLoader.getInstance().getConfigDir().resolve(FOLDER).resolve(worldKey + SUFFIX);
 	}
 }

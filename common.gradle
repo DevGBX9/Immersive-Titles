@@ -91,7 +91,7 @@ dependencies {
 	}
 }
 
-String LANG_DIR = 'assets/wanderers_titles/lang'
+String LANG_DIR = 'assets/immersive_titles/lang'
 JavaVersion JAVA_COMPATIBILITY
 if (mcVersion >= 260000) {
 	JAVA_COMPATIBILITY = JavaVersion.VERSION_25
