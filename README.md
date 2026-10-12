@@ -16,7 +16,9 @@ server does not need it, and installing it there does nothing.
 ## What works right now
 
 Both title reveals live in the **Immersive Titles** category of the controls screen, so both can be
-rebound there.
+rebound there. The game files the categories of mods after its own and sorts them by the id of the
+mod, so this one sits between the other mods - with this id next to the ones whose id starts with
+`i` - and not at the end of the list.
 
 | Key | Title | Behaviour |
 | --- | --- | --- |
