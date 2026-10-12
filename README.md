@@ -1,7 +1,7 @@
 # Immersive Titles
 
 [![Dev Builds](https://github.com/DevGBX9/Wanderers-Titles/actions/workflows/gradle.yml/badge.svg)](https://github.com/DevGBX9/Wanderers-Titles/actions/workflows/gradle.yml)
-[![License](https://img.shields.io/github/license/DevGBX9/Wanderers-Titles.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
+[![License](https://img.shields.io/github/license/DevGBX9/Wanderers-Titles.svg)](LICENSE)
 
 Displays cinematic biome titles when entering a biome, with a large first-visit title and a compact title on later visits.
 
@@ -14,16 +14,6 @@ no common or server entrypoint, and everything it does is done by the client it 
 server does not need it, and installing it there does nothing.
 
 ## What works right now
-
-Both title reveals live in the **Immersive Titles** category of the controls screen, so both can be
-rebound there. The game files the categories of mods after its own and sorts them by the id of the
-mod, so this one sits between the other mods - with this id next to the ones whose id starts with
-`i` - and not at the end of the list.
-
-| Key | Title | Behaviour |
-| --- | --- | --- |
-| `T` | cinematic reveal | Plays the 187 frame clip at its native resolution as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. Only the frames still in use are held in video memory. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
-| `K` | corner title | Draws the name of the biome the player is in with the game font in bold, two and a half times the normal size, a little above the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
 
 The big reveal opens with a short impact sound, `title_reveal.ogg`, at the same moment the plate
 arrives. It is played on the master channel rather than as a UI sound, so that pausing the game
@@ -143,7 +133,7 @@ downloaded from.
 
 ## License
 
-Licensed under the [GNU Lesser General Public License v3.0](LICENSE).
+Licensed under the [MIT License](LICENSE).
 
 The project is based on [fallen's fabric mod template](https://github.com/Fallen-Breath/fabric-mod-template),
 thanks to Fallen_Breath for it.
