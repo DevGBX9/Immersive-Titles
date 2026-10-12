@@ -169,6 +169,14 @@ public final class TitleOverlay
 	 * The sound the big reveal opens with: the impact of the plate arriving. The file is
 	 * {@code title_reveal.ogg} in the {@code sounds} folder of the mod's assets, and this is the name
 	 * the mod's own {@code sounds.json} gives it.
+	 *
+	 * That entry has to spell the name out with the mod's namespace, i.e.
+	 * {@code wanderers_titles:title_reveal}, because a name without a namespace is read as one of the
+	 * game's own sounds: written as a bare {@code title_reveal} the game looks for
+	 * {@code minecraft:sounds/title_reveal.ogg}, finds nothing and drops the sound with
+	 * "File minecraft:sounds/title_reveal.ogg does not exist" - the reveal then plays in silence,
+	 * because the event it plays exists but has no sound left in it. Vanilla's own entries can leave
+	 * the namespace out since they are all under {@code minecraft}.
 	 */
 	private static final SoundEvent REVEAL_SOUND = SoundEvent.createVariableRangeEvent(
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_reveal"));

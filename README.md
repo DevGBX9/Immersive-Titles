@@ -9,6 +9,10 @@ Displays cinematic biome titles when entering a biome, with a large first-visit 
 > Both reveals are implemented and playable on 26.3, including the biome trigger, the biome name in
 > the title card and the first visit / later visit behaviour.
 
+Immersive Titles is a **client side mod**: fabric.mod.json declares it as client only, the mod has
+no common or server entrypoint, and everything it does is done by the client it is installed on. A
+server does not need it, and installing it there does nothing.
+
 ## What works right now
 
 Both title reveals live in the **Immersive Titles** category of the controls screen, so both can be
@@ -18,6 +22,10 @@ rebound there.
 | --- | --- | --- |
 | `T` | cinematic reveal | Plays the 187 frame clip at its native resolution as a full screen overlay, transparent over the world, in real time for about 6.2 seconds, then removes itself. Only the frames still in use are held in video memory. `T` is also the vanilla chat key, so rebind one of the two if the reveal should run without opening the chat. |
 | `K` | corner title | Draws the name of the biome the player is in with the game font in bold, two and a half times the normal size, a little above the lower left corner. It fades in, holds and fades out in about 2.9 seconds, and it uses no texture at all. |
+
+The big reveal opens with a short impact sound, `title_reveal.ogg`, at the same moment the plate
+arrives. It is played on the master channel rather than as a UI sound, so that pausing the game
+holds the sound with the picture instead of letting it run on behind the pause menu.
 
 While the reveal plays, the name of the biome is written into the empty middle of the ornamental
 plate with the game font, scaled so that any biome name fits between the ornaments. The name is not
@@ -106,7 +114,11 @@ The authoritative build environment is GitHub Actions: every push is built there
 The build matrix only contains the enabled versions listed above, and the enabled/disabled matrix is
 printed into the run summary of every build.
 
-`./gradlew build` is the command the workflow runs for every enabled version.
+`./gradlew build` is the command the workflow runs for every enabled version. Each version builds
+`wanderers_titles-v<version>.jar`, i.e. the jar reports the plain version of `gradle.properties` -
+`wanderers_titles-v0.1.0.jar` right now - and the build number of the run that produced it is not
+part of the mod or of the jar's name. Which version a jar is for comes from the run it was
+downloaded from.
 
 ## License
 

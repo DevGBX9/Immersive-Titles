@@ -20,7 +20,6 @@
 
 package com.devgx9.wanderers_titles;
 
-import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 
@@ -33,12 +32,14 @@ import org.slf4j.Logger;
 //#endif
 
 /**
- * Entrypoint of the mod.
+ * Identity of the mod: its id, its logger, and the name and version it reports.
  *
- * The biome triggered titles are not implemented yet (see README.md); the two key bound reveals
- * that do exist live in the client package, see {@code TitleOverlay}.
+ * Immersive Titles is a client side mod - a title is drawn by the client and the biome it names is
+ * read on the client - so there is no common or server entrypoint at all: fabric.mod.json declares
+ * the mod as client only and the mod's whole implementation hangs off {@code WandererTitlesClient}.
+ * This class is what that side names its assets and writes its log lines with.
  */
-public class WandererTitles implements ModInitializer
+public final class WandererTitles
 {
 	public static final String MOD_ID = "wanderers_titles";
 
@@ -49,16 +50,25 @@ public class WandererTitles implements ModInitializer
 			//$$ LogManager.getLogger();
 			//#endif
 
-	public static String MOD_VERSION = "unknown";
+	/** The name and version of the installed jar, as it reports them itself. Read once, on start. */
 	public static String MOD_NAME = "unknown";
+	public static String MOD_VERSION = "unknown";
 
-	@Override
-	public void onInitialize()
+	private WandererTitles()
 	{
-		ModMetadata metadata = FabricLoader.getInstance().getModContainer(MOD_ID).orElseThrow(RuntimeException::new).getMetadata();
+	}
+
+	/**
+	 * Reads the name and version the mod reports out of its own metadata, i.e. out of the jar that
+	 * is actually installed, so that the mod list, the log and the jar cannot disagree. Called from
+	 * the client entrypoint, once, before anything logs with them.
+	 */
+	public static void readMetadata()
+	{
+		ModMetadata metadata = FabricLoader.getInstance().getModContainer(MOD_ID)
+				.orElseThrow(RuntimeException::new)
+				.getMetadata();
 		MOD_NAME = metadata.getName();
 		MOD_VERSION = metadata.getVersion().getFriendlyString();
-
-		LOGGER.info("{} v{} initialized", MOD_NAME, MOD_VERSION);
 	}
 }

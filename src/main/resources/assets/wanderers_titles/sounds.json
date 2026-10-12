@@ -2,7 +2,7 @@
   "title_reveal": {
     "sounds": [
       {
-        "name": "title_reveal",
+        "name": "wanderers_titles:title_reveal",
         "stream": false
       }
     ]
