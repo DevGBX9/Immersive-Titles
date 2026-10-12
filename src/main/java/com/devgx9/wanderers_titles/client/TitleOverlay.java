@@ -28,6 +28,7 @@ package com.devgx9.wanderers_titles.client;
 import com.devgx9.wanderers_titles.WandererTitles;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -40,6 +41,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -298,8 +300,13 @@ public final class TitleOverlay
 	/** Where the player stood when the world was joined, until they start moving. */
 	private static Vec3 joinPosition = null;
 
-	/** Whether the player is currently in a world. */
-	private static boolean inWorld = false;
+	/**
+	 * Whether the level the titles are following is loaded. The game loads a level both when a
+	 * world is entered and when the level of the world the titles are already following is
+	 * replaced (a respawn, a portal), so this is what tells the two apart: entering a world is the
+	 * case that has to start over, see {@link #levelChanged}.
+	 */
+	private static boolean inLevel = false;
 
 	/** Ticks left until the biome is checked again. */
 	private static int ticksUntilBiomeCheck = 0;
@@ -322,7 +329,39 @@ public final class TitleOverlay
 				Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_overlay"),
 				TitleOverlay::render);
 
+		// A world is prepared the moment the game loads its level, and everything after that is
+		// watched from the tick, see levelChanged and tick.
+		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register(TitleOverlay::levelChanged);
 		ClientTickEvents.END_CLIENT_TICK.register(TitleOverlay::tick);
+	}
+
+	/**
+	 * Called by the game once it has loaded a level, i.e. when a world is entered.
+	 *
+	 * This is where a world is prepared: the identity it is remembered by together with the biomes
+	 * that already had their reveal in it (see {@link WorldIdentity} and {@link DiscoveredBiomes}),
+	 * and the state the titles start a world from - no biome seen yet, and no position the player
+	 * can have moved on from. The game also loads a level when it replaces one, i.e. on a respawn
+	 * or through a portal, so those walk through here too: they leave the world the titles are
+	 * following alone, and the biome the player arrives in is titled right away, while a world that
+	 * is actually being entered is the one case that starts over.
+	 *
+	 * The level is not used: what happens here belongs to the world, not to one of its levels.
+	 */
+	private static void levelChanged(Minecraft client, ClientLevel level)
+	{
+		if (inLevel)
+		{
+			return;
+		}
+
+		inLevel = true;
+		joinPosition = null;
+		lastBiomeId = null;
+		world = WorldIdentity.of(client).orElse(null);
+		VISITED_BIOMES.clear();
+		VISITED_BIOMES.addAll(DiscoveredBiomes.load(world));
+		logWorld();
 	}
 
 	private static void tick(Minecraft client)
@@ -337,7 +376,33 @@ public final class TitleOverlay
 			startCornerTitle(BiomeNames.of(client).orElse(FALLBACK_NAME));
 		}
 
-		checkBiome(client);
+		if (client.level == null)
+		{
+			// back in a menu: the discoveries of the world that was left are on disk, so the next
+			// world is prepared from its own file when its level arrives, see #levelChanged
+			inLevel = false;
+			joinPosition = null;
+			return;
+		}
+
+		if (client.player == null)
+		{
+			return;
+		}
+
+		if (joinPosition == null)
+		{
+			// the world has just been joined: the titles wait until the player actually moves, so
+			// the first title is about the biome the player ends up standing in instead of about
+			// whatever the camera saw while the world was still loading
+			joinPosition = client.player.position();
+			return;
+		}
+
+		if (client.player.position().distanceToSqr(joinPosition) >= MOVED_DISTANCE_SQR)
+		{
+			checkBiome(client);
+		}
 	}
 
 	/**
@@ -353,37 +418,6 @@ public final class TitleOverlay
 		}
 
 		ticksUntilBiomeCheck = BIOME_CHECK_INTERVAL_TICKS;
-
-		if (client.level == null || client.player == null)
-		{
-			// back in a menu: the discoveries of the world that was left are on disk, so the next
-			// world loads its own
-			inWorld = false;
-			joinPosition = null;
-			lastBiomeId = null;
-			world = null;
-			VISITED_BIOMES.clear();
-			return;
-		}
-
-		if (!inWorld)
-		{
-			// the world has just been joined: pick up the discoveries of this world - a biome that
-			// had its reveal in an earlier session is not a discovery again - and wait for the
-			// player to actually start moving
-			inWorld = true;
-			joinPosition = client.player.position();
-			world = WorldIdentity.of(client).orElse(null);
-			VISITED_BIOMES.clear();
-			VISITED_BIOMES.addAll(DiscoveredBiomes.load(world));
-			logWorld();
-			return;
-		}
-
-		if (joinPosition != null && client.player.position().distanceToSqr(joinPosition) < MOVED_DISTANCE_SQR)
-		{
-			return;
-		}
 
 		String biomeId = BiomeNames.id(client).orElse(null);
 		if (biomeId == null || biomeId.equals(lastBiomeId))

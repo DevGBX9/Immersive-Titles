@@ -79,15 +79,17 @@ dependencies {
 	// (see src/main/java/com/devgx9/wanderers_titles/client/TitleOverlay.java), so Fabric API is
 	// only pulled in for the versions that actually carry it. Enabling an older version means
 	// porting the overlay there first and then lowering this bound.
+	//
+	// Fabric API is a dependency of the mod, not a part of it: fabric.mod.json asks the loader for
+	// "fabric-api" and the player installs it next to the mod, like with any other Fabric API mod.
+	// The whole API is depended on instead of the handful of modules the mod actually calls,
+	// because the development environment resolves this same dependency as an installed mod: the
+	// modules are separate mods with their own ids, so a run client would be missing exactly the
+	// mod fabric.mod.json demands. Bundling them into the jar with include(...) is no way out
+	// either - every mod that does it ships one more frozen copy of Fabric API, and the loader is
+	// left to sort out two mods carrying the same module.
 	if (mcVersion >= 260300) {
-		[
-				'fabric-api-base',
-				'fabric-key-mapping-api-v1',
-				'fabric-lifecycle-events-v1',
-				'fabric-rendering-v1',
-		].each { module ->
-			include(autoImplementation(fabricApi.module(module, project.fabric_api_version)))
-		}
+		autoImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
 	}
 }
 
@@ -176,14 +178,25 @@ if (System.getenv("JITPACK") == "true") {
 }
 version = fullProjectVersion
 
+// The Fabric API version this build is compiled against, as fabric.mod.json asks a player for it.
+// The Minecraft part of a Fabric API version ("0.160.5+26.3") is left out, so the dependency reads
+// ">=0.160.5": being a few releases behind is normal for an installed Fabric API, and which
+// Minecraft a Fabric API is built for is not something this mod can judge from its own metadata.
+// A version that has no Fabric API of its own simply asks for nothing in particular.
+String fabricApiDependency = '>=0.0.0'
+if (project.findProperty('fabric_api_version') != null) {
+	fabricApiDependency = '>=' + project.fabric_api_version.toString().split('\\+')[0]
+}
+
 // See https://youtrack.jetbrains.com/issue/IDEA-296490
 // if IDEA complains about "Cannot resolve resource filtering of MatchingCopyAction" and you want to know why
 processResources {
 	def modProperties = [
-			"id"                  : project.mod_id,
-			"name"                : project.mod_name,
-			"version"             : fullModVersion,
-			"minecraft_dependency": project.minecraft_dependency,
+			"id"                    : project.mod_id,
+			"name"                  : project.mod_name,
+			"version"               : fullModVersion,
+			"minecraft_dependency"  : project.minecraft_dependency,
+			"fabric_api_dependency" : fabricApiDependency,
 	]
 	inputs.properties(modProperties)
 

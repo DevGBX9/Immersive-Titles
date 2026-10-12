@@ -34,10 +34,12 @@ import net.fabricmc.api.ClientModInitializer;
  * It is the mod's only entrypoint: Immersive Titles is client side, so there is nothing to run on a
  * server, and the game never loads this class there.
  *
- * The title reveals need the Fabric HUD and key mapping APIs plus the client rendering classes of
- * the core Minecraft version (26.3), so their implementation lives right next to this class in
- * {@code TitleOverlay} and is wired up below. Those APIs changed a lot over time, so an older
- * version would need a port of the overlay before it can be re-enabled in the build matrix.
+ * The title reveals need Fabric API - its HUD, key mapping and client lifecycle events - plus the
+ * client rendering classes of the core Minecraft version (26.3), so their implementation lives
+ * right next to this class in {@code TitleOverlay} and is wired up below. Fabric API is declared
+ * as a dependency in fabric.mod.json, i.e. it is a mod of its own next to this one. Those APIs
+ * changed a lot over time, so an older version would need a port of the overlay before it can be
+ * re-enabled in the build matrix.
  */
 public class WandererTitlesClient implements ClientModInitializer
 {

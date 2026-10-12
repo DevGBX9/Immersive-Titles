@@ -13,6 +13,10 @@ Immersive Titles is a **client side mod**: fabric.mod.json declares it as client
 no common or server entrypoint, and everything it does is done by the client it is installed on. A
 server does not need it, and installing it there does nothing.
 
+It asks the loader for [Fabric API](https://modrinth.com/mod/fabric-api), so Fabric API has to be
+installed next to it, for the same Minecraft version: the mod does not carry its own copy of the
+parts of Fabric API it calls, it needs them to be there.
+
 ## What works right now
 
 The big reveal opens with a short impact sound, `title_reveal.ogg`, at the same moment the plate
