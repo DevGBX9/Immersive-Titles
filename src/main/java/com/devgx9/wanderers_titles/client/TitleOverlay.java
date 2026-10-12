@@ -92,6 +92,10 @@ import java.util.Set;
  * The corner title is purely programmatic, i.e. it uses no texture at all: the text is drawn with
  * the game font in bold and it fades in, holds and fades out in the lower left corner.
  *
+ * The mod's own key opens the collection of biomes (see {@link BiomeCollectionScreen}): every biome
+ * of the world, with the ones that already had their reveal checked and dimmed, so that what the
+ * reveals have been remembering per world is something the player can look at.
+ *
  * The big reveal opens with a short sound of the plate arriving, see {@link #REVEAL_SOUND}. Both
  * titles stand still while the pause menu is open over the world, and only then: the menu the player
  * opens with escape is what a reveal has to survive, so the reveal waits on the frame it was showing
@@ -241,10 +245,24 @@ public final class TitleOverlay
 			InputConstants.KEY_T,
 			CATEGORY));
 
+	/**
+	 * The collection of biomes, which is what the mod's own key opens: the list is the half of the
+	 * feature a player looks at, so it gets the key they are told about.
+	 */
+	private static final KeyMapping OPEN_COLLECTION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+			"key.immersive_titles.open_collection",
+			InputConstants.Type.KEYBOARD,
+			InputConstants.KEY_K,
+			CATEGORY));
+
+	/**
+	 * The corner title, on a key of its own because K now opens the collection. Both titles have a
+	 * key of their own so that either can be seen without walking into the right biome for it.
+	 */
 	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.show_corner_title",
 			InputConstants.Type.KEYBOARD,
-			InputConstants.KEY_K,
+			InputConstants.KEY_J,
 			CATEGORY));
 
 	/** Whether the cinematic reveal is playing right now. */
@@ -376,6 +394,11 @@ public final class TitleOverlay
 			startCornerTitle(BiomeNames.of(client).orElse(FALLBACK_NAME));
 		}
 
+		while (OPEN_COLLECTION.consumeClick())
+		{
+			toggleCollection(client);
+		}
+
 		if (client.level == null)
 		{
 			// back in a menu: the discoveries of the world that was left are on disk, so the next
@@ -437,6 +460,44 @@ public final class TitleOverlay
 		{
 			startCornerTitle(name);
 		}
+	}
+
+	/**
+	 * Opens the collection of biomes, or closes it again while it is open, so that one key both
+	 * shows the list and puts it away.
+	 *
+	 * A screen the player opened themselves is left alone: the collection only opens on a client that
+	 * has nothing on screen at the moment and is in a world, because the biomes it lists are the ones
+	 * that world registered. Pressing the key while the list is open is what closes it: the key
+	 * mapping is consumed here, on the client tick, and not by the screen, so the press that closes
+	 * the screen cannot be seen a second time and open it again.
+	 */
+	private static void toggleCollection(Minecraft client)
+	{
+		Screen screen = client.gui.screen();
+
+		if (screen instanceof BiomeCollectionScreen collection)
+		{
+			collection.onClose();
+			return;
+		}
+
+		if (screen != null || client.level == null)
+		{
+			return;
+		}
+
+		client.setScreenAndShow(new BiomeCollectionScreen(client.level, discoveredBiomes()));
+	}
+
+	/**
+	 * The biomes of the world the player is in that already had their reveal, i.e. the ones the
+	 * collection marks as found. A copy, so that the screen cannot change what the reveals know, and
+	 * an empty set while there is no world.
+	 */
+	static Set<String> discoveredBiomes()
+	{
+		return Set.copyOf(VISITED_BIOMES);
 	}
 
 	/**

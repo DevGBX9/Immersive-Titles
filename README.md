@@ -84,6 +84,19 @@ A world on a server is not the client's to write to, and the game tells a client
 server world that no other server world could also have, so the discoveries of a server world are
 kept in `config/immersive_titles/servers`, one file per address the player joined with.
 
+## The biome collection
+
+The list of everything there is to find is a key of the mod's own, `K` by default and rebindable in
+the controls screen: it opens a screen with every biome the world has, the ones already discovered
+checked and dimmed, and a line at the top counting them. Opening it pauses the game exactly like the
+escape menu does, and the world behind it is blurred the same way.
+
+The biomes are listed from the ones a player meets while walking around to the ones that take a
+portal, a long trip or a lucky world - mushroom fields, ice spikes and the pale garden are far down
+the list, and the nether and the end are below them. Which biome belongs where is the mod's own
+reading, written out by hand, because the game has no opinion on how rare a biome is. A biome from a
+mod is listed with the name of the mod it comes from, after the biomes the list knows.
+
 ## What the mod is meant to do
 
 Immersive Titles is planned as a client side mod that treats every biome like a discovered location:

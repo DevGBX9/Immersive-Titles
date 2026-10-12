@@ -38,10 +38,11 @@ import java.util.Optional;
  * The biome the player is standing in, as the titles need it: an id to notice that it changed, and a
  * display name to write into the plate.
  *
- * The name comes from the same translation key the game uses for biomes ({@code biome.<namespace>.<path>}),
- * uppercased because the title card is set in capitals. A biome without a translation, e.g. one added
- * by a mod that forgot it, falls back to its id with underscores turned into spaces, so the reveal
- * never shows a raw key.
+ * The name comes from the same translation key the game uses for biomes ({@code biome.<namespace>.<path>}).
+ * A biome without a translation, e.g. one added by a mod that forgot it, falls back to its id with
+ * underscores turned into spaces, so neither a reveal nor the collection ever shows a raw key. The
+ * title card is set in capitals and asks for that form ({@link #displayName}); the collection lists
+ * biomes the way every other screen names them ({@link #name}).
  */
 final class BiomeNames
 {
@@ -72,7 +73,11 @@ final class BiomeNames
 		return id(client).map(BiomeNames::displayName);
 	}
 
-	private static Component displayName(String id)
+	/**
+	 * The name the game gives a biome, e.g. {@code Pale Garden}, or its id with underscores turned
+	 * into spaces while the biome has no translation of its own.
+	 */
+	static Component name(String id)
 	{
 		int separator = id.indexOf(':');
 		String namespace = separator < 0 ? "minecraft" : id.substring(0, separator);
@@ -82,6 +87,12 @@ final class BiomeNames
 		String translated = Component.translatable(key).getString();
 		String name = translated.equals(key) || translated.isEmpty() ? path.replace('_', ' ') : translated;
 
-		return Component.literal(name.toUpperCase(Locale.ROOT)).withStyle(ChatFormatting.BOLD);
+		return Component.literal(name);
+	}
+
+	/** The uppercase display name of a title card, e.g. {@code PALE GARDEN}. */
+	private static Component displayName(String id)
+	{
+		return Component.literal(name(id).getString().toUpperCase(Locale.ROOT)).withStyle(ChatFormatting.BOLD);
 	}
 }
