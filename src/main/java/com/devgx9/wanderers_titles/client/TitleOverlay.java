@@ -35,8 +35,12 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Util;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3x2fStack;
@@ -64,10 +68,11 @@ import java.util.Set;
  * the original as their alpha channel and pure white as their color, and every pixel the render left
  * black - 88% of them - is fully transparent. Drawn over the world that reproduces the original
  * picture and lets the reveal glow over any background, instead of covering the world with a black
- * rectangle. The sequence is played back on real time ({@link Util#getMillis()}) so it runs at the
- * same speed regardless of the frame rate, and it stops by itself at the end of the clip. A full
- * resolution frame is about 4 MiB in video memory and there are 187 of them, so only the frames that
- * are still needed are kept loaded and the ones that have been drawn are released again.
+ * rectangle. The sequence is played back on the time between two drawn frames, which is real time
+ * as long as frames keep coming, so it runs at the same speed regardless of the frame rate, and it
+ * stops by itself at the end of the clip. A full resolution frame is about 4 MiB in video memory
+ * and there are 187 of them, so only the frames that are still needed are kept loaded and the ones
+ * that have been drawn are released again.
  *
  * The biome name is not part of the clip: the plate leaves an empty box in its middle, and the name
  * is drawn into it with the game font, scaled to the box and faded in and out in step with the clip
@@ -75,6 +80,11 @@ import java.util.Set;
  *
  * The corner title is purely programmatic, i.e. it uses no texture at all: the text is drawn with
  * the game font in bold and it fades in, holds and fades out in the lower left corner.
+ *
+ * The big reveal opens with a short sound of the plate arriving, see {@link #REVEAL_SOUND}. Both
+ * titles stand still while a screen is open over the world - the pause menu, the inventory, any
+ * other one - which is what keeps a menu from taking a reveal away: the reveal waits on the frame
+ * it was showing and carries on from it once the screen is closed, see {@link #render}.
  */
 public final class TitleOverlay
 {
@@ -152,6 +162,18 @@ public final class TitleOverlay
 	private static final int CONTENT_HEIGHT = FRAME_HEIGHT - 2 * FRAME_CROP;
 
 	// ---------------------------------------------------------------------------------------------
+	// The sound of the reveal
+	// ---------------------------------------------------------------------------------------------
+
+	/**
+	 * The sound the big reveal opens with: the impact of the plate arriving. The file is
+	 * {@code title_reveal.ogg} in the {@code sounds} folder of the mod's assets, and this is the name
+	 * the mod's own {@code sounds.json} gives it.
+	 */
+	private static final SoundEvent REVEAL_SOUND = SoundEvent.createVariableRangeEvent(
+			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_reveal"));
+
+	// ---------------------------------------------------------------------------------------------
 	// When a title plays
 	// ---------------------------------------------------------------------------------------------
 
@@ -203,11 +225,38 @@ public final class TitleOverlay
 			InputConstants.KEY_K,
 			CATEGORY));
 
-	/** Wall clock time at which the current playback started, or 0 while nothing is playing. */
-	private static long startedAt = 0L;
+	/** Whether the cinematic reveal is playing right now. */
+	private static boolean revealPlaying = false;
 
-	/** Wall clock time at which the corner title animation started, or 0 while it is not playing. */
-	private static long cornerStartedAt = 0L;
+	/**
+	 * How much of the clip has been shown so far, in milliseconds. The frame of the reveal is read
+	 * from this instead of from the clock: time is only ever added to it while the reveal is running,
+	 * which is what lets a screen hold the reveal on the exact frame it was showing and lets closing
+	 * the screen carry on from that frame instead of starting the clip again.
+	 */
+	private static long revealMs = 0L;
+
+	/** Whether the corner title animation is playing right now. */
+	private static boolean cornerPlaying = false;
+
+	/**
+	 * How much of the corner title animation has been played, in milliseconds. It holds with the
+	 * reveal while a screen is open.
+	 */
+	private static long cornerMs = 0L;
+
+	/**
+	 * Wall clock time the overlay was drawn at last, which the time between two drawn frames is
+	 * measured from.
+	 */
+	private static long lastFrameMs = 0L;
+
+	/**
+	 * The longest step a title takes from one drawn frame to the next, in milliseconds. A frame that
+	 * took longer than this - the game stalling, the HUD being hidden and shown again - counts as a
+	 * tenth of a second instead of letting the clip jump ahead over everything it missed.
+	 */
+	private static final long MAX_FRAME_STEP_MS = 100L;
 
 	/** The name the running reveal writes into the plate. */
 	private static Component revealName = null;
@@ -244,7 +293,10 @@ public final class TitleOverlay
 
 	public static void initialize()
 	{
-		// render right before the chat, so the titles sit on top of the world and the HUD
+		// Render right before the chat, so the titles sit on top of the world and the HUD. Being a
+		// HUD element is also what keeps the titles behind every screen the player opens: the game
+		// extracts the HUD before it extracts a screen, so the inventory and the pause menu are
+		// drawn over the titles instead of the titles being drawn over them.
 		HudElementRegistry.attachElementBefore(
 				VanillaHudElements.CHAT,
 				Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_overlay"),
@@ -352,39 +404,101 @@ public final class TitleOverlay
 		}
 	}
 
-	/** Starts the cinematic reveal, writing {@code name} into the plate for the length of the clip. */
+	/**
+	 * Starts the cinematic reveal from its first frame, writing {@code name} into the plate for the
+	 * length of the clip and playing the sound that goes with the plate arriving.
+	 */
 	private static void startReveal(Component name)
 	{
 		revealName = name;
-		startedAt = Util.getMillis();
+		revealMs = 0L;
+		revealPlaying = true;
 
 		// the big reveal takes over from the corner title
 		cornerName = null;
-		cornerStartedAt = 0L;
+		cornerMs = 0L;
+		cornerPlaying = false;
+
+		playRevealSound();
 	}
 
 	/** Starts the corner title, which fades in, holds and fades out on its own. */
 	private static void startCornerTitle(Component name)
 	{
 		cornerName = name;
-		cornerStartedAt = Util.getMillis();
+		cornerMs = 0L;
+		cornerPlaying = true;
 	}
 
+	/**
+	 * Plays the sound of the plate arriving, once, as the big reveal starts. It goes to the
+	 * {@code MASTER} channel - the one the game pauses along with itself - so that pressing escape in
+	 * a single player world holds the sound exactly like it holds the picture and both pick up where
+	 * they stopped; a UI sound would keep playing through the pause, and the reveal would come back
+	 * to a sound that has already finished.
+	 */
+	private static void playRevealSound()
+	{
+		Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(
+				REVEAL_SOUND.location(),
+				SoundSource.MASTER,
+				1.0F,
+				1.0F,
+				SoundInstance.createUnseededRandom(),
+				false,
+				0,
+				SoundInstance.Attenuation.NONE,
+				0.0D,
+				0.0D,
+				0.0D,
+				true));
+	}
+
+	/**
+	 * Draws the titles and moves them on by the time since the last drawn frame.
+	 *
+	 * That step is what holds a title still while a screen is open: no time is added while one is
+	 * there, so the reveal keeps standing on the exact frame it was showing - on screen, behind the
+	 * screen the player opened - and when the screen is closed the reveal carries on from that same
+	 * frame to the end of the clip instead of playing the clip from its start again. The small corner
+	 * title holds the same way.
+	 */
 	private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker)
 	{
+		long now = Util.getMillis();
+		long elapsedMs = held() ? 0L : Math.min(now - lastFrameMs, MAX_FRAME_STEP_MS);
+		lastFrameMs = now;
+
+		revealMs += elapsedMs;
+		cornerMs += elapsedMs;
+
 		renderSequence(graphics);
 		renderCornerTitle(graphics);
+	}
+
+	/**
+	 * Whether a screen or an overlay is open over the world and is holding the titles still: the
+	 * pause menu that escape opens, the inventory, the chat, any other screen.
+	 *
+	 * Every one of them holds the titles, not just the pause menu, because the titles are drawn
+	 * behind all of them - and the frame they hold behind an open screen is the frame the reveal
+	 * carries on from when the player is back in the world.
+	 */
+	private static boolean held()
+	{
+		Minecraft client = Minecraft.getInstance();
+		return client.gui.screen() != null || client.gui.overlay() != null;
 	}
 
 	/** Draws the current frame of the cinematic reveal, as long as a playback is running. */
 	private static void renderSequence(GuiGraphicsExtractor graphics)
 	{
-		if (startedAt == 0L)
+		if (!revealPlaying)
 		{
 			return;
 		}
 
-		int frame = (int) ((Util.getMillis() - startedAt) * FRAME_FPS / 1000L);
+		int frame = (int) (revealMs * FRAME_FPS / 1000L);
 		if (frame >= FRAME_COUNT)
 		{
 			stopPlayback();
@@ -549,15 +663,15 @@ public final class TitleOverlay
 	/** Draws the small corner title of a biome the player has already seen. */
 	private static void renderCornerTitle(GuiGraphicsExtractor graphics)
 	{
-		if (cornerStartedAt == 0L || cornerName == null)
+		if (!cornerPlaying || cornerName == null)
 		{
 			return;
 		}
 
-		long elapsedMs = Util.getMillis() - cornerStartedAt;
-		if (elapsedMs >= CORNER_ANIMATION_MS)
+		if (cornerMs >= CORNER_ANIMATION_MS)
 		{
-			cornerStartedAt = 0L;
+			cornerPlaying = false;
+			cornerMs = 0L;
 			cornerName = null;
 			return;
 		}
@@ -571,7 +685,7 @@ public final class TitleOverlay
 		pose.pushMatrix();
 		pose.translate(x, y);
 		pose.scale(CORNER_TEXT_SCALE, CORNER_TEXT_SCALE);
-		graphics.text(font, cornerName, 0, 0, (cornerAlpha(elapsedMs) << 24) | TITLE_TEXT_RGB, true);
+		graphics.text(font, cornerName, 0, 0, (cornerAlpha(cornerMs) << 24) | TITLE_TEXT_RGB, true);
 		pose.popMatrix();
 	}
 
@@ -596,7 +710,8 @@ public final class TitleOverlay
 	/** Ends a playback and drops the frame textures it was still holding. */
 	private static void stopPlayback()
 	{
-		startedAt = 0L;
+		revealPlaying = false;
+		revealMs = 0L;
 		revealName = null;
 		releaseFrameTextures();
 	}

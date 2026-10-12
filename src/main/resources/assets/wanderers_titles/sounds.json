@@ -1,0 +1,10 @@
+{
+  "title_reveal": {
+    "sounds": [
+      {
+        "name": "title_reveal",
+        "stream": false
+      }
+    ]
+  }
+}
