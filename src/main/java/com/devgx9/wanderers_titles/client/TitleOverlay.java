@@ -514,12 +514,33 @@ public final class TitleOverlay
 
 	/**
 	 * The biomes of the world the player is in that already had their reveal, i.e. the ones the
-	 * collection marks as found. A copy, so that the screen cannot change what the reveals know, and
-	 * an empty set while there is no world.
+	 * collection marks as found. A copy, so that nothing the screen does with its own list changes
+	 * what the reveals know: a discovery it takes back is taken back through {@link #forgetBiome},
+	 * and an empty set while there is no world.
 	 */
 	static Set<String> discoveredBiomes()
 	{
 		return Set.copyOf(VISITED_BIOMES);
+	}
+
+	/**
+	 * Forgets that the biome {@code biomeId} had its reveal in the world the player is in, so that
+	 * entering it plays the reveal again: the biome is dropped from what this session remembers,
+	 * which is what the titles read on every check, and its line is taken out of the world's own file,
+	 * which is what a later session loads (see {@link DiscoveredBiomes#forget}).
+	 *
+	 * The collection screen is what asks for this, after warning the player about it (see
+	 * {@link BiomeCollectionScreen}); a biome that was never discovered changes nothing, and so does
+	 * a world whose discoveries were never written down.
+	 */
+	static void forgetBiome(String biomeId)
+	{
+		if (!VISITED_BIOMES.remove(biomeId))
+		{
+			return;
+		}
+
+		DiscoveredBiomes.forget(world, biomeId);
 	}
 
 	/**

@@ -30,6 +30,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -41,6 +42,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -53,6 +55,15 @@ import java.util.Set;
  * this screen marks, so the two can never disagree about what the player has found: what is
  * checked here is exactly what no longer plays its reveal, and what is not checked is what still
  * has one waiting. The bar at the top is that same count.
+ *
+ * The screen is also where a discovery can be given back. A row of a discovered biome offers to
+ * forget it while the mouse is on the row, and forgetting one is asked about first (see
+ * {@link #askToForget}): it drops the biome from what the world remembers - on disk with
+ * {@link DiscoveredBiomes#forget}, in this session with {@link TitleOverlay#forgetBiome} - so the
+ * reveal plays again the next time the biome is entered. That is for a player who wants a reveal
+ * back: a biome walked into by accident, a world whose file was edited by hand, a discovery that was
+ * written down wrongly. It is the one thing in this screen that changes anything, which is why it is
+ * the one thing that comes with a warning.
  *
  * The order is the mod's own, from the biomes a player meets while walking around to the ones that
  * take a portal or a search (see {@link BiomeCatalog}), because a list that starts with the biomes
@@ -71,6 +82,9 @@ import java.util.Set;
  * - the panel the rows sit on is the colour of the game's own list background inside a world, which
  *   is black at 44% - measured from {@code inworld_menu_list_background.png}, the one the game's
  *   lists are drawn with,
+ * - the frame around that panel is the game's own button again, drawn behind the panel and reaching
+ *   {@link #FRAME_PADDING} past it on every side, so what holds the list is a ring of the game's own
+ *   drawing and follows a resource pack that redraws buttons like everything else here does,
  * - the two lines framing the list are the mod's own, one drawn centred over the list and one under
  *   it, each at the proportions of the drawing rather than stretched to the width of the list (see
  *   {@link #drawLine}),
@@ -85,10 +99,21 @@ import java.util.Set;
  * the frame around them is where the mod says what kind of list this is - a pair of drawn ornaments
  * over and under it reads as a collection, where the game's own two-pixel separators read as a menu.
  *
- * The rows are drawn rather than made of widgets, because there is nothing to press on a biome:
- * a row that cannot be clicked should not be given a hover highlight, a click, a focus ring or a
- * keyboard shortcut that would suggest otherwise. Everything the player can do is scroll, filter and
- * close.
+ * The collection is drawn a little smaller than the room the screen has for it, which is what the
+ * sizes in here come to together: the list stops at {@link #LIST_MAX_HEIGHT_PERCENT} of the screen's
+ * height, the drawings it is framed with are drawn at {@link #LINE_SIZE_PERCENT} of the size they are
+ * cut at, the list is narrower, the rows sit a pixel closer together and the button that closes the
+ * screen is a little smaller. Taken together that is a collection that reads as a block of the screen
+ * with the world around it, instead of a list stretched down the screen with a frame at each end of
+ * it.
+ *
+ * The rows are drawn rather than made of widgets, because there is next to nothing to press on a
+ * biome, and the one thing that can be pressed is drawn where it is shown: a row of a discovered
+ * biome that the mouse is on gives up the place of the name of the mod it comes from to the game's
+ * own cross button, and pressing that button is what asks about forgetting the biome (see
+ * {@link #askToForget}). The row under it stays a row that cannot be clicked, hovered into a
+ * highlight or focused, which is what keeps a list of what the game holds from reading as a list of
+ * things to press. Everything else the player can do is scroll, filter and close.
  *
  * Scrolling is smooth: the wheel and the keys move where the list is going, not where it is drawn,
  * and the drawn list eases after it (see {@link #advanceScroll}). Rows therefore slide up and down
@@ -111,7 +136,8 @@ import java.util.Set;
  * of Mod Menu opens, since it is the one screen this mod has (see {@link ModMenuIntegration}), and
  * from there it can be built with no world behind it at all: the biomes listed are then the ones the
  * mod itself knows (see {@link BiomeCatalog#known()}) and the line under the title says there is no
- * world rather than claiming that none of them were found.
+ * world rather than claiming that none of them were found - and nothing there offers to forget a
+ * biome, since a discovery is a discovery of a world.
  */
 final class BiomeCollectionScreen extends Screen
 {
@@ -135,8 +161,11 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private static final int ROW_HEIGHT = 16;
 
-	/** Room left between two rows. */
-	private static final int ROW_SPACING = 3;
+	/**
+	 * Room left between two rows, a pixel less than the list used to leave: the collection is drawn a
+	 * little smaller than it was, see {@link #LIST_MAX_HEIGHT_PERCENT}.
+	 */
+	private static final int ROW_SPACING = 2;
 
 	/** How far apart two rows are drawn, i.e. a row and the room under it. */
 	private static final int ROW_PITCH = ROW_HEIGHT + ROW_SPACING;
@@ -193,26 +222,39 @@ final class BiomeCollectionScreen extends Screen
 			"textures/gui/collection_down_line.png");
 
 	/**
-	 * The size each of those two textures is written at. They are written at twice the size they are
-	 * drawn in, and at the proportions of the drawing itself: a game at gui scale 2 draws them one to
-	 * one, a game at gui scale 1 reads them through the area filter the scaling down is, instead of
-	 * dropping every other pixel, and no game at any scale reads a drawing that was stretched.
+	 * The size each of those two textures is written at: the drawings themselves, cut at a size they
+	 * can still be read at. They are drawn at {@link #LINE_SIZE_PERCENT} of it, and at the proportions
+	 * of the drawing rather than stretched to the width of the list - no game at any scale reads a
+	 * drawing that was stretched, see {@link #drawLine}.
 	 *
-	 * They are written at the size they are drawn in, which is a size their drawings can be read at:
-	 * each is a dense drawing, about two fifths ink inside its own box, and a drawing of that kind
-	 * needs the room to resolve back out of its box or what should read as an ornament reads as a
-	 * white smear. {@link #UP_LINE_HEIGHT} is what that costs the list, in rows, and it and the size
-	 * the drawings are cut at in {@code templates/collection_frame} are the two numbers that decide
-	 * how large the frame is and how much room is left for the screen around it.
+	 * They are written large on purpose: each is a dense drawing, about two fifths ink inside its own
+	 * box, and a drawing of that kind needs the room to resolve back out of its box or what should
+	 * read as an ornament reads as a white smear. {@link #UP_LINE_HEIGHT} is what the size they are
+	 * drawn at costs the list, in rows, and it and the size the drawings are cut at in
+	 * {@code templates/collection_frame} are the two numbers that decide how large the frame is and
+	 * how much room is left for the screen around it.
 	 */
 	private static final int UP_LINE_TEXTURE_WIDTH = 396;
 	private static final int UP_LINE_TEXTURE_HEIGHT = 52;
 	private static final int DOWN_LINE_TEXTURE_WIDTH = 362;
 	private static final int DOWN_LINE_TEXTURE_HEIGHT = 58;
 
+	/**
+	 * The part of each of those textures a line is drawn at, in hundredths of it: two fifths of the
+	 * drawing, a little smaller than the half the screen used to draw.
+	 *
+	 * Half was the size the drawings were made for, because half of them is read one to one at gui
+	 * scale 2 and through the area filter of a whole division at gui scale 1. What the smaller size
+	 * costs is that two fifths of a drawing is not a whole number of its pixels, so a game at gui
+	 * scale 2 reads the drawing through the area filter where it used to read it one to one - and what
+	 * it buys is a frame whose room is spent on the list rather than around it, which is what the whole
+	 * screen is drawn a little smaller for, see {@link #LIST_MAX_HEIGHT_PERCENT}.
+	 */
+	private static final int LINE_SIZE_PERCENT = 40;
+
 	/** How tall each of the two lines is drawn on the screen, in gui pixels. */
-	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT / 2;
-	private static final int DOWN_LINE_HEIGHT = DOWN_LINE_TEXTURE_HEIGHT / 2;
+	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT * LINE_SIZE_PERCENT / 100;
+	private static final int DOWN_LINE_HEIGHT = DOWN_LINE_TEXTURE_HEIGHT * LINE_SIZE_PERCENT / 100;
 
 	/**
 	 * The gap kept between a line and the list it frames, and between a line and the line of text it
@@ -222,26 +264,51 @@ final class BiomeCollectionScreen extends Screen
 	private static final int LINE_GAP = 2;
 
 	/**
-	 * Where the line over the list is drawn, under the line counting the discoveries, and where the
-	 * list starts under it: the title, the count and that line take the top of the screen, each with
-	 * the same small gap under it. Both lines are drawn centred on the list rather than across it (see
-	 * {@link #drawLine}); the room they are given is the room their height takes, whatever their width
-	 * comes to, so the list starts at the same place under either of them.
+	 * How far the frame of the list stands out past the panel it is drawn around, in gui pixels: the
+	 * game's own button, reaching this far past the panel on every side, so the list is held in a ring
+	 * of the game's drawing rather than in one of the mod's own.
 	 */
-	private static final int UP_LINE_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
-	private static final int LIST_TOP = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP;
-
-	/** How wide the panel of the list is kept away from the edges of the screen. */
-	private static final int PANEL_MARGIN = 24;
+	private static final int FRAME_PADDING = 4;
 
 	/**
-	 * How much of the screen the list takes at most, in gui pixels. The list is narrower than the
-	 * screen on purpose - the room beside it is what the two filter buttons sit in, and a row that
-	 * stretches from edge to edge is read as a bar rather than as an item of a list - and it is kept
-	 * well short of the screen as well, so that a screen of any size has room around the collection
-	 * rather than a collection drawn to its edges.
+	 * Where the line over the list is drawn, under the line counting the discoveries, and where the
+	 * frame of the list starts under it: the title, the count and that line take the top of the
+	 * screen, each with the same small gap under it, and the frame stands {@link #FRAME_PADDING}
+	 * further down than the panel it is drawn around. Both lines are drawn centred on the list rather
+	 * than across it (see {@link #drawLine}); the room they are given is the room their height takes,
+	 * whatever their width comes to, so the list starts at the same place under either of them.
 	 */
-	private static final int LIST_MAX_WIDTH = 360;
+	private static final int UP_LINE_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
+	private static final int LIST_TOP = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP + FRAME_PADDING;
+
+	/** Where the line under the list is drawn, from the bottom of the panel the list is drawn on. */
+	private static final int DOWN_LINE_OFFSET = FRAME_PADDING + LINE_GAP;
+
+	/** How wide the panel of the list is kept away from the edges of the screen. */
+	private static final int PANEL_MARGIN = 20;
+
+	/**
+	 * How much of the screen the list takes at most: {@link #LIST_MAX_WIDTH} gui pixels of its width,
+	 * and {@link #LIST_MAX_HEIGHT_PERCENT} hundredths of the height of the screen of its height.
+	 *
+	 * The list is narrower than the screen on purpose - the room beside it is what the two filter
+	 * buttons sit in, and a row that stretches from edge to edge is read as a bar rather than as an
+	 * item of a list - and it is kept short of the screen in both directions as well, so that a screen
+	 * of any size has room around the collection rather than a collection drawn to its edges.
+	 */
+	private static final int LIST_MAX_WIDTH = 330;
+
+	/**
+	 * How much of the screen's height the list is given at most, in hundredths of it: three fifths.
+	 *
+	 * The list used to be given everything the screen had between the line over it and the button
+	 * under it, which on a large screen is a list drawn the whole way down the screen. A collection
+	 * reads as a collection when it is a block of a screen with room around it, so it stops at three
+	 * fifths, and the line under it and the button that closes the screen come up with it; the room
+	 * below is left to the world behind the screen. A screen with less room than that still gets all
+	 * of it.
+	 */
+	private static final int LIST_MAX_HEIGHT_PERCENT = 60;
 
 	/** How big the two filter buttons are, and how far they sit from the list they filter. */
 	private static final int FILTER_BUTTON_SIZE = 16;
@@ -250,20 +317,24 @@ final class BiomeCollectionScreen extends Screen
 	/** The room one of those buttons takes at one side of the list, margin included. */
 	private static final int SIDE_SPACE = PANEL_MARGIN + FILTER_BUTTON_GAP + FILTER_BUTTON_SIZE;
 
-	/** The size of the button that closes the screen, and how far off the bottom it sits. */
-	private static final int DONE_WIDTH = 120;
+	/**
+	 * The size of the button that closes the screen, and the room it keeps under itself: the button is
+	 * drawn under the frame of the list, which is what puts it where it is - the room below it is the
+	 * room the frame keeps off the bottom of the screen while the list is taking all of it.
+	 */
+	private static final int DONE_WIDTH = 110;
 	private static final int DONE_HEIGHT = 18;
 	private static final int DONE_BOTTOM_MARGIN = 8;
 
 	/**
-	 * Room the list leaves below itself: the gap under the list, the line that frames its bottom, the
-	 * same gap again and the button that closes the screen with its own gap and its room from the
-	 * bottom. There is no longer a line of text between the line and the button: the screen used to
-	 * spend two lines above the button, one on the line counting the discoveries and one on a line of
-	 * its own telling the player to scroll, and the second one is gone.
+	 * Room the list leaves below itself: the frame around the panel, the gap under it, the line that
+	 * frames its bottom, the same gap again and the button that closes the screen, with its own gap
+	 * and its room from the bottom. There is no longer a line of text between the line and the button:
+	 * the screen used to spend two lines above the button, one on the line counting the discoveries
+	 * and one on a line of its own telling the player to scroll, and the second one is gone.
 	 */
-	private static final int FOOTER_HEIGHT = 3 * LINE_GAP + DOWN_LINE_HEIGHT + DONE_HEIGHT
-			+ DONE_BOTTOM_MARGIN;
+	private static final int FOOTER_HEIGHT = DOWN_LINE_OFFSET + DOWN_LINE_HEIGHT + LINE_GAP
+			+ DONE_HEIGHT + DONE_BOTTOM_MARGIN;
 
 	/** The strip at the right end of the list the scrollbar is drawn in, in gui pixels. */
 	private static final int SCROLLBAR_WIDTH = 6;
@@ -289,6 +360,12 @@ final class BiomeCollectionScreen extends Screen
 	/** The line the screen says in place of the count while there is no world to count. */
 	private static final String NO_WORLD_KEY = "screen.immersive_titles.collection.no_world";
 
+	/** What the button that forgets a biome says it does, and what the warning about it says. */
+	private static final String FORGET_KEY = "screen.immersive_titles.collection.forget";
+	private static final String FORGET_TITLE_KEY = "screen.immersive_titles.collection.forget.title";
+	private static final String FORGET_MESSAGE_KEY = "screen.immersive_titles.collection.forget.message";
+	private static final String FORGET_CONFIRM_KEY = "screen.immersive_titles.collection.forget.confirm";
+
 	/** The glyph a biome that was discovered is marked with, from the game's own font. */
 	private static final String CHECK = "\u2714";
 
@@ -303,6 +380,15 @@ final class BiomeCollectionScreen extends Screen
 	 * button it will not let anyone press in, which is a flat, dimmed panel instead of a button.
 	 */
 	private static final Identifier DISCOVERED_BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button_disabled");
+
+	/**
+	 * The button a row of a discovered biome is given while the mouse is on that row: the game's own
+	 * cross button, at the size the game draws it, with the lit one it draws under the mouse.
+	 */
+	private static final Identifier FORGET_SPRITE = Identifier.withDefaultNamespace("widget/cross_button");
+	private static final Identifier FORGET_HOVERED_SPRITE =
+			Identifier.withDefaultNamespace("widget/cross_button_highlighted");
+	private static final int FORGET_SIZE = 14;
 
 	/** The game's own scroller, and the groove it runs in. */
 	private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("widget/scroller");
@@ -333,11 +419,19 @@ final class BiomeCollectionScreen extends Screen
 	/** The biomes of {@link #entries} the list is showing right now, i.e. the ones the filter keeps. */
 	private final List<BiomeCatalog.Entry> shown = new ArrayList<>();
 
-	/** The biomes of the world that already had their reveal, i.e. the ones that are checked. */
+	/**
+	 * The biomes of the world that already had their reveal, i.e. the ones that are checked. It is a
+	 * copy of what the mod remembers, and it is this screen's own: a biome that is forgotten is taken
+	 * out of it here, while what the mod remembers is changed through {@link TitleOverlay#forgetBiome}
+	 * and nothing else.
+	 */
 	private final Set<String> discovered;
 
-	/** How many of {@link #entries} are in {@link #discovered}, counted once when the screen opens. */
-	private final int discoveredCount;
+	/**
+	 * How many of {@link #entries} are in {@link #discovered}: counted when the screen opens and held
+	 * up to date from there, since a biome that is forgotten stops being one of them.
+	 */
+	private int discoveredCount;
 
 	/** Which biomes the list is showing; the two buttons beside it switch this, see {@link #toggleFilter}. */
 	private Filter filter = Filter.ALL;
@@ -386,7 +480,7 @@ final class BiomeCollectionScreen extends Screen
 
 		this.inWorld = level != null;
 		this.entries = level == null ? BiomeCatalog.known() : BiomeCatalog.all(level);
-		this.discovered = discovered;
+		this.discovered = new HashSet<>(discovered);
 
 		int found = 0;
 		for (BiomeCatalog.Entry entry : entries)
@@ -405,12 +499,16 @@ final class BiomeCollectionScreen extends Screen
 	protected void init()
 	{
 		// the list is centred and narrower than the screen, with the room the two filter buttons need
-		// left empty beside it
+		// left empty beside it, and it is given at most its share of the height of the screen, so that
+		// the collection stays a block of the screen instead of a list down all of it
 		int listWidth = Math.max(0, Math.min(LIST_MAX_WIDTH, width - 2 * SIDE_SPACE));
+		int room = Math.max(0, height - FOOTER_HEIGHT - LIST_TOP);
+		int listHeight = Math.min(room, height * LIST_MAX_HEIGHT_PERCENT / 100);
+
 		listLeft = (width - listWidth) / 2;
 		listRight = listLeft + listWidth;
 		listTop = LIST_TOP;
-		listBottom = height - FOOTER_HEIGHT;
+		listBottom = listTop + listHeight;
 
 		// a resize can leave the list scrolled past its own end
 		scrollTarget = clampScroll(scrollTarget);
@@ -422,9 +520,20 @@ final class BiomeCollectionScreen extends Screen
 		addFilterButtons();
 
 		addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-				.bounds(width / 2 - DONE_WIDTH / 2, height - DONE_HEIGHT - DONE_BOTTOM_MARGIN,
-						DONE_WIDTH, DONE_HEIGHT)
+				.bounds(width / 2 - DONE_WIDTH / 2, doneY(), DONE_WIDTH, DONE_HEIGHT)
 				.build());
+	}
+
+	/**
+	 * Where the button that closes the screen is drawn: under the line that frames the bottom of the
+	 * list, with the same gap under it that the line has over it. The button is under the frame and
+	 * not pinned to the bottom of the screen, so it comes up with the list when the list stops short
+	 * of the screen - and while the list is taking everything the screen has, the two are the same
+	 * place.
+	 */
+	private int doneY()
+	{
+		return listBottom + DOWN_LINE_OFFSET + DOWN_LINE_HEIGHT + LINE_GAP;
 	}
 
 	/**
@@ -505,15 +614,20 @@ final class BiomeCollectionScreen extends Screen
 						: Component.translatable(NO_WORLD_KEY),
 				PROGRESS_Y, MUTED_COLOR);
 
+		// the frame of the list: the game's own button, drawn behind the panel and reaching past it on
+		// every side, with the panel itself drawn over all of it but that ring
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, BUTTON_SPRITE,
+				listLeft - FRAME_PADDING, listTop - FRAME_PADDING,
+				(listRight - listLeft) + 2 * FRAME_PADDING, (listBottom - listTop) + 2 * FRAME_PADDING);
 		graphics.fill(listLeft, listTop, listRight, listBottom, PANEL_COLOR);
 
-		drawRows(graphics);
+		drawRows(graphics, mouseX, mouseY);
 		drawScrollBar(graphics);
 
 		// the two lines of the mod's own drawing the list is framed with, one over it and one under it
 		drawLine(graphics, UP_LINE, UP_LINE_TEXTURE_WIDTH, UP_LINE_TEXTURE_HEIGHT, UP_LINE_Y);
 		drawLine(graphics, DOWN_LINE, DOWN_LINE_TEXTURE_WIDTH, DOWN_LINE_TEXTURE_HEIGHT,
-				listBottom + LINE_GAP);
+				listBottom + DOWN_LINE_OFFSET);
 
 		// the buttons added in init() are among the screen's renderables
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -568,7 +682,7 @@ final class BiomeCollectionScreen extends Screen
 	 * on the way. A filter that keeps nothing leaves the panel with a line saying so, in the middle,
 	 * because an empty panel reads as a fault.
 	 */
-	private void drawRows(GuiGraphicsExtractor graphics)
+	private void drawRows(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
 	{
 		if (shown.isEmpty())
 		{
@@ -577,8 +691,8 @@ final class BiomeCollectionScreen extends Screen
 			return;
 		}
 
-		int slide = (int) Math.round(scrollCurrent * ROW_PITCH);
-		int rowRight = listRight - SCROLLBAR_WIDTH - SCROLLBAR_MARGIN;
+		int rowRight = rowRight();
+		int hovered = rowAt(mouseX, mouseY);
 
 		// the row above the first one that is fully in the list may still be hanging into it
 		int first = Math.max(0, (int) Math.floor(scrollCurrent) - 1);
@@ -587,7 +701,7 @@ final class BiomeCollectionScreen extends Screen
 
 		for (int index = first; index < shown.size(); index++)
 		{
-			int y = listTop + index * ROW_PITCH - slide;
+			int y = rowTop(index);
 			if (y >= listBottom)
 			{
 				break;
@@ -595,19 +709,66 @@ final class BiomeCollectionScreen extends Screen
 
 			if (y + ROW_HEIGHT > listTop)
 			{
-				drawRow(graphics, shown.get(index), y, rowRight);
+				drawRow(graphics, shown.get(index), index, y, rowRight, hovered, mouseX, mouseY);
 			}
 		}
 
 		graphics.disableScissor();
 	}
 
+	/** How far the rows are slid up from where the list is, in pixels, at this frame. */
+	private int slide()
+	{
+		return (int) Math.round(scrollCurrent * ROW_PITCH);
+	}
+
+	/**
+	 * The top of the row at {@code index} as it is drawn right now, in gui pixels. It is where the row
+	 * is drawn and where it is read from the mouse alike, so a button drawn on a row is pressed where
+	 * it is seen, see {@link #rowAt}.
+	 */
+	private int rowTop(int index)
+	{
+		return listTop + index * ROW_PITCH - slide();
+	}
+
+	/** The right end of a row: the room the scrollbar keeps along the right of the list is no row. */
+	private int rowRight()
+	{
+		return listRight - SCROLLBAR_WIDTH - SCROLLBAR_MARGIN;
+	}
+
+	/**
+	 * The row the point is on, or -1 while it is on none of them: the room between two rows is not part
+	 * of a row, the room the scrollbar keeps is not part of one either, and a point outside the box of
+	 * the list is on nothing at all.
+	 */
+	private int rowAt(double mouseX, double mouseY)
+	{
+		if (mouseX < listLeft || mouseX >= rowRight() || mouseY < listTop || mouseY >= listBottom)
+		{
+			return -1;
+		}
+
+		double offset = mouseY - listTop + slide();
+		int index = (int) Math.floor(offset / ROW_PITCH);
+
+		if (index < 0 || index >= shown.size() || offset - index * ROW_PITCH >= ROW_HEIGHT)
+		{
+			return -1;
+		}
+
+		return index;
+	}
+
 	/**
 	 * Draws one biome: the game's own button, its name, a check and a dimmed name once it was
-	 * discovered, and the id of the mod it comes from for a biome of a mod, so a long list from a
-	 * modpack stays readable.
+	 * discovered, and either the id of the mod it comes from or - while the mouse is on a row of a
+	 * discovered biome - the button that forgets it, which takes the place of that id so that a long
+	 * list from a modpack stays readable and the button keeps to the end of its own row.
 	 */
-	private void drawRow(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int y, int rowRight)
+	private void drawRow(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int index, int y,
+			int rowRight, int hovered, int mouseX, int mouseY)
 	{
 		boolean found = discovered.contains(entry.id());
 		int textY = y + (ROW_HEIGHT - font.lineHeight) / 2;
@@ -623,11 +784,78 @@ final class BiomeCollectionScreen extends Screen
 
 		graphics.text(font, entry.name(), listLeft + NAME_X, textY, found ? DISCOVERED_COLOR : NAME_COLOR, true);
 
+		if (found && canForget() && index == hovered)
+		{
+			drawForgetButton(graphics, entry, y, rowRight, mouseX, mouseY);
+			return;
+		}
+
 		String source = source(entry.id());
 		if (source != null)
 		{
 			graphics.text(font, source, rowRight - TEXT_MARGIN - font.width(source), textY, SOURCE_COLOR, true);
 		}
+	}
+
+	/**
+	 * Whether a biome can be forgotten in this screen at all: it can while the screen is listing a
+	 * world, since a discovery is a discovery of a world and there is nothing to take back without
+	 * one, which is the case the Mod Menu way in can open the screen in.
+	 */
+	private boolean canForget()
+	{
+		return inWorld;
+	}
+
+	/**
+	 * Draws the button that forgets the biome of the row the mouse is on: the game's own cross button,
+	 * at the end of the row, where the name of the mod a biome comes from would be drawn - which is the
+	 * place the button takes while it is there (see {@link #drawRow}).
+	 *
+	 * It is lit while the mouse is on the button itself and flat while it is only on the row it belongs
+	 * to, since what the mouse is on decides what a press would do: a press anywhere on the row does
+	 * nothing, a press on the button asks about forgetting the biome.
+	 */
+	private void drawForgetButton(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int y,
+			int rowRight, int mouseX, int mouseY)
+	{
+		boolean onButton = isOverForgetButton(y, rowRight, mouseX, mouseY);
+
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
+				onButton ? FORGET_HOVERED_SPRITE : FORGET_SPRITE,
+				forgetButtonX(rowRight), forgetButtonY(y), FORGET_SIZE, FORGET_SIZE);
+
+		if (onButton)
+		{
+			graphics.setTooltipForNextFrame(Component.translatable(FORGET_KEY, entry.name()), mouseX, mouseY);
+		}
+	}
+
+	/** Where the button that forgets a biome is drawn inside a row: its right end, at the margin the
+	 * name of the mod a biome comes from keeps from it. */
+	private static int forgetButtonX(int rowRight)
+	{
+		return rowRight - TEXT_MARGIN - FORGET_SIZE;
+	}
+
+	/** How far down a row the button that forgets a biome is drawn: centred in the row. */
+	private static int forgetButtonY(int y)
+	{
+		return y + (ROW_HEIGHT - FORGET_SIZE) / 2;
+	}
+
+	/**
+	 * Whether the point is on the button that forgets a biome of the row drawn at {@code y}, which is
+	 * a smaller target than the row it sits at the end of: what a press does is decided by the button
+	 * and not by the row around it.
+	 */
+	private static boolean isOverForgetButton(int y, int rowRight, double mouseX, double mouseY)
+	{
+		int x = forgetButtonX(rowRight);
+		int buttonY = forgetButtonY(y);
+
+		return mouseX >= x && mouseX < x + FORGET_SIZE
+				&& mouseY >= buttonY && mouseY < buttonY + FORGET_SIZE;
 	}
 
 	/** The name of the mod a biome comes from, or null while the biome is one of the game's own. */
@@ -687,7 +915,8 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * Draws one of the two lines the list is framed with, centred on the list and at the size the
-	 * drawing itself asks for: half the texture it is cut from, in both directions.
+	 * drawing is read at: {@link #LINE_SIZE_PERCENT} of the texture it is cut from, in both
+	 * directions, which is what keeps the proportions of the drawing.
 	 *
 	 * It is not stretched across the list, and that is the whole of how it is drawn. A drawing of a
 	 * thing is not a pattern: widening it to fit a list twice its width does not make a longer line,
@@ -707,8 +936,8 @@ final class BiomeCollectionScreen extends Screen
 	private void drawLine(GuiGraphicsExtractor graphics, Identifier texture, int textureWidth,
 			int textureHeight, int y)
 	{
-		int drawnWidth = textureWidth / 2;
-		int drawnHeight = textureHeight / 2;
+		int drawnHeight = textureHeight * LINE_SIZE_PERCENT / 100;
+		int drawnWidth = textureWidth * drawnHeight / textureHeight;
 		int x = listLeft + (listRight - listLeft - drawnWidth) / 2;
 
 		graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0.0F, 0.0F,
@@ -728,7 +957,10 @@ final class BiomeCollectionScreen extends Screen
 	 * A press on the thumb takes it where it was taken, so the thumb does not jump under the hand
 	 * that is already holding it, while a press on the groove brings the thumb under the cursor
 	 * first, so that a press anywhere on the scrollbar is followed by the drag the player expects.
-	 * The row area is not a target of anything: a press there is left to the rest of the screen.
+	 *
+	 * The row area answers a press for one thing only, the button a row of a discovered biome shows
+	 * while the mouse is on it (see {@link #forgetTargetAt}); anywhere else it is left to the rest of
+	 * the screen, so a row of a biome is still not something that answers a click of its own.
 	 */
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
@@ -747,7 +979,101 @@ final class BiomeCollectionScreen extends Screen
 			return true;
 		}
 
+		if (event.button() == LEFT_BUTTON)
+		{
+			BiomeCatalog.Entry forget = forgetTargetAt(event.x(), event.y());
+
+			if (forget != null)
+			{
+				askToForget(forget);
+				return true;
+			}
+		}
+
 		return super.mouseClicked(event, doubleClick);
+	}
+
+	/**
+	 * The biome whose button a press at the point would land on, or null while it lands on none: a row
+	 * shows its button only while the mouse is on that row and only for a biome that was discovered
+	 * (see {@link #drawRow}), and the point has to be on the button itself, so a press can never reach
+	 * a button that is not drawn.
+	 */
+	private BiomeCatalog.Entry forgetTargetAt(double mouseX, double mouseY)
+	{
+		if (!canForget())
+		{
+			return null;
+		}
+
+		int index = rowAt(mouseX, mouseY);
+
+		if (index < 0)
+		{
+			return null;
+		}
+
+		BiomeCatalog.Entry entry = shown.get(index);
+
+		if (!discovered.contains(entry.id()))
+		{
+			return null;
+		}
+
+		return isOverForgetButton(rowTop(index), rowRight(), mouseX, mouseY) ? entry : null;
+	}
+
+	/**
+	 * Asks about forgetting a biome before anything is forgotten: the game's own confirmation screen,
+	 * carrying the name of the biome and what forgetting it does - the reveal plays again the next
+	 * time it is entered - because a button at the end of a row is a small thing to press by mistake,
+	 * and a reveal that has already played is the one thing a collection is made of.
+	 *
+	 * The collection is what both answers come back to, so a press that was a mistake costs a press of
+	 * cancel and nothing else, and closing the confirmation with escape is cancel as well, since the
+	 * game's own confirmation screen answers its own close with no.
+	 */
+	private void askToForget(BiomeCatalog.Entry entry)
+	{
+		minecraft.setScreenAndShow(new ConfirmScreen(
+				confirmed ->
+				{
+					if (confirmed)
+					{
+						forget(entry);
+					}
+
+					minecraft.setScreenAndShow(this);
+				},
+				Component.translatable(FORGET_TITLE_KEY),
+				Component.translatable(FORGET_MESSAGE_KEY, entry.name()),
+				Component.translatable(FORGET_CONFIRM_KEY),
+				Component.translatable("gui.cancel")));
+	}
+
+	/**
+	 * Forgets the biome of a row: the reveal is taken back out of what the world remembers, on disk as
+	 * well as in this session (see {@link TitleOverlay#forgetBiome}), and the list is built again with
+	 * that row as a biome that still has its reveal waiting, which is what it is now.
+	 *
+	 * The count over the list comes down with it, and the list is held where it is: a row that leaves
+	 * a filtered list is one row out of a list the player is reading, not a reason to throw them back
+	 * to the top.
+	 */
+	private void forget(BiomeCatalog.Entry entry)
+	{
+		if (!discovered.remove(entry.id()))
+		{
+			return;
+		}
+
+		TitleOverlay.forgetBiome(entry.id());
+		discoveredCount--;
+
+		rebuildShown();
+
+		scrollCurrent = clampScroll(scrollCurrent);
+		scrollTarget = clampScroll(scrollTarget);
 	}
 
 	@Override

@@ -109,6 +109,59 @@ final class DiscoveredBiomes
 	}
 
 	/**
+	 * Takes {@code biomeId} back out of what is written down for {@code world}, so that its reveal
+	 * plays again the next time it is entered. The file is rewritten without that line and with every
+	 * other line as it was - a comment the player wrote stays, and the line ends are the mod's own,
+	 * the same on every system (see {@link WorldIdentity#LINE_SEPARATOR}) - and a world that has
+	 * nothing written down about that biome is left alone.
+	 *
+	 * This is the counterpart of {@link #remember}, and it is best effort in the same way: a failure
+	 * is logged and the discovery stays where it is, which is the side to fail on, since the reveal
+	 * the player asked to have back is then only still had when they ask for it again.
+	 */
+	static void forget(WorldIdentity world, String biomeId)
+	{
+		if (world == null)
+		{
+			return;
+		}
+
+		Path file = world.file();
+
+		if (!Files.isRegularFile(file))
+		{
+			return;
+		}
+
+		try
+		{
+			StringBuilder kept = new StringBuilder();
+			boolean writtenDown = false;
+
+			for (String line : Files.readAllLines(file, StandardCharsets.UTF_8))
+			{
+				if (line.trim().equals(biomeId))
+				{
+					writtenDown = true;
+					continue;
+				}
+
+				kept.append(line).append(WorldIdentity.LINE_SEPARATOR);
+			}
+
+			if (writtenDown)
+			{
+				Files.writeString(file, kept, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+			}
+		}
+		catch (IOException | RuntimeException e)
+		{
+			WandererTitles.LOGGER.warn("Could not take the discovery of {} out of {}", biomeId, file, e);
+		}
+	}
+
+	/**
 	 * Writes down that the biome {@code biomeId} had its reveal in {@code world}, so the next visit
 	 * only gets the corner title. Nothing happens while there is no world.
 	 */

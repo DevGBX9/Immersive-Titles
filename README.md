@@ -132,20 +132,38 @@ what it does in a tooltip.
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
 resource pack that redraws them: every biome is drawn as one of the game's buttons, a biome that was
 discovered is drawn as one of its disabled buttons, dimmed and checked, the panel behind the list is
-the colour the game's own lists sit on inside a world, and the scrollbar is the one the game's own
-lists are scrolled with. The rows are drawn rather than made of buttons that work, because there is
-nothing to press on a biome: they cannot be clicked, hovered into a highlight or focused. The
-scrollbar, on the other hand, is a scrollbar: it can be taken with the mouse and dragged, and the
-list follows the hand exactly.
+the colour the game's own lists sit on inside a world, the frame around that panel is one of the
+game's buttons drawn behind it a few pixels wider on every side, and the scrollbar is the one the
+game's own lists are scrolled with. The rows are drawn rather than made of buttons that work, because
+there is next to nothing to press on a biome: they cannot be clicked, hovered into a highlight or
+focused. The scrollbar, on the other hand, is a scrollbar: it can be taken with the mouse and
+dragged, and the list follows the hand exactly.
+
+A biome that was discovered is also the one thing in the list that can be pressed. Hovering its row
+draws the game's own cross button at the end of it, in the place the name of the mod a biome comes
+from is drawn at, and pressing that button asks before anything happens: the game's confirmation
+screen, with the biome's name and what forgetting it means. Forgetting a biome takes its reveal back
+out of the world - the line is dropped from the file that world's discoveries are written to, and
+from what the session remembers - so the next time the biome is entered, the full reveal plays again.
+That is for a player who wants a reveal back: a biome walked into by accident, a file edited by hand,
+a discovery that should not have been one. Nothing offers to forget anything while there is no world
+being played, which is the way in the mod list can open the screen from the title screen.
 
 The one thing in the screen that is not the game's own is the pair of lines the list is framed with,
 over it and under it. They are the mod's own drawing - two white ornaments on a flat sheet, cut out of
-it so that only the lines are left, and written into the mod's `textures/gui` at twice the size they
-are drawn in. The list is drawn between them, and each line is centred over or under it at the
-proportions of the drawing rather than stretched to its width, which is what tells the player they
-are looking at a collection of things rather than at a menu. `templates/collection_frame` holds the
-drawings themselves and the script that cuts them out of the sheet they were made on, so the texture
-the mod ships can be remade from them.
+it so that only the lines are left, and written into the mod's `textures/gui` large enough to be read
+at the size they are drawn at. The list is drawn between them, and each line is centred over or under
+it at the proportions of the drawing rather than stretched to its width, which is what tells the
+player they are looking at a collection of things rather than at a menu. `templates/collection_frame`
+holds the drawings themselves and the script that cuts them out of the sheet they were made on, so
+the texture the mod ships can be remade from them.
+
+The collection is drawn a little smaller than the screen it sits on. The list is given at most three
+fifths of the screen's height, the two ornaments are drawn at two fifths of the drawings they are cut
+from, and the list, the rows and the button that closes the screen come down with them - so the
+collection sits on the screen with the world around it, instead of filling the screen with a list.
+On a small screen, where three fifths is less room than the collection needs, the list is simply
+given all of it.
 
 Scrolling is smooth. The wheel and the keys say where the list is going, and the drawn list eases
 after them, so the rows slide up and down instead of jumping. The slide is measured against the clock
