@@ -118,13 +118,16 @@ import java.util.Set;
  * and the same is asked of the one line inside it: what opens a section has to read as a heading over
  * the biomes under it, and the game draws no heading over a list of its own.
  *
- * The collection is drawn a little smaller than the room the screen has for it, which is what the
- * sizes in here come to together: the list stops at {@link #LIST_MAX_HEIGHT_PERCENT} of the screen's
- * height, the drawings it is framed with are drawn at {@link #LINE_SIZE_PERCENT} of the size they are
- * cut at, the list is narrower, the rows sit a pixel closer together and the button that closes the
- * screen is a little smaller. Taken together that is a collection that reads as a block of the screen
- * with the world around it, instead of a list stretched down the screen with a frame at each end of
- * it.
+ * The collection is a block of the screen rather than the screen itself, and it is set on the screen
+ * the way a block of one is: it is given at most {@link #LIST_MAX_HEIGHT_PERCENT} of the screen's
+ * height and {@link #LIST_MAX_WIDTH} gui pixels of its width, the rows sit a pixel closer together,
+ * and the whole of it - from the top of its title to the bottom of the button that closes it - is
+ * what the room left over is split around, so that the room over the title and the room under the
+ * button are the same, to the pixel (see {@link #blockTop}). What that leaves is a collection that
+ * reads as a block with the world around it rather than as a list stretched down the screen, and one
+ * that sits in the middle of the screen instead of hanging from its top. A screen too short to hold
+ * even the smallest of it keeps {@link #SCREEN_MARGIN} over and under the block and gives the list
+ * everything between them.
  *
  * The rows are drawn rather than made of widgets, because there is next to nothing to press on a
  * biome, and the one thing that can be pressed is drawn where it is shown: a row of a discovered
@@ -255,7 +258,11 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private static final int LEFT_BUTTON = InputConstants.MOUSE_BUTTON_LEFT;
 
-	/** Where the title of the screen, and the line counting the discoveries, are drawn. */
+	/**
+	 * Where the title of the screen and the line counting the discoveries are drawn, measured from the
+	 * top of the block the whole collection is set in rather than from the top of the screen (see
+	 * {@link #blockTop}).
+	 */
 	private static final int TITLE_Y = 8;
 	private static final int PROGRESS_Y = 20;
 
@@ -304,9 +311,21 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private static final int LINE_SIZE_PERCENT = 40;
 
+	/**
+	 * The part of the drawing under the list that is drawn, in hundredths of it: a little under half,
+	 * where the line over the list is drawn at {@link #LINE_SIZE_PERCENT}.
+	 *
+	 * The two are not drawn at the same size on purpose. The line over the list is the frame of it - the
+	 * list is what the screen is about, and the drawing over it stays out of the way of that - while the
+	 * line under it is the foot of the collection: it is the drawing the eye comes to when the list has
+	 * been read, and it is the one that has to carry the width of the block at the bottom of it. Drawn
+	 * a little larger than the line over the list, the two do not read as the same ornament cut twice.
+	 */
+	private static final int DOWN_LINE_SIZE_PERCENT = 46;
+
 	/** How tall each of the two lines is drawn on the screen, in gui pixels. */
 	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT * LINE_SIZE_PERCENT / 100;
-	private static final int DOWN_LINE_HEIGHT = DOWN_LINE_TEXTURE_HEIGHT * LINE_SIZE_PERCENT / 100;
+	private static final int DOWN_LINE_HEIGHT = DOWN_LINE_TEXTURE_HEIGHT * DOWN_LINE_SIZE_PERCENT / 100;
 
 	/**
 	 * The gap kept between a line and the list it frames, and between a line and the line of text it
@@ -324,8 +343,8 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * Where the line over the list is drawn, under the line counting the discoveries, and where the
-	 * frame of the list starts under it: the title, the count and that line take the top of the
-	 * screen, each with the same small gap under it, and the frame stands {@link #FRAME_PADDING}
+	 * frame of the list starts under it: the title, the count and that line take the top of the block,
+	 * each with the same small gap under it, and the frame stands {@link #FRAME_PADDING}
 	 * further down than the panel it is drawn around. Both lines are drawn centred on the list rather
 	 * than across it (see {@link #drawLine}); the room they are given is the room their height takes,
 	 * whatever their width comes to, so the list starts at the same place under either of them.
@@ -348,19 +367,19 @@ final class BiomeCollectionScreen extends Screen
 	 * item of a list - and it is kept short of the screen in both directions as well, so that a screen
 	 * of any size has room around the collection rather than a collection drawn to its edges.
 	 */
-	private static final int LIST_MAX_WIDTH = 330;
+	private static final int LIST_MAX_WIDTH = 300;
 
 	/**
-	 * How much of the screen's height the list is given at most, in hundredths of it: three fifths.
+	 * How much of the screen's height the list is given at most, in hundredths of it: half.
 	 *
 	 * The list used to be given everything the screen had between the line over it and the button
-	 * under it, which on a large screen is a list drawn the whole way down the screen. A collection
-	 * reads as a collection when it is a block of a screen with room around it, so it stops at three
-	 * fifths, and the line under it and the button that closes the screen come up with it; the room
-	 * below is left to the world behind the screen. A screen with less room than that still gets all
-	 * of it.
+	 * under it, which on a large screen is a list drawn the whole way down the screen; at three fifths
+	 * it was still the whole of the screen the eye landed on first. A collection reads as a collection
+	 * when it is a block of a screen with the world around it, so the list stops at half the screen's
+	 * height, and what the rest of the block leaves of the screen over is the room the block is set in
+	 * (see {@link #blockTop}). A screen with less room than that still gets all of it.
 	 */
-	private static final int LIST_MAX_HEIGHT_PERCENT = 60;
+	private static final int LIST_MAX_HEIGHT_PERCENT = 50;
 
 	/** How big the two filter buttons are, and how far they sit from the list they filter. */
 	private static final int FILTER_BUTTON_SIZE = 16;
@@ -370,23 +389,27 @@ final class BiomeCollectionScreen extends Screen
 	private static final int SIDE_SPACE = PANEL_MARGIN + FILTER_BUTTON_GAP + FILTER_BUTTON_SIZE;
 
 	/**
-	 * The size of the button that closes the screen, and the room it keeps under itself: the button is
-	 * drawn under the frame of the list, which is what puts it where it is - the room below it is the
-	 * room the frame keeps off the bottom of the screen while the list is taking all of it.
+	 * The size of the button that closes the screen, and the least room the block of the screen keeps
+	 * off its own top and bottom edges: the button is drawn under the frame of the list, which is what
+	 * puts it where it is, and the room over the title and under the button is the room left over by
+	 * the list, split between them (see {@link #blockTop}). This is the floor of those two margins
+	 * rather than their size, and it is what a screen that cannot hold the whole block keeps around
+	 * what is left of it.
 	 */
 	private static final int DONE_WIDTH = 110;
 	private static final int DONE_HEIGHT = 18;
-	private static final int DONE_BOTTOM_MARGIN = 8;
+	private static final int SCREEN_MARGIN = 8;
 
 	/**
-	 * Room the list leaves below itself: the frame around the panel, the gap under it, the line that
-	 * frames its bottom, the same gap again and the button that closes the screen, with its own gap
-	 * and its room from the bottom. There is no longer a line of text between the line and the button:
-	 * the screen used to spend two lines above the button, one on the line counting the discoveries
-	 * and one on a line of its own telling the player to scroll, and the second one is gone.
+	 * Room the panel leaves below itself: the frame around it, the gap under it, the line that frames
+	 * its bottom, the same gap again and the button that closes the screen - without the room that
+	 * button keeps off the bottom of the screen, which is the block's own margin (see
+	 * {@link #SCREEN_MARGIN}) rather than a gap of the layout. There is no longer a line of text
+	 * between the line and the button: the screen used to spend two lines above the button, one on the
+	 * line counting the discoveries and one on a line of its own telling the player to scroll, and the
+	 * second one is gone.
 	 */
-	private static final int FOOTER_HEIGHT = DOWN_LINE_OFFSET + DOWN_LINE_HEIGHT + LINE_GAP
-			+ DONE_HEIGHT + DONE_BOTTOM_MARGIN;
+	private static final int FOOTER_HEIGHT = DOWN_LINE_OFFSET + DOWN_LINE_HEIGHT + LINE_GAP + DONE_HEIGHT;
 
 	/** The strip at the right end of the list the scrollbar is drawn in, in gui pixels. */
 	private static final int SCROLLBAR_WIDTH = 6;
@@ -565,6 +588,20 @@ final class BiomeCollectionScreen extends Screen
 	private int listBottom;
 
 	/**
+	 * How far down the screen the block of the screen starts: the room the list leaves over is split
+	 * evenly over and under that block, so that the room over the title of the screen and the room
+	 * under the button that closes it are the same, to the pixel (see {@link #init()}).
+	 *
+	 * Everything the screen places itself is placed at an offset of this - the title, the count, the
+	 * line over the list and the list itself - while the line under the list and the button after it
+	 * follow the list's own bottom, which is what keeps the frame of the list around the list whatever
+	 * the block comes to. It is measured in the screen rather than in the block, so a screen with room
+	 * to spare and a screen without any are read the same way: the room left over is what is split,
+	 * and a screen that has none leaves the block at {@link #SCREEN_MARGIN} from its edges.
+	 */
+	private int blockTop;
+
+	/**
 	 * Whether the screen is listing one world or every world at once. The mod's own key opens it in a
 	 * world, where the biomes are that world's registry's and the discoveries are the ones that world
 	 * remembers, and the mod list of Mod Menu opens the collection of all of them, which is what this
@@ -651,12 +688,27 @@ final class BiomeCollectionScreen extends Screen
 		// left empty beside it, and it is given at most its share of the height of the screen, so that
 		// the collection stays a block of the screen instead of a list down all of it
 		int listWidth = Math.max(0, Math.min(LIST_MAX_WIDTH, width - 2 * SIDE_SPACE));
-		int room = Math.max(0, height - FOOTER_HEIGHT - LIST_TOP);
+		int room = Math.max(0, height - LIST_TOP - FOOTER_HEIGHT - 2 * SCREEN_MARGIN);
 		int listHeight = Math.min(room, height * LIST_MAX_HEIGHT_PERCENT / 100);
+		int spare = height - (LIST_TOP + listHeight + FOOTER_HEIGHT);
+
+		// what the list leaves over is what the block is set in, and it is split evenly: half of it over
+		// the title and half under the button that closes the screen, so the two margins come out the
+		// same. A screen of an odd width or height leaves a pixel that no halving can place, and that
+		// pixel is taken off the list rather than handed to one of the two margins, so the block is
+		// set in the middle of the screen exactly
+		listWidth = Math.max(0, listWidth - (width - listWidth) % 2);
+
+		if (spare > 1)
+		{
+			listHeight -= spare % 2;
+		}
+
+		blockTop = Math.max(SCREEN_MARGIN, (height - (LIST_TOP + listHeight + FOOTER_HEIGHT)) / 2);
 
 		listLeft = (width - listWidth) / 2;
 		listRight = listLeft + listWidth;
-		listTop = LIST_TOP;
+		listTop = blockTop + LIST_TOP;
 		listBottom = listTop + listHeight;
 
 		// a resize can leave the list scrolled past its own end
@@ -837,7 +889,7 @@ final class BiomeCollectionScreen extends Screen
 	{
 		advanceScroll();
 
-		drawCentered(graphics, title, TITLE_Y, TITLE_COLOR);
+		drawCentered(graphics, title, blockTop + TITLE_Y, TITLE_COLOR);
 
 		// what the line under the title says: how much of the world is found, or - while the list is
 		// every world at once - how much of all of them is, which is that same count read against the
@@ -845,7 +897,7 @@ final class BiomeCollectionScreen extends Screen
 		drawCentered(graphics,
 				Component.translatable(inWorld ? PROGRESS_KEY : ALL_WORLDS_PROGRESS_KEY,
 						discoveredCount, entries.size()),
-				PROGRESS_Y, MUTED_COLOR);
+				blockTop + PROGRESS_Y, MUTED_COLOR);
 
 		// the frame of the list: the game's own button, drawn behind the panel and reaching past it on
 		// every side, with the panel itself drawn over all of it but that ring
@@ -858,9 +910,10 @@ final class BiomeCollectionScreen extends Screen
 		drawScrollBar(graphics);
 
 		// the two lines of the mod's own drawing the list is framed with, one over it and one under it
-		drawLine(graphics, UP_LINE, UP_LINE_TEXTURE_WIDTH, UP_LINE_TEXTURE_HEIGHT, UP_LINE_Y);
+		drawLine(graphics, UP_LINE, UP_LINE_TEXTURE_WIDTH, UP_LINE_TEXTURE_HEIGHT,
+				blockTop + UP_LINE_Y, LINE_SIZE_PERCENT);
 		drawLine(graphics, DOWN_LINE, DOWN_LINE_TEXTURE_WIDTH, DOWN_LINE_TEXTURE_HEIGHT,
-				listBottom + DOWN_LINE_OFFSET);
+				listBottom + DOWN_LINE_OFFSET, DOWN_LINE_SIZE_PERCENT);
 
 		// the buttons added in init() are among the screen's renderables
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -1225,8 +1278,9 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * Draws one of the two lines the list is framed with, centred on the list and at the size the
-	 * drawing is read at: {@link #LINE_SIZE_PERCENT} of the texture it is cut from, in both
-	 * directions, which is what keeps the proportions of the drawing.
+	 * drawing is read at: {@code percent} hundredths of the texture it is cut from, in both
+	 * directions, which is what keeps the proportions of the drawing - {@link #LINE_SIZE_PERCENT} for
+	 * the line over the list and {@link #DOWN_LINE_SIZE_PERCENT} for the one under it.
 	 *
 	 * It is not stretched across the list, and that is the whole of how it is drawn. A drawing of a
 	 * thing is not a pattern: widening it to fit a list twice its width does not make a longer line,
@@ -1244,9 +1298,9 @@ final class BiomeCollectionScreen extends Screen
 	 * lines were drawn the whole way across.
 	 */
 	private void drawLine(GuiGraphicsExtractor graphics, Identifier texture, int textureWidth,
-			int textureHeight, int y)
+			int textureHeight, int y, int percent)
 	{
-		int drawnHeight = textureHeight * LINE_SIZE_PERCENT / 100;
+		int drawnHeight = textureHeight * percent / 100;
 		int drawnWidth = textureWidth * drawnHeight / textureHeight;
 		int x = listLeft + (listRight - listLeft - drawnWidth) / 2;
 

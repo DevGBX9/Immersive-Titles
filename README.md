@@ -188,12 +188,18 @@ the one before it. It is drawn with the game's own font and the game's own colou
 into a texture of the mod's, because what it says is a line of the mod's language file - the name of a
 dimension - and not a drawing.
 
-The collection is drawn a little smaller than the screen it sits on. The list is given at most three
-fifths of the screen's height, the two ornaments are drawn at two fifths of the drawings they are cut
-from, and the list, the rows and the button that closes the screen come down with them - so the
-collection sits on the screen with the world around it, instead of filling the screen with a list.
-On a small screen, where three fifths is less room than the collection needs, the list is simply
-given all of it.
+The collection is a block of the screen rather than the screen itself. The list is given at most half
+of the screen's height and 300 gui pixels of its width, the rows sit a pixel closer together, and the
+block - the title, the count, the two lines and the button - is set in the room the list leaves over:
+half of that room goes over the title and half under the button that closes the screen, so the two
+margins come out the same to the pixel, and a screen of an odd height has the pixel no halving can
+place taken off the list rather than handed to one of them. The same is done across the screen - the
+list is centred on an even difference - so the room at its left and the room at its right are the same
+on any width. The line over the list is drawn at two fifths of the drawing it is cut from, and the
+line under it a little larger, at a little under half: the foot of the block is the larger of the two
+ornaments, since it is the drawing a player is left looking at once the list has been read. On a
+screen too small to hold even the smallest of that, the list is given everything between the two
+margins, and eight gui pixels are kept over and under the block.
 
 Scrolling is smooth. The wheel and the keys say where the list is going, and the drawn list eases
 after them, so the rows slide up and down instead of jumping. The slide is measured against the clock
