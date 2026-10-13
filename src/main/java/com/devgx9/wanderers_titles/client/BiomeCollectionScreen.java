@@ -38,6 +38,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
@@ -221,7 +222,7 @@ final class BiomeCollectionScreen extends Screen
 		 * The name of this tab, as it is drawn in it. It is the name of the page and of the tab at once,
 		 * since the two are the same word: what the strip says is which page the list below it holds.
 		 */
-		private Component label()
+		private MutableComponent label()
 		{
 			return Component.translatable(key);
 		}
