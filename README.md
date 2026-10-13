@@ -91,6 +91,13 @@ the controls screen: it opens a screen with every biome the world has, the ones 
 checked and dimmed, and a line at the top counting them. Opening it pauses the game exactly like the
 escape menu does, and the world behind it is blurred the same way.
 
+The same screen is what clicking the mod in [Mod Menu](https://modrinth.com/mod/modmenu) opens: it is
+the only screen the mod has, so it is the one the mod list offers. Mod Menu is not a dependency -
+a player without it simply has the mod's own key - and the one thing that differs between the two ways
+in is what is behind them: the key is read in a world, while the mod list can be opened from the title
+screen, where the mod lists the biomes it knows and says there is no world to count rather than
+showing an empty list as if nothing had ever been found.
+
 The biomes are listed from the ones a player meets while walking around to the ones that take a
 portal, a long trip or a lucky world - mushroom fields, ice spikes and the pale garden are far down
 the list, and the nether and the end are below them. Which biome belongs where is the mod's own

@@ -20,6 +20,10 @@ repositories {
 		url = 'https://maven.fallenbreath.me/releases'
 		content { includeGroup('me.fallenbreath') }
 	}
+	maven {
+		url = 'https://maven.terraformersmc.com/releases'
+		content { includeGroup('com.terraformersmc') }
+	}
 }
 
 dependencies {
@@ -90,6 +94,16 @@ dependencies {
 	// left to sort out two mods carrying the same module.
 	if (mcVersion >= 260300) {
 		autoImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
+	}
+
+	// Mod Menu is the mod list most players use, and it is where the collection screen is reached
+	// from without a world being open: clicking this mod in that list opens it (see
+	// ModMenuIntegration, and the modmenu entrypoint of fabric.mod.json). Mod Menu is not a
+	// dependency of the mod, though - a player without it simply has the mod's own key - so it is
+	// compiled against and not required at runtime, and the dependency is only resolved for the
+	// versions that have a build of it.
+	if (mcVersion >= 260300) {
+		autoCompileOnly("com.terraformersmc:modmenu:${project.modmenu_version}")
 	}
 }
 
@@ -188,6 +202,14 @@ if (project.findProperty('fabric_api_version') != null) {
 	fabricApiDependency = '>=' + project.fabric_api_version.toString().split('\\+')[0]
 }
 
+// The Mod Menu version this build is compiled against, as fabric.mod.json suggests a player asks
+// for it. It is only suggested and never required: the mod works without Mod Menu, and the entry
+// it offers is a second way into a screen the mod's own key already opens.
+String modmenuDependency = '>=0.0.0'
+if (project.findProperty('modmenu_version') != null) {
+	modmenuDependency = '>=' + project.modmenu_version
+}
+
 // See https://youtrack.jetbrains.com/issue/IDEA-296490
 // if IDEA complains about "Cannot resolve resource filtering of MatchingCopyAction" and you want to know why
 processResources {
@@ -197,6 +219,7 @@ processResources {
 			"version"               : fullModVersion,
 			"minecraft_dependency"  : project.minecraft_dependency,
 			"fabric_api_dependency" : fabricApiDependency,
+			"modmenu_dependency"    : modmenuDependency,
 	]
 	inputs.properties(modProperties)
 

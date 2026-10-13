@@ -107,7 +107,11 @@ import java.util.Set;
  *
  * The key that opens it is the mod's own (see {@link TitleOverlay}), and pressing it again closes
  * the screen: the key is consumed on the client tick rather than in the screen, so the same press
- * that closes the screen cannot open it again on the way out.
+ * that closes the screen cannot open it again on the way out. The same screen is what the mod list
+ * of Mod Menu opens, since it is the one screen this mod has (see {@link ModMenuIntegration}), and
+ * from there it can be built with no world behind it at all: the biomes listed are then the ones the
+ * mod itself knows (see {@link BiomeCatalog#known()}) and the line under the title says there is no
+ * world rather than claiming that none of them were found.
  */
 final class BiomeCollectionScreen extends Screen
 {
@@ -122,11 +126,17 @@ final class BiomeCollectionScreen extends Screen
 		REMAINING
 	}
 
-	/** Height of one row, i.e. of one biome: the height of a button of the game. */
-	private static final int ROW_HEIGHT = 20;
+	/**
+	 * Height of one row, i.e. of one biome: a line of the game's font with the room around it a row
+	 * needs, rather than the height of a button of the game. The rows are a list to read, not buttons
+	 * to press - there is nothing to press on a biome - so they are drawn as small as the text in
+	 * them allows, which is what leaves the collection small enough for a screen to hold it with room
+	 * around it instead of filling the screen with it.
+	 */
+	private static final int ROW_HEIGHT = 16;
 
-	/** Room left between two rows: the spacing the game leaves between two of its own buttons. */
-	private static final int ROW_SPACING = 4;
+	/** Room left between two rows. */
+	private static final int ROW_SPACING = 3;
 
 	/** How far apart two rows are drawn, i.e. a row and the room under it. */
 	private static final int ROW_PITCH = ROW_HEIGHT + ROW_SPACING;
@@ -188,16 +198,17 @@ final class BiomeCollectionScreen extends Screen
 	 * one, a game at gui scale 1 reads them through the area filter the scaling down is, instead of
 	 * dropping every other pixel, and no game at any scale reads a drawing that was stretched.
 	 *
-	 * They are written large because the drawings are dense - nearly two fifths of the rectangle a
-	 * line takes up is ink - and a drawing of that kind has to be given the room to resolve back out
-	 * of its box: at a size that leaves it twenty pixels tall only its boldest parts survive, and what
-	 * should read as an ornament reads as a white smear. {@link #UP_LINE_HEIGHT} is what that costs the
-	 * list, in rows, and it is the one number to change if the two are wanted larger or smaller.
+	 * They are written at the size they are drawn in, which is a size their drawings can be read at:
+	 * each is a dense drawing, about two fifths ink inside its own box, and a drawing of that kind
+	 * needs the room to resolve back out of its box or what should read as an ornament reads as a
+	 * white smear. {@link #UP_LINE_HEIGHT} is what that costs the list, in rows, and it and the size
+	 * the drawings are cut at in {@code templates/collection_frame} are the two numbers that decide
+	 * how large the frame is and how much room is left for the screen around it.
 	 */
-	private static final int UP_LINE_TEXTURE_WIDTH = 548;
-	private static final int UP_LINE_TEXTURE_HEIGHT = 72;
-	private static final int DOWN_LINE_TEXTURE_WIDTH = 500;
-	private static final int DOWN_LINE_TEXTURE_HEIGHT = 80;
+	private static final int UP_LINE_TEXTURE_WIDTH = 396;
+	private static final int UP_LINE_TEXTURE_HEIGHT = 52;
+	private static final int DOWN_LINE_TEXTURE_WIDTH = 362;
+	private static final int DOWN_LINE_TEXTURE_HEIGHT = 58;
 
 	/** How tall each of the two lines is drawn on the screen, in gui pixels. */
 	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT / 2;
@@ -221,52 +232,62 @@ final class BiomeCollectionScreen extends Screen
 	private static final int LIST_TOP = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP;
 
 	/** How wide the panel of the list is kept away from the edges of the screen. */
-	private static final int PANEL_MARGIN = 20;
+	private static final int PANEL_MARGIN = 24;
 
 	/**
 	 * How much of the screen the list takes at most, in gui pixels. The list is narrower than the
-	 * screen on purpose: the room beside it is what the two filter buttons sit in, and a row that
-	 * stretches from edge to edge is read as a bar rather than as an item of a list.
+	 * screen on purpose - the room beside it is what the two filter buttons sit in, and a row that
+	 * stretches from edge to edge is read as a bar rather than as an item of a list - and it is kept
+	 * well short of the screen as well, so that a screen of any size has room around the collection
+	 * rather than a collection drawn to its edges.
 	 */
-	private static final int LIST_MAX_WIDTH = 440;
+	private static final int LIST_MAX_WIDTH = 360;
 
 	/** How big the two filter buttons are, and how far they sit from the list they filter. */
-	private static final int FILTER_BUTTON_SIZE = 20;
-	private static final int FILTER_BUTTON_GAP = 6;
+	private static final int FILTER_BUTTON_SIZE = 16;
+	private static final int FILTER_BUTTON_GAP = 4;
 
 	/** The room one of those buttons takes at one side of the list, margin included. */
 	private static final int SIDE_SPACE = PANEL_MARGIN + FILTER_BUTTON_GAP + FILTER_BUTTON_SIZE;
 
-	/** How far the hint above the button is drawn from the bottom of the screen. */
-	private static final int HINT_Y_FROM_BOTTOM = 44;
+	/** The size of the button that closes the screen, and how far off the bottom it sits. */
+	private static final int DONE_WIDTH = 120;
+	private static final int DONE_HEIGHT = 18;
+	private static final int DONE_BOTTOM_MARGIN = 8;
 
 	/**
 	 * Room the list leaves below itself: the gap under the list, the line that frames its bottom, the
-	 * same gap again, and the hint - which is exactly the room the hint keeps off that line, since the
-	 * hint, the button under it and the room under that keep the places they have always had.
+	 * same gap again and the button that closes the screen with its own gap and its room from the
+	 * bottom. There is no longer a line of text between the line and the button: the screen used to
+	 * spend two lines above the button, one on the line counting the discoveries and one on a line of
+	 * its own telling the player to scroll, and the second one is gone.
 	 */
-	private static final int FOOTER_HEIGHT = 2 * LINE_GAP + DOWN_LINE_HEIGHT + HINT_Y_FROM_BOTTOM;
+	private static final int FOOTER_HEIGHT = 3 * LINE_GAP + DOWN_LINE_HEIGHT + DONE_HEIGHT
+			+ DONE_BOTTOM_MARGIN;
 
 	/** The strip at the right end of the list the scrollbar is drawn in, in gui pixels. */
 	private static final int SCROLLBAR_WIDTH = 6;
 
 	/** How far the rows stop before that strip, so the scrollbar is never drawn over a row. */
-	private static final int SCROLLBAR_MARGIN = 4;
+	private static final int SCROLLBAR_MARGIN = 3;
 
 	/**
 	 * The shortest the scrollbar thumb is allowed to be, and the room it keeps from the bottom of
 	 * its track: the two ends of the game's own scroller height, which is as much of the track as
 	 * the list is of its content, between a floor of its own and the bottom of the list.
 	 */
-	private static final int SCROLLBAR_MIN_HEIGHT = 32;
-	private static final int SCROLLBAR_BOTTOM_MARGIN = 8;
+	private static final int SCROLLBAR_MIN_HEIGHT = 24;
+	private static final int SCROLLBAR_BOTTOM_MARGIN = 6;
 
 	/** Where the check of a discovered biome and its name sit inside a row, from its left end. */
-	private static final int CHECK_X = 9;
-	private static final int NAME_X = 22;
+	private static final int CHECK_X = 7;
+	private static final int NAME_X = 17;
 
 	/** How far the text of a row is kept away from the right end of it. */
-	private static final int TEXT_MARGIN = 8;
+	private static final int TEXT_MARGIN = 6;
+
+	/** The line the screen says in place of the count while there is no world to count. */
+	private static final String NO_WORLD_KEY = "screen.immersive_titles.collection.no_world";
 
 	/** The glyph a biome that was discovered is marked with, from the game's own font. */
 	private static final String CHECK = "\u2714";
@@ -342,11 +363,29 @@ final class BiomeCollectionScreen extends Screen
 	private int listRight;
 	private int listBottom;
 
-	BiomeCollectionScreen(ClientLevel level, Set<String> discovered)
+	/**
+	 * Whether the screen is listing a world at all. It is opened from the mod's own key in a world,
+	 * and from the mod list of Mod Menu, where a world may not be open: without one there is no
+	 * registry to read the biomes of, no discoveries to mark, and the screen says so in the place of
+	 * the line that counts them (see {@link #NO_WORLD_KEY}).
+	 */
+	private final boolean inWorld;
+
+	/**
+	 * The screen this one was opened from, or null while it was opened from the game itself: a screen
+	 * opened out of another screen - the mod list of Mod Menu - closes back into it, while the one the
+	 * mod's own key opens in a world closes into the world. See {@link #onClose()}.
+	 */
+	private final Screen parent;
+
+	BiomeCollectionScreen(ClientLevel level, Set<String> discovered, Screen parent)
 	{
 		super(Component.translatable("screen.immersive_titles.collection.title"));
 
-		this.entries = BiomeCatalog.all(level);
+		this.parent = parent;
+
+		this.inWorld = level != null;
+		this.entries = level == null ? BiomeCatalog.known() : BiomeCatalog.all(level);
 		this.discovered = discovered;
 
 		int found = 0;
@@ -383,7 +422,8 @@ final class BiomeCollectionScreen extends Screen
 		addFilterButtons();
 
 		addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-				.bounds(width / 2 - 75, height - 28, 150, 20)
+				.bounds(width / 2 - DONE_WIDTH / 2, height - DONE_HEIGHT - DONE_BOTTOM_MARGIN,
+						DONE_WIDTH, DONE_HEIGHT)
 				.build());
 	}
 
@@ -456,28 +496,46 @@ final class BiomeCollectionScreen extends Screen
 		advanceScroll();
 
 		drawCentered(graphics, title, TITLE_Y, TITLE_COLOR);
-		drawCentered(graphics, Component.translatable("screen.immersive_titles.collection.progress",
-				discoveredCount, entries.size()), PROGRESS_Y, MUTED_COLOR);
+
+		// what the line under the title says: how much of the world is found, or - while there is no
+		// world - that there is no world to count, so an empty row of checks is not read as a bug
+		drawCentered(graphics,
+				inWorld ? Component.translatable("screen.immersive_titles.collection.progress",
+						discoveredCount, entries.size())
+						: Component.translatable(NO_WORLD_KEY),
+				PROGRESS_Y, MUTED_COLOR);
 
 		graphics.fill(listLeft, listTop, listRight, listBottom, PANEL_COLOR);
 
 		drawRows(graphics);
 		drawScrollBar(graphics);
 
-		// the two lines of the mod's own drawing the list is framed with, one over it and one under
-		// it, drawn before the text below so that the hint and the button stay on top of everything
+		// the two lines of the mod's own drawing the list is framed with, one over it and one under it
 		drawLine(graphics, UP_LINE, UP_LINE_TEXTURE_WIDTH, UP_LINE_TEXTURE_HEIGHT, UP_LINE_Y);
 		drawLine(graphics, DOWN_LINE, DOWN_LINE_TEXTURE_WIDTH, DOWN_LINE_TEXTURE_HEIGHT,
 				listBottom + LINE_GAP);
-
-		drawCentered(graphics, Component.translatable("screen.immersive_titles.collection.hint"),
-				height - HINT_Y_FROM_BOTTOM, MUTED_COLOR);
 
 		// the buttons added in init() are among the screen's renderables
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
 		// and their marks are drawn over them, once the buttons themselves are on the screen
 		drawFilterIcons(graphics);
+	}
+
+	/**
+	 * Closes the collection back to where it was opened from: the world, while it was opened in one,
+	 * or the screen it was opened out of, which is the mod list where Mod Menu is the way in.
+	 */
+	@Override
+	public void onClose()
+	{
+		if (parent == null)
+		{
+			super.onClose();
+			return;
+		}
+
+		minecraft.setScreenAndShow(parent);
 	}
 
 	/**

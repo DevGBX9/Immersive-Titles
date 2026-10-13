@@ -6,7 +6,7 @@
   "screen.immersive_titles.collection.empty": "Nothing to list here yet",
   "screen.immersive_titles.collection.filter_discovered": "Show discovered biomes only",
   "screen.immersive_titles.collection.filter_remaining": "Show undiscovered biomes only",
-  "screen.immersive_titles.collection.hint": "Scroll to browse, press K or Escape to close",
+  "screen.immersive_titles.collection.no_world": "Open a world to see its collection",
   "screen.immersive_titles.collection.progress": "%s of %s biomes discovered",
   "screen.immersive_titles.collection.title": "Biome Collection"
 }

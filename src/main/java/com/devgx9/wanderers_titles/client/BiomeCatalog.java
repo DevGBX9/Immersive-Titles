@@ -194,6 +194,30 @@ final class BiomeCatalog
 	}
 
 	/**
+	 * The biomes the mod itself knows, in display order: the ones of {@link #DISCOVERY_ORDER}, each
+	 * named the way the game names a biome.
+	 *
+	 * It is what the collection has to list while there is no world to ask - from the mod list, where
+	 * no world may be open at all (see {@link ModMenuIntegration}) - and it is deliberately only the
+	 * mod's own list: the biomes of a world are its registry's, and without a world there is none to
+	 * read, so what is shown is what the mod tracks rather than a guess at what a world would hold.
+	 * The names still come from the game, so every one of them is translated like any other.
+	 */
+	static List<Entry> known()
+	{
+		List<Entry> entries = new ArrayList<>(DISCOVERY_ORDER.size());
+
+		for (String id : DISCOVERY_ORDER)
+		{
+			entries.add(new Entry(id, BiomeNames.name(id), rank(id)));
+		}
+
+		entries.sort(DISPLAY_ORDER);
+
+		return List.copyOf(entries);
+	}
+
+	/**
 	 * Where {@code id} sits in {@link #DISCOVERY_ORDER}, or one place behind every listed biome when
 	 * the mod does not know it, which is where the biomes of mods and of newer versions end up.
 	 */

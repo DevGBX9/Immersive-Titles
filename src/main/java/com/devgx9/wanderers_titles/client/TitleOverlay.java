@@ -487,7 +487,8 @@ public final class TitleOverlay
 			return;
 		}
 
-		client.setScreenAndShow(new BiomeCollectionScreen(client.level, discoveredBiomes()));
+		// opened from the game rather than out of another screen, so it closes back into the world
+		client.setScreenAndShow(new BiomeCollectionScreen(client.level, discoveredBiomes(), null));
 	}
 
 	/**

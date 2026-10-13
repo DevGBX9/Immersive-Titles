@@ -21,6 +21,9 @@
   "entrypoints": {
     "client": [
       "com.devgx9.wanderers_titles.client.WandererTitlesClient"
+    ],
+    "modmenu": [
+      "com.devgx9.wanderers_titles.client.ModMenuIntegration"
     ]
   },
 
@@ -28,5 +31,9 @@
     "fabricloader": ">=0.11.4",
     "minecraft": "${minecraft_dependency}",
     "fabric-api": "${fabric_api_dependency}"
+  },
+
+  "suggests": {
+    "modmenu": ">=${modmenu_dependency}"
   }
 }
