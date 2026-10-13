@@ -110,7 +110,8 @@ import java.util.Set;
  *   drawing and follows a resource pack that redraws buttons like everything else here does,
  * - the two lines framing the list are the mod's own, one drawn centred over the list and one under
  *   it, each at the proportions of the drawing rather than stretched to the width of the list (see
- *   {@link #drawLine}),
+ *   {@link #drawLine}), the one over it being the plate the two tabs stand under and as wide as the
+ *   two of them together (see {@link #TAB_STRIP_WIDTH}),
  * - the line that opens a section of the list is the mod's own drawing too: the name of the dimension
  *   at the left end, where the names of the biomes under it are, the count of that dimension at the
  *   right end, where the names of the mods a biome comes from are, and a rule across the row over the
@@ -332,7 +333,8 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * The size each of those two textures is written at: the drawings themselves, cut at a size they
-	 * can still be read at. They are drawn at {@link #LINE_SIZE_PERCENT} of it, and at the proportions
+	 * can still be read at. Each is drawn at a share of it - {@link #UP_LINE_SIZE_PERCENT} for the one
+	 * over the list, {@link #DOWN_LINE_SIZE_PERCENT} for the one under it - and at the proportions
 	 * of the drawing rather than stretched to the width of the list - no game at any scale reads a
 	 * drawing that was stretched, see {@link #drawLine}.
 	 *
@@ -349,33 +351,47 @@ final class BiomeCollectionScreen extends Screen
 	private static final int DOWN_LINE_TEXTURE_HEIGHT = 58;
 
 	/**
-	 * The part of each of those textures a line is drawn at, in hundredths of it: two fifths of the
-	 * drawing, a little smaller than the half the screen used to draw.
+	 * The part of the drawing over the list that is drawn, in hundredths of it: a little over half, where
+	 * the drawing under the list is drawn at {@link #DOWN_LINE_SIZE_PERCENT}.
 	 *
-	 * Half was the size the drawings were made for, because half of them is read one to one at gui
-	 * scale 2 and through the area filter of a whole division at gui scale 1. What the smaller size
-	 * costs is that two fifths of a drawing is not a whole number of its pixels, so a game at gui
-	 * scale 2 reads the drawing through the area filter where it used to read it one to one - and what
-	 * it buys is a frame whose room is spent on the list rather than around it, which is what the whole
-	 * screen is drawn a little smaller for, see {@link #LIST_MAX_HEIGHT_PERCENT}.
+	 * The drawing over the list is the head of the block rather than only the frame of it: the two tabs
+	 * stand under it, and it is drawn at the width the two of them take together (see {@link #UP_LINE_WIDTH}
+	 * and {@link #TAB_STRIP_WIDTH}), so the ornament and the strip of pages below it read as one thing -
+	 * the plate the collection is titled with, held over the two pages it holds. The size is what that
+	 * width costs in height: the drawing is cut at its own proportions and is never stretched to a width
+	 * of its own, so the width of the line and the height of it are one number (see {@link #drawLine}).
+	 *
+	 * A drawing of this kind is a dense one - about two fifths of the rectangle it takes up is ink, and
+	 * its finest strokes are a hundredth of its own height - so a smaller share of it than this is read
+	 * as a grey smear rather than as an ornament: what the size costs is the room over the list, which is
+	 * paid along with the rest of the block by the size the whole screen is drawn at (see
+	 * {@link #LIST_MAX_HEIGHT_PERCENT}).
 	 */
-	private static final int LINE_SIZE_PERCENT = 40;
+	private static final int UP_LINE_SIZE_PERCENT = 58;
 
 	/**
 	 * The part of the drawing under the list that is drawn, in hundredths of it: a little under half,
-	 * where the line over the list is drawn at {@link #LINE_SIZE_PERCENT}.
+	 * where the line over the list is drawn at {@link #UP_LINE_SIZE_PERCENT}.
 	 *
-	 * The two are not drawn at the same size on purpose. The line over the list is the frame of it - the
-	 * list is what the screen is about, and the drawing over it stays out of the way of that - while the
-	 * line under it is the foot of the collection: it is the drawing the eye comes to when the list has
-	 * been read, and it is the one that has to carry the width of the block at the bottom of it. Drawn
-	 * a little larger than the line over the list, the two do not read as the same ornament cut twice.
+	 * The two are not drawn at the same size on purpose. The line over the list is the plate the two tabs
+	 * stand under, and it is as wide as the two of them together; the line under it is the foot of the
+	 * collection - the drawing the eye comes to once the list has been read, and the one that carries the
+	 * width of the block at the bottom of it - so it is drawn at the size of the drawing itself rather
+	 * than at a width of its own (see {@link #drawLine}). Drawn at their own sizes, the two do not read as
+	 * the same ornament cut twice: one is the head of the block and the other its foot.
 	 */
 	private static final int DOWN_LINE_SIZE_PERCENT = 46;
 
 	/** How tall each of the two lines is drawn on the screen, in gui pixels. */
-	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT * LINE_SIZE_PERCENT / 100;
+	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT * UP_LINE_SIZE_PERCENT / 100;
 	private static final int DOWN_LINE_HEIGHT = DOWN_LINE_TEXTURE_HEIGHT * DOWN_LINE_SIZE_PERCENT / 100;
+
+	/**
+	 * How wide the line over the list comes to at that height: the drawing is drawn at its own proportions
+	 * (see {@link #drawLine}), so its width follows from its height rather than from the width of the list,
+	 * and it is the width the strip of two tabs is drawn at as well, so the two stand one over the other.
+	 */
+	private static final int UP_LINE_WIDTH = UP_LINE_TEXTURE_WIDTH * UP_LINE_HEIGHT / UP_LINE_TEXTURE_HEIGHT;
 
 	/**
 	 * The gap kept between a line and the list it frames, and between a line and the line of text it
@@ -392,36 +408,49 @@ final class BiomeCollectionScreen extends Screen
 	private static final int FRAME_PADDING = 4;
 
 	/**
-	 * The strip of tabs over the list: how tall one of them is, how far the two sit apart, and how much
-	 * room the name in one of them keeps at each end of it.
+	 * The strip of tabs under the line over the list: how tall one of them is, how far the two sit apart,
+	 * and how wide the two of them are together.
 	 *
-	 * A tab is as tall as a row of the list and as a small button of the screen, so the strip and what it
-	 * switches are read as the same kind of thing, and it is as wide as its own name rather than a fixed
-	 * box (see {@link #tabWidth}): the two names are the two pages of the collection, so a name of any
-	 * length is given the room it takes instead of being cut off in the middle.
+	 * A tab is as tall as a button of the game - twenty gui pixels, the height the game draws its own
+	 * buttons at - so the strip reads as the two buttons it is, and the two of them together are as wide
+	 * as the plate drawn over them (see {@link #UP_LINE_WIDTH}): the two names are the two pages of the
+	 * collection, and the strip they are written in is the bar under the plate that holds both of them
+	 * rather than a box fitted around each name. Each name is drawn in the middle of its own half of the
+	 * strip (see {@link #drawTabNames}), so the two pages are read at the two ends of one bar.
 	 */
-	private static final int TAB_HEIGHT = 16;
+	private static final int TAB_HEIGHT = 20;
 	private static final int TAB_GAP = 2;
-	private static final int TAB_PADDING = 6;
+
+	/** How wide one tab of the strip is: half of the strip, less the room the two of them sit apart. */
+	private static final int TAB_WIDTH = (UP_LINE_WIDTH - TAB_GAP) / 2;
+
+	/** How wide the two tabs are together: the two of them and the gap between them. */
+	private static final int TAB_STRIP_WIDTH = 2 * TAB_WIDTH + TAB_GAP;
 
 	/**
-	 * Where the two tabs are drawn: under the line counting the discoveries, and over the line that
-	 * frames the top of the list. They are set outside that frame on purpose - the two lines of the
-	 * mod's own drawing frame the list, while the strip says which page the list holds, and a strip
-	 * drawn between the frame and the list would be inside the frame it does not belong to.
+	 * Where the line over the list is drawn, and where the strip of the two tabs stands under it: the
+	 * plate of the screen is set directly under the line counting the discoveries, and the two pages of
+	 * the collection are written in the bar under the plate rather than over it - under it, over the list
+	 * the two of them are the pages of, which is the thing they say something about.
 	 */
-	private static final int TABS_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
+	private static final int UP_LINE_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
 
 	/**
-	 * Where the line over the list is drawn, under the strip of tabs, and where the frame of the list
-	 * starts under it: the title, the count, the tabs and that line take the top of the block, each with
-	 * the same small gap under it, and the frame stands {@link #FRAME_PADDING} further down than the
-	 * panel it is drawn around. Both lines are drawn centred on the list rather than across it (see
-	 * {@link #drawLine}); the room they are given is the room their height takes, whatever their width
-	 * comes to, so the list starts at the same place under either of them.
+	 * Where the two tabs are drawn: under the plate of the screen, and over the frame of the list. They
+	 * are set between the two on purpose - the plate names the collection, the strip says which of its two
+	 * pages the list holds, and the list is what that page is made of.
 	 */
-	private static final int UP_LINE_Y = TABS_Y + TAB_HEIGHT + LINE_GAP;
-	private static final int LIST_TOP = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP + FRAME_PADDING;
+	private static final int TABS_Y = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP;
+
+	/**
+	 * Where the frame of the list starts under the strip of tabs: the title, the count, the plate, the
+	 * strip and the gaps between them take the top of the block, and the frame stands
+	 * {@link #FRAME_PADDING} further down than the panel it is drawn around. The plate and the strip are
+	 * drawn centred on the list rather than across it, both of them at the same width (see
+	 * {@link #TAB_STRIP_WIDTH}); the room each is given is the room its own height takes, so the list
+	 * starts at the same place under either of them.
+	 */
+	private static final int LIST_TOP = TABS_Y + TAB_HEIGHT + LINE_GAP + FRAME_PADDING;
 
 	/** Where the line under the list is drawn, from the bottom of the panel the list is drawn on. */
 	private static final int DOWN_LINE_OFFSET = FRAME_PADDING + LINE_GAP;
@@ -701,6 +730,13 @@ final class BiomeCollectionScreen extends Screen
 	private int blockTop;
 
 	/**
+	 * Where the strip of the two tabs starts, worked out in {@link #init()}: the strip is as wide as the
+	 * line drawn over the list (see {@link #TAB_STRIP_WIDTH} and {@link #UP_LINE_WIDTH}) and it is centred
+	 * on the list the way that line is, so the two stand exactly one over the other.
+	 */
+	private int tabStripLeft;
+
+	/**
 	 * Whether the screen is listing one world or every world at once. The mod's own key opens it in a
 	 * world, where the biomes are that world's registry's and the discoveries are the ones that world
 	 * remembers, and the mod list of Mod Menu opens the collection of all of them, which is what this
@@ -810,6 +846,10 @@ final class BiomeCollectionScreen extends Screen
 		listTop = blockTop + LIST_TOP;
 		listBottom = listTop + listHeight;
 
+		// the strip of tabs is as wide as the line drawn over them, and it is centred on the list the same
+		// way that line is, so what holds the two pages and the plate over them stand one over the other
+		tabStripLeft = listLeft + (listWidth - TAB_STRIP_WIDTH) / 2;
+
 		// a resize can leave the list scrolled past its own end
 		scrollTarget = clampScroll(scrollTarget);
 		scrollCurrent = clampScroll(scrollCurrent);
@@ -865,32 +905,25 @@ final class BiomeCollectionScreen extends Screen
 	 * that filter the list, with their names drawn over them by {@link #drawTabNames} instead of by the
 	 * game - the same way the two filters are drawn as blank buttons with a mark over them.
 	 *
-	 * The two are laid out from the left end of the list and set apart by {@link #TAB_GAP}, each as wide
-	 * as its own name (see {@link #tabWidth}), so the strip is a strip of two rather than two boxes with
-	 * a name in them, and it starts where the list does.
+	 * The two are laid out from the start of the strip the plate of the screen is drawn over, at the width
+	 * of {@link #TAB_WIDTH} each and set apart by {@link #TAB_GAP} (see {@link #TAB_STRIP_WIDTH}), so the
+	 * strip is a bar of two under the plate rather than two boxes fitted around two names, and each name
+	 * is drawn in the middle of its own half of it (see {@link #drawTabNames}).
 	 */
 	private void addTabs()
 	{
-		int x = listLeft;
+		int x = tabStripLeft;
 
 		for (Page tab : Page.values())
 		{
-			int width = tabWidth(tab);
-
 			addRenderableWidget(Button.builder(Component.empty(), button -> show(tab))
-					.size(width, TAB_HEIGHT)
+					.size(TAB_WIDTH, TAB_HEIGHT)
 					.pos(x, tabY())
 					.createNarration(defaultNarration -> tab.label())
 					.build());
 
-			x += width + TAB_GAP;
+			x += TAB_WIDTH + TAB_GAP;
 		}
-	}
-
-	/** How wide the tab of one page is drawn: as wide as its name, with {@link #TAB_PADDING} at each end. */
-	private int tabWidth(Page tab)
-	{
-		return font.width(tab.label()) + 2 * TAB_PADDING;
 	}
 
 	/** Where the tabs are drawn, from the top of the block the whole collection is set in. */
@@ -1109,7 +1142,7 @@ final class BiomeCollectionScreen extends Screen
 
 		// the two lines of the mod's own drawing the list is framed with, one over it and one under it
 		drawLine(graphics, UP_LINE, UP_LINE_TEXTURE_WIDTH, UP_LINE_TEXTURE_HEIGHT,
-				blockTop + UP_LINE_Y, LINE_SIZE_PERCENT);
+				blockTop + UP_LINE_Y, UP_LINE_SIZE_PERCENT);
 		drawLine(graphics, DOWN_LINE, DOWN_LINE_TEXTURE_WIDTH, DOWN_LINE_TEXTURE_HEIGHT,
 				listBottom + DOWN_LINE_OFFSET, DOWN_LINE_SIZE_PERCENT);
 
@@ -1487,18 +1520,17 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private void drawTabNames(GuiGraphicsExtractor graphics)
 	{
-		int x = listLeft;
+		int x = tabStripLeft;
 
 		for (Page tab : Page.values())
 		{
 			Component name = tab.label();
-			int width = tabWidth(tab);
 
-			graphics.text(font, name, x + (width - font.width(name)) / 2,
+			graphics.text(font, name, x + (TAB_WIDTH - font.width(name)) / 2,
 					tabY() + (TAB_HEIGHT - font.lineHeight) / 2,
 					tab == page ? TAB_COLOR : TAB_OFF_COLOR, true);
 
-			x += width + TAB_GAP;
+			x += TAB_WIDTH + TAB_GAP;
 		}
 	}
 
@@ -1511,7 +1543,7 @@ final class BiomeCollectionScreen extends Screen
 	/**
 	 * Draws one of the two lines the list is framed with, centred on the list and at the size the
 	 * drawing is read at: {@code percent} hundredths of the texture it is cut from, in both
-	 * directions, which is what keeps the proportions of the drawing - {@link #LINE_SIZE_PERCENT} for
+	 * directions, which is what keeps the proportions of the drawing - {@link #UP_LINE_SIZE_PERCENT} for
 	 * the line over the list and {@link #DOWN_LINE_SIZE_PERCENT} for the one under it.
 	 *
 	 * It is not stretched across the list, and that is the whole of how it is drawn. A drawing of a

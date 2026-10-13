@@ -154,9 +154,12 @@ page is the interface of a collection still to come and nothing else: the title,
 and the button that closes the screen are the same on both pages, while the line counting the
 discoveries and the two filters belong to the biomes and step aside while that page is shown, since
 neither has anything to count or to filter there, and where the list of biomes would be, the page says
-that nothing is collected there rather than standing empty. A tab is as tall as a row of the list and
-as wide as its own name, the two start at the left end of the list, and the name of the page being
-read is lit in the white of the title while the other one is dim in the grey a filter that is off is
+that nothing is collected there rather than standing empty. A tab is as tall as a button of the game
+and half of the strip the two of them make together, the strip is as wide as the line drawn over it -
+the plate of the screen - and it is centred on the list, under that plate: rather than a box fitted
+around each name, the two are the bar under the plate that holds the two pages, and the name of each
+page is written in the middle of its own half of it. The name of the page being read is lit in the
+white of the title while the other one is dim in the grey a filter that is off is
 drawn in - the same way those two filters say which of them is on. The title over the whole screen
 names the collection itself rather than one of its two pages, since it is the collection that holds
 both and the tabs are what name the pages.
@@ -209,9 +212,14 @@ half of that room goes over the title and half under the button that closes the 
 margins come out the same to the pixel, and a screen of an odd height has the pixel no halving can
 place taken off the list rather than handed to one of them. The same is done across the screen - the
 list is centred on an even difference - so the room at its left and the room at its right are the same
-on any width. The line over the list is drawn at two fifths of the drawing it is cut from, and the
-line under it a little larger, at a little under half: the foot of the block is the larger of the two
-ornaments, since it is the drawing a player is left looking at once the list has been read. On a
+on any width. The line over the list is the plate the two tabs stand under, and it is drawn at the
+width the two of them make together - 228 gui pixels, a little over half of the drawing it is cut
+from - so the ornament and the bar of pages below it read as one thing. The line under the list is the
+foot of the block: it is the drawing a player is left looking at once the list has been read, and it is
+drawn at a little under half of its own drawing, 162 x 26 gui pixels. Neither is stretched to a width
+of its own - each is drawn at the proportions of the drawing it is cut from, so a width and a height
+are one number - and the two are drawn at their own sizes because one is the head of the block and the
+other its foot, rather than as the same ornament cut twice. On a
 screen too small to hold even the smallest of that, the list is given everything between the two
 margins, and eight gui pixels are kept over and under the block.
 
