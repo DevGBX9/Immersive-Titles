@@ -51,15 +51,18 @@ NOISE = 0.06
 
 # and the opposite: the contrast the line is given once it is scaled down, which turns a soft edge
 # of a few percent into a soft edge of a pixel or two without turning the antialiasing into a step
-CURVE_FROM = 0.10
-CURVE_SPAN = 0.70
+CURVE_FROM = 0.12
+CURVE_SPAN = 0.60
 
 # what the screen draws the drawings as: the file, its name in the mod, and the size it is written
 # at, which is the size it is drawn at, doubled. The two widths are the heights below at the
-# drawings' own proportions: 22 gui pixels of the up line is 168 wide, 26 of the down line is 164.
+# drawings' own proportions: 36 gui pixels of the up line is 274 wide, 40 of the down line is 250.
+# The heights are the one number that matters - a drawing of this kind is nearly 40% ink inside its
+# own box, so its whole structure has to be given the room to resolve back out of it, and at a size
+# that leaves it a few pixels tall only the boldest parts of it survive as a white smear.
 SHEETS = [
-    ("Up-line.png", "collection_up_line.png", 336, 44),
-    ("Down-line.png", "collection_down_line.png", 328, 52),
+    ("Up-line.png", "collection_up_line.png", 548, 72),
+    ("Down-line.png", "collection_down_line.png", 500, 80),
 ]
 
 SOURCE = Path(__file__).resolve().parent

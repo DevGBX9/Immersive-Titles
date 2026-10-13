@@ -185,13 +185,19 @@ final class BiomeCollectionScreen extends Screen
 	/**
 	 * The size each of those two textures is written at. They are written at twice the size they are
 	 * drawn in, and at the proportions of the drawing itself: a game at gui scale 2 draws them one to
-	 * one, a game at gui scale 1 reads them through the area filter the scaling down is instead of
+	 * one, a game at gui scale 1 reads them through the area filter the scaling down is, instead of
 	 * dropping every other pixel, and no game at any scale reads a drawing that was stretched.
+	 *
+	 * They are written large because the drawings are dense - nearly two fifths of the rectangle a
+	 * line takes up is ink - and a drawing of that kind has to be given the room to resolve back out
+	 * of its box: at a size that leaves it twenty pixels tall only its boldest parts survive, and what
+	 * should read as an ornament reads as a white smear. {@link #UP_LINE_HEIGHT} is what that costs the
+	 * list, in rows, and it is the one number to change if the two are wanted larger or smaller.
 	 */
-	private static final int UP_LINE_TEXTURE_WIDTH = 336;
-	private static final int UP_LINE_TEXTURE_HEIGHT = 44;
-	private static final int DOWN_LINE_TEXTURE_WIDTH = 328;
-	private static final int DOWN_LINE_TEXTURE_HEIGHT = 52;
+	private static final int UP_LINE_TEXTURE_WIDTH = 548;
+	private static final int UP_LINE_TEXTURE_HEIGHT = 72;
+	private static final int DOWN_LINE_TEXTURE_WIDTH = 500;
+	private static final int DOWN_LINE_TEXTURE_HEIGHT = 80;
 
 	/** How tall each of the two lines is drawn on the screen, in gui pixels. */
 	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT / 2;

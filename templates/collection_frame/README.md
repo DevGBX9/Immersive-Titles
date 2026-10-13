@@ -14,10 +14,10 @@ python templates/collection_frame/cut_frames.py
 
 The script writes
 
-- `assets/immersive_titles/textures/gui/collection_up_line.png`, 336x44, and
-- `assets/immersive_titles/textures/gui/collection_down_line.png`, 328x52,
+- `assets/immersive_titles/textures/gui/collection_up_line.png`, 548x72, and
+- `assets/immersive_titles/textures/gui/collection_down_line.png`, 500x80,
 
-and the screen draws each of them at half of that - 168x22 gui pixels over the list, 164x26 under it
+and the screen draws each of them at half of that - 274x36 gui pixels over the list, 250x40 under it
 - so that a game at gui scale 2 draws them one to one and a game at gui scale 1 reads them through an
 area filter.
 
@@ -27,6 +27,13 @@ ends of the list: widening a drawing of a thing to fit a wider list does not mak
 makes a squashed one, with every ornament in it flattened by the same amount. If a line looks too
 small or too large for the list, the number to change is the height it is drawn at - here and in the
 screen's `UP_LINE_HEIGHT`/`DOWN_LINE_HEIGHT` - and the width follows from the drawing.
+
+Those heights are 36 and 40 gui pixels, and they are large on purpose. These are dense drawings -
+about two fifths of the rectangle each takes up is ink, and their finest strokes are a hundredth of
+their own height - so the whole of the shape has to be given the room to resolve back out of that
+box. At twenty pixels tall the thin parts survive only as a few percent of coverage, which is a grey
+haze over a bright sky, and what is left is the boldest third of the drawing: a white smear where an
+ornament should be. The cost is paid by the list, which is a row or so shorter.
 
 What it does with a sheet is worth knowing before changing it: the sheet is not simply made
 transparent, it is measured. The art is white on a sheet of one grey, so how much of a pixel is art
