@@ -68,7 +68,7 @@ final class BiomeNames
 	 * of a biome they are in, so the titles have to tell "standing on the surface of this biome"
 	 * from "in the rock under it" apart, and the height of the ground over the player is what they
 	 * have to go by. A dip in the terrain, the mouth of a tunnel and the ground floor of a house are
-	 * not the player being under anything; four blocks of terrain over their head is where that
+	 * not the player being under anything; four blocks of ground over their head is where that
 	 * begins.
 	 *
 	 * What is measured is the game's own {@code MOTION_BLOCKING_NO_LEAVES} heightmap, which the
