@@ -442,14 +442,16 @@ public final class TitleOverlay
 	 * a first visit, the corner title on every visit after that.
 	 *
 	 * What is watched is {@link BiomeNames#place}, which is the biome the game reports for the player
-	 * except when they are under the biome that covers the sky over their head. That is what keeps a
-	 * player in a cave from being told about the biome over the cave: the game reports the column
-	 * they are under down there, so a walk through a cave under one surface biome after another is
-	 * not a walk into biomes, nothing is titled and nothing is written down as discovered, and the
-	 * titles pick up again once the player is out in the open. A biome of its own is reported there
-	 * just as it is anywhere else, so the cave biomes - a dripstone cave, a lush cave, the deep dark
-	 * - are titled like any other biome, which is what the titles follow while a player is down
-	 * there instead of the rock over their head.
+	 * except where the game is reporting ground rather than a place: under the biome that covers the
+	 * sky over their head, and in any biome the surface of the ground around them wears. That is what
+	 * keeps a player in a cave from being told about the biome over the cave - down there the game
+	 * reports the climate of the player's depth, which is the ground of the column they are under, or
+	 * a biome whose region reaches under the ground of a neighbour at that depth - so a walk through
+	 * a cave under one surface biome after another is not a walk into biomes, nothing is titled and
+	 * nothing is written down as discovered, and the titles pick up again once the player is out in
+	 * the open. A biome of its own is reported there just as it is anywhere else, so the cave biomes
+	 * - a dripstone cave, a lush cave, the deep dark - are titled like any other biome, which is what
+	 * the titles follow while a player is down there instead of the rock over their head.
 	 */
 	private static void checkBiome(Minecraft client)
 	{

@@ -54,9 +54,9 @@ import java.util.Optional;
  * - {@link #id} is the biome the game reports at the position the player stands in, whatever that
  *   is. The keys that play a title on demand ask for this one, since they name where the player is
  *   and nothing else.
- * - {@link #place} is what the automatic titles follow: the same biome, except that a player under
- *   the biome of the column over their head - underground, in the biome the surface above them
- *   wears - has no place of their own there, and gets nothing to be titled for.
+ * - {@link #place} is what the automatic titles follow: the same biome, except while the game is
+ *   reporting ground for the player instead of a place they are in - under the biome over their
+ *   head, and in any biome the surface of the ground around them wears, see there.
  */
 final class BiomeNames
 {
@@ -84,6 +84,27 @@ final class BiomeNames
 	 * up, which is the one case this reading is wrong about.
 	 */
 	private static final int ROOF_DEPTH = 4;
+
+	/**
+	 * How far from the player the surface of the ground is read for the biomes it wears, in blocks.
+	 *
+	 * The ground over the player's own column says which biome they are standing on the surface of,
+	 * but it is not the whole of it: the game reads the biome of a position from the climate there,
+	 * and the climate of a cave is the climate of its depth. The region one surface biome reaches
+	 * across the ground down there does not end where the same biome ends up on the surface, so the
+	 * ground over a player can wear one biome while the game reports the one that reaches under it,
+	 * and the biome the ground around them wears is what says whether that is a place of the surface
+	 * or a place of the underground.
+	 *
+	 * It is a reach and not a boundary on purpose: at thirty-two blocks the ground read covers what a
+	 * player can walk out to from where they stand in a few seconds, and the reads are still a
+	 * handful of them twice a second.
+	 */
+	private static final int SURFACE_REACH = 32;
+
+	/** The columns of that read: the eight around the player's own, at {@link #SURFACE_REACH}. */
+	private static final int[][] SURFACE_OFFSETS = {
+			{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
 
 	private BiomeNames()
 	{
@@ -116,77 +137,120 @@ final class BiomeNames
 
 	/**
 	 * The biome the automatic titles have to name for the player right now, or an empty optional
-	 * while there is nothing of the player's own to name: no world or no player, or a player who is
-	 * under the biome that covers the sky over their head.
+	 * while there is nothing of the player's own to name: no world or no player, or a player the
+	 * game is reporting ground for instead of a place they are in.
 	 *
-	 * Below the surface the game reports the biome of the column the player is under: a player in a
-	 * cave is in the biome the ground over them is made of, and someone walking through a cave under
-	 * one forest after another would be reported as walking into forests they never see. A biome of
-	 * its own is therefore what gets titled down there - the biome the game reports that is *not* the
-	 * one over the player's head - which in a world of the game's own are exactly the cave biomes:
-	 * a dripstone cave, a lush cave, the deep dark. The surface biome the player is under is not a
-	 * biome they entered, so it is neither titled nor written down as discovered, and the titles pick
-	 * up again the moment a player is back out in the open.
+	 * Standing out in the open, the two are one: the game reports the biome of the column the player
+	 * stands in, and the ground of that column wears the biome they are standing on the surface of,
+	 * so it is theirs and is titled. Down in a cave the game goes on reporting the ground of the
+	 * column the player is under - the biome the climate of their depth belongs to - so a walk
+	 * through a cave under one forest after another is not a walk into biomes: the biome over the
+	 * player's head is not titled while they are under it, and nothing is written down as discovered
+	 * either.
+	 *
+	 * The ground over the player's own column is not the whole of it, though, because the game reads
+	 * the biome of a position from the climate there and the climate of a cave is read at the depth
+	 * of the cave: the region a surface biome reaches across the ground at that depth does not end
+	 * where the same biome ends up on the surface, and the game can report for a player in a cave a
+	 * biome the ground over them does not wear - one whose region reaches under the ground of a
+	 * neighbour there. A biome like that is a place up there and not a place down here, which is what
+	 * the surface of the ground around the player is read for, see {@link #SURFACE_REACH}: a biome
+	 * that ground wears is not titled, while a biome no ground around them wears is one of the
+	 * underground and is - in a world of the game's own, a dripstone cave, a lush cave, the deep
+	 * dark.
 	 *
 	 * Nothing here knows a biome by name, which is what makes this hold for biomes from a mod as
-	 * well: a cave biome a mod added is not the biome over the player either, so it is titled like
-	 * any other, while a surface biome of a mod is treated like a surface biome of the game's own.
+	 * well: a cave biome a mod added is not worn by the surface around the player either, so it is
+	 * titled like any other, while a surface biome of a mod is worn by it like one of the game's
+	 * own.
 	 */
 	static Optional<String> place(Minecraft client)
-	{
-		Optional<String> here = id(client);
-
-		if (here.isEmpty())
-		{
-			return Optional.empty();
-		}
-
-		// the biome over the player's head is the biome they are under, not a place they are in
-		if (overhead(client).filter(here.get()::equals).isPresent())
-		{
-			return Optional.empty();
-		}
-
-		return here;
-	}
-
-	/**
-	 * The biome of the sky over the player's column, i.e. of the surface directly above the place
-	 * they stand in, or an empty optional while there is no such biome to hold against the one the
-	 * player is in.
-	 *
-	 * That is the case while the player is not under ground at all - with less than
-	 * {@link #ROOF_DEPTH} blocks of ground over their head, so on the surface, up in the air, and
-	 * under the leaves of a canopy, see there - and it is the case in a world
-	 * whose ground a ceiling covers: the nether and a cave world have rock over every place a player
-	 * can be, their biomes are stacked by depth instead of sitting under a surface, and the biome a
-	 * player is in there is the one they are in and not a column they are under.
-	 */
-	private static Optional<String> overhead(Minecraft client)
 	{
 		if (client.level == null || client.player == null)
 		{
 			return Optional.empty();
 		}
 
-		DimensionType dimension = client.level.dimensionType();
-
-		if (!dimension.hasSkyLight() || dimension.hasCeiling())
-		{
-			return Optional.empty();
-		}
-
 		BlockPos pos = client.player.blockPosition();
-		int roof = client.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
+		Optional<String> here = id(client.level, pos);
 
-		if (roof - pos.getY() < ROOF_DEPTH)
+		if (here.isEmpty())
 		{
 			return Optional.empty();
 		}
 
-		// the heightmap gives the first block of air over the ground, i.e. the ground a player
-		// standing on the surface of this column would have under their feet
-		return id(client.level, new BlockPos(pos.getX(), roof, pos.getZ()));
+		// a world whose ground a ceiling covers has rock over every place a player can be, its
+		// biomes stacked by depth instead of sitting under a surface: nothing in it is a player
+		// being under ground, and the biome they are in is the place they are in
+		if (!hasSurface(client))
+		{
+			return here;
+		}
+
+		BlockPos surface = surfaceOf(client, pos.getX(), pos.getZ());
+
+		if (id(client.level, surface).filter(here.get()::equals).isPresent())
+		{
+			// the ground over the player wears the biome they are in: it is theirs while they stand
+			// on its surface, and it is not while they are under it
+			return surface.getY() - pos.getY() < ROOF_DEPTH ? here : Optional.empty();
+		}
+
+		// the game is reporting a biome the ground over the player does not wear, which it only does
+		// for a player in the rock, and it does so from the climate of their depth: a biome the
+		// surface of the ground around them wears is a place up there, not one down here
+		return surfaceAroundWears(client, here.get()) ? Optional.empty() : here;
+	}
+
+	/**
+	 * Whether the world the player is in has a surface to be under at all: ground with a sky over it
+	 * that no ceiling covers.
+	 *
+	 * The nether and a cave world have rock over every place a player can be, and their biomes are
+	 * stacked by depth instead of sitting under a surface, so the titles read them as they always
+	 * have: the biome a player is in there is the place they are in, and nothing is held against it.
+	 */
+	private static boolean hasSurface(Minecraft client)
+	{
+		DimensionType dimension = client.level.dimensionType();
+		return dimension.hasSkyLight() && !dimension.hasCeiling();
+	}
+
+	/**
+	 * The air just over the ground of the column {@code x}/{@code z}, from the game's own
+	 * {@code MOTION_BLOCKING_NO_LEAVES} heightmap: the ground a player standing on the surface of
+	 * that column would have under their feet, see {@link #ROOF_DEPTH}.
+	 */
+	private static BlockPos surfaceOf(Minecraft client, int x, int z)
+	{
+		return new BlockPos(x, client.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+	}
+
+	/**
+	 * Whether the surface of the ground around the player wears {@code biomeId}: the ground of the
+	 * eight columns {@link #SURFACE_REACH} blocks away from theirs, read with {@link #surfaceOf}.
+	 *
+	 * That ground is what tells a place of the surface from a place of the underground while the
+	 * game reports the same player both, and it is read at the height of the ground and not at the
+	 * depth the player is at, since the question is what a player standing out in the open there
+	 * would have under their feet.
+	 */
+	private static boolean surfaceAroundWears(Minecraft client, String biomeId)
+	{
+		BlockPos pos = client.player.blockPosition();
+
+		for (int[] offset : SURFACE_OFFSETS)
+		{
+			BlockPos surface = surfaceOf(client, pos.getX() + offset[0] * SURFACE_REACH,
+					pos.getZ() + offset[1] * SURFACE_REACH);
+
+			if (id(client.level, surface).filter(biomeId::equals).isPresent())
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/** The uppercase display name of the biome the player is in, e.g. {@code PALE GARDEN}. */
