@@ -2,8 +2,10 @@
 
 `Up-line.png` and `Down-line.png` are the two drawings the collection screen is framed with: one is
 drawn over the list and one under it, across its width. Together with the list between them they read
-as a collection rather than as a menu of things to press, which is the one place in that screen that
-is the mod's own drawing rather than the game's own widgets.
+as a collection rather than as a menu of things to press. They are the screen's drawings of this kind;
+the line that opens each section of the list is the mod's own as well, but it is written with the
+game's own font in the game's own colours rather than cut out of a sheet, so there is nothing of it in
+here.
 
 They are original work of this project, white line art on a flat dark sheet. Both sheets are kept here so
 that the texture the mod ships can always be remade from them:
@@ -14,12 +16,14 @@ python templates/collection_frame/cut_frames.py
 
 The script writes
 
-- `assets/immersive_titles/textures/gui/collection_up_line.png`, 548x72, and
-- `assets/immersive_titles/textures/gui/collection_down_line.png`, 500x80,
+- `assets/immersive_titles/textures/gui/collection_up_line.png`, 396x52, and
+- `assets/immersive_titles/textures/gui/collection_down_line.png`, 362x58,
 
-and the screen draws each of them at half of that - 274x36 gui pixels over the list, 250x40 under it
-- so that a game at gui scale 2 draws them one to one and a game at gui scale 1 reads them through an
-area filter.
+and the screen draws each of them at two fifths of that - 152x20 gui pixels over the list, 143x23
+under it. Two fifths of a drawing is not a whole number of its own pixels - 52 of the up line come to
+20, 58 of the down line to 23 - so the game reads them through its area filter rather than one to one,
+at gui scale 1 (twenty gui pixels out of fifty-two pixels of texture) and at gui scale 2 (forty out of
+the same fifty-two) alike.
 
 The size is a decision about the drawing, not about the room it is given. Both lines are drawn
 **centred** over and under the list, at their own proportions, and neither is stretched to reach the
@@ -28,12 +32,13 @@ makes a squashed one, with every ornament in it flattened by the same amount. If
 small or too large for the list, the number to change is the height it is drawn at - here and in the
 screen's `UP_LINE_HEIGHT`/`DOWN_LINE_HEIGHT` - and the width follows from the drawing.
 
-Those heights are 36 and 40 gui pixels, and they are large on purpose. These are dense drawings -
-about two fifths of the rectangle each takes up is ink, and their finest strokes are a hundredth of
-their own height - so the whole of the shape has to be given the room to resolve back out of that
-box. At twenty pixels tall the thin parts survive only as a few percent of coverage, which is a grey
-haze over a bright sky, and what is left is the boldest third of the drawing: a white smear where an
-ornament should be. The cost is paid by the list, which is a row or so shorter.
+Those heights are 20 and 23 gui pixels, and they are as small as these drawings can be read at. These
+are dense drawings - about two fifths of the rectangle each takes up is ink, and their finest strokes
+are a hundredth of their own height - so the whole of the shape has to be given the room to resolve
+back out of that box. At half of that - ten pixels of a drawing fifty-two pixels tall - the thin parts
+survive only as a few percent of coverage, which is a grey haze over a bright sky, and what is left is
+the boldest third of the drawing: a white smear where an ornament should be. The cost is paid by the
+list, which is a row or so shorter.
 
 What it does with a sheet is worth knowing before changing it: the sheet is not simply made
 transparent, it is measured. The art is white on a sheet of one grey, so how much of a pixel is art

@@ -126,11 +126,20 @@ world's. The line under the title counts what was found across all of them, in t
 world view counts one world with, and a biome that was found somewhere is on that list even when the
 mod's own order has never heard of it, since the list is what was found rather than what the mod knows.
 
-The biomes are listed from the ones a player meets while walking around to the ones that take a
-portal, a long trip or a lucky world - mushroom fields, ice spikes and the pale garden are far down
-the list, and the nether and the end are below them. Which biome belongs where is the mod's own
-reading, written out by hand, because the game has no opinion on how rare a biome is. A biome from a
-mod is listed with the name of the mod it comes from, after the biomes the list knows.
+The list is divided by dimension: the overworld's biomes first, then the nether's, then the end's, and
+last the ones that belong to no dimension at all, each of them under a line that names the dimension
+and counts what the collection has of it, found and total. Which dimension a biome is in is not the
+mod's reading but the game's own: a world generates its dimensions from the biome tags it holds, and
+those are what the list is divided by, so a biome of a mod is filed under the dimension its author
+tagged it into, and the void - the barrier of the end, which no world generates - is listed as
+belonging to no dimension. A section the filter has emptied is left out with the biomes it would have
+held, rather than standing in the panel as a heading over nothing.
+
+Inside a section the order is the mod's own, written out by hand, from the biomes a player meets while
+walking around to the ones that take a long trip or a lucky world - mushroom fields, ice spikes and
+the pale garden are far down the overworld's section - because the game has no opinion on how rare a
+biome is. A biome from a mod is listed with the name of the mod it comes from, after the biomes the
+list knows.
 
 The list is narrower than the screen and centred, with the room at its sides left empty for two small
 buttons of the mod's own: the one on the left keeps only the biomes that were discovered, the one on
@@ -163,14 +172,21 @@ a discovery that should not have been one. Nothing offers to forget anything in 
 list opens, whether a world is being played or not: a row of that list is a biome found in whichever
 of the player's worlds it was found in, and the file to take it out of is not this screen's to pick.
 
-The one thing in the screen that is not the game's own is the pair of lines the list is framed with,
-over it and under it. They are the mod's own drawing - two white ornaments on a flat sheet, cut out of
-it so that only the lines are left, and written into the mod's `textures/gui` large enough to be read
-at the size they are drawn at. The list is drawn between them, and each line is centred over or under
-it at the proportions of the drawing rather than stretched to its width, which is what tells the
-player they are looking at a collection of things rather than at a menu. `templates/collection_frame`
-holds the drawings themselves and the script that cuts them out of the sheet they were made on, so
-the texture the mod ships can be remade from them.
+What the screen draws itself are the mod's own lines. Two of them frame the list, over it and under
+it: the mod's own drawing - two white ornaments on a flat sheet, cut out of it so that only the lines
+are left, and written into the mod's `textures/gui` large enough to be read at the size they are
+drawn at. The list is drawn between them, and each line is centred over or under it at the proportions
+of the drawing rather than stretched to its width, which is what tells the player they are looking at
+a collection of things rather than at a menu. `templates/collection_frame` holds the drawings
+themselves and the script that cuts them out of the sheet they were made on, so the texture the mod
+ships can be remade from them.
+
+The third line is the one inside the panel, over each section: the name of the dimension in the gold
+the game writes a heading in, the count of that dimension at the far end of the row, where the name of
+a biome's mod is written, and a rule drawn in the room above the row that sets the section off from
+the one before it. It is drawn with the game's own font and the game's own colours rather than cut
+into a texture of the mod's, because what it says is a line of the mod's language file - the name of a
+dimension - and not a drawing.
 
 The collection is drawn a little smaller than the screen it sits on. The list is given at most three
 fifths of the screen's height, the two ornaments are drawn at two fifths of the drawings they are cut

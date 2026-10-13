@@ -55,8 +55,8 @@ CURVE_FROM = 0.12
 CURVE_SPAN = 0.60
 
 # what the screen draws the drawings as: the file, its name in the mod, and the size it is written
-# at, which is the size it is drawn at, doubled. The two widths are the heights below at the
-# drawings' own proportions: 26 gui pixels of the up line is 198 wide, 29 of the down line is 181.
+# at, which is two and a half times the size it is drawn at. The two widths are the heights below at
+# the drawings' own proportions: 20 gui pixels of the up line is 152 wide, 23 of the down line is 143.
 # The heights are the one number that matters - a drawing of this kind is nearly 40% ink inside its
 # own box, so its whole structure has to be given the room to resolve back out of it, and at a size
 # that leaves it a few pixels tall only the boldest parts of it survive as a white smear.
