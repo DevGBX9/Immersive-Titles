@@ -92,19 +92,30 @@ the same crop as pure alpha.
 
 ## Where a name goes
 
-The plate is symmetric and leaves its middle empty:
+The plate is symmetric and leaves its middle empty. The box below is the area the word
+was cleared from in the 1920 x 960 render of `templates/biome_title/`, scaled by 0.75,
+which is the exact scale factor between the two renders:
 
 | | |
 |---|---|
 | word box | x 324 .. 1131, y 198 .. 318 (1440 x 720) |
-| box centre | (727, 259) |
+| box centre | (727.5, 258) |
 | ink height | 82-84 px, to match the 110 px of the 1920 x 960 render |
 
-That box is the 1920 x 960 box of `templates/biome_title/` scaled by 0.75, which is
-the exact scale factor between the two renders, and the new frames confirm it: in a
-90 frame average of the steady stretch the solid ornament occupies rows 147 to 196
-and rows 342 to 430, so the box top lands exactly on the gap, and the whole interior
-carries nothing above 27 of 255 - drifting sparkle trails only.
+The new frames confirm the clearing: in a 90 frame average of the steady stretch the
+solid ornament occupies rows 147 to 196 and rows 342 to 430, so the box top lands
+exactly on the gap, and the whole interior carries nothing above 27 of 255 - drifting
+sparkle trails only.
+
+**The box is not the middle of the plate.** It is where the original word happened to
+sit, and that word sat ten pixels right of the middle of the 1920 x 960 render and
+about twelve above the middle of the room between the ornaments - the box centre is
+the box's own centre, not the plate's. Measured on these frames, the plate's middle is
+column **720** and row **269.5**: the middle stroke of each ornament is drawn at
+720.00 and 720.39 down the frames, and the room the two leave between them is rows 197
+to 342. That is where a name is centred (`NAME_CENTER_X` / `NAME_CENTER_Y` in
+`TitleOverlay`), and a name drawn around the box centre instead lands 7.5 pixels right
+of the plate's middle and 11.5 pixels above the middle of its room.
 
 ## The in game budget
 

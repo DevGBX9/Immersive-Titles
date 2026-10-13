@@ -35,8 +35,11 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.Heightmap;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The biome the player is standing in, as the titles need it: an id to notice that it changed, and a
@@ -45,8 +48,9 @@ import java.util.Optional;
  * The name comes from the same translation key the game uses for biomes ({@code biome.<namespace>.<path>}).
  * A biome without a translation, e.g. one added by a mod that forgot it, falls back to its id with
  * underscores turned into spaces, so neither a reveal nor the collection ever shows a raw key. The
- * title card is set in capitals and asks for that form ({@link #displayName}); the collection lists
- * biomes the way every other screen names them ({@link #name}).
+ * title card is set in capitals and shortened to the two words a title has room for ({@link
+ * #displayName}); the collection lists biomes the way every other screen names them ({@link #name}),
+ * in full, since a list has the width for a name that a plate does not.
  *
  * There are two reads of the player in here, and which one a caller wants is the difference between
  * naming a biome and noticing a place:
@@ -279,6 +283,80 @@ final class BiomeNames
 	/** The uppercase display name of a title card, e.g. {@code PALE GARDEN}. */
 	private static Component displayName(String id)
 	{
-		return Component.literal(name(id).getString().toUpperCase(Locale.ROOT)).withStyle(ChatFormatting.BOLD);
+		return Component.literal(shortName(name(id).getString()).toUpperCase(Locale.ROOT))
+				.withStyle(ChatFormatting.BOLD);
+	}
+
+	/**
+	 * How many words the title of a biome may have. A title is read at a glance, in one line of the
+	 * plate and one in the corner of the screen, and a name of four words is a sentence in a frame
+	 * that is measured for two.
+	 */
+	private static final int TITLE_WORDS = 2;
+
+	/**
+	 * The words a title can do without. They say which kind of a place a biome is rather than which
+	 * place it is, so a name is shortened without losing which biome it names - and they are read off
+	 * the names the game gives the biomes, one by one:
+	 *
+	 * - {@code Old Growth Spruce Taiga} and {@code Old Growth Pine Taiga} are a spruce taiga and a
+	 *   pine taiga, and the two are told apart by the tree,
+	 * - {@code Old Growth Birch Forest} is a birch forest,
+	 * - {@code Windswept Gravelly Hills} are gravelly hills,
+	 * - {@code Deep Lukewarm Ocean}, {@code Deep Cold Ocean} and {@code Deep Frozen Ocean} are oceans
+	 *   of a temperature each, and it is the temperature that tells them from one another,
+	 * - {@code Small End Islands} are islands of the end,
+	 * - and {@code Sand} is here for the one name it appears in, {@code Soul Sand Valley}: two words
+	 *   cannot hold all three of its words, and the place is named by its soul sand rather than by its
+	 *   sand, so the sand is the word it can do without - {@code Soul Valley} is still that valley.
+	 *
+	 * The words are compared without their capitals, since the name comes from the game in the case
+	 * the game translates it in.
+	 */
+	private static final Set<String> TITLE_WORDS_DROPPED = Set.of(
+			"deep", "growth", "old", "sand", "small", "windswept");
+
+	/**
+	 * The name of a biome as a title writes it: the words of {@link #TITLE_WORDS_DROPPED} taken out
+	 * while the name is longer than {@link #TITLE_WORDS} words, and then - for a name that is still
+	 * too long, e.g. the name a mod gives a biome of its own - its last two words, since the end of
+	 * the name of a biome is the part that names it.
+	 *
+	 * A name of two words or fewer is left exactly as the game gives it: nothing is shortened that is
+	 * already short, so {@code Deep Dark} keeps both of its words, and every vanilla biome whose name
+	 * is that long is listed as the game names it.
+	 */
+	private static String shortName(String name)
+	{
+		String[] words = name.split(" ");
+
+		if (words.length <= TITLE_WORDS)
+		{
+			return name;
+		}
+
+		List<String> kept = new ArrayList<>(words.length);
+
+		for (String word : words)
+		{
+			if (!TITLE_WORDS_DROPPED.contains(word.toLowerCase(Locale.ROOT)))
+			{
+				kept.add(word);
+			}
+		}
+
+		// a name whose words are all words a title can do without is left alone: what is left of it
+		// would name nothing, and the whole name names the biome
+		if (kept.isEmpty())
+		{
+			return name;
+		}
+
+		if (kept.size() > TITLE_WORDS)
+		{
+			kept = kept.subList(kept.size() - TITLE_WORDS, kept.size());
+		}
+
+		return String.join(" ", kept);
 	}
 }

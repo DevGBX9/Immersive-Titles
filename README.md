@@ -30,8 +30,13 @@ and every other screen are not an interruption - the game does not pause for the
 reveal keeps playing behind them and is further along, or already over, when they are closed.
 
 While the reveal plays, the name of the biome is written into the empty middle of the ornamental
-plate with the game font, scaled so that any biome name fits between the ornaments. The name is not
-part of the clip: it comes from the clip's own light, i.e. it is hidden while the opening flash
+plate with the game font, in capitals and at most two words, scaled so that any biome name fits
+between the ornaments. The name is centred on the middle of the plate as the frames themselves
+measure it - the column both ornaments are drawn about and the row in the middle of the room they
+leave - and a name longer than two words is shortened to the two that name the biome, with the words
+that only say which kind of a place it is taken out: `Old Growth Spruce Taiga` is titled `SPRUCE
+TAIGA`, `Deep Lukewarm Ocean` is `LUKEWARM OCEAN`, and `Soul Sand Valley` is `SOUL VALLEY`. The name
+is not part of the clip: it comes from the clip's own light, i.e. it is hidden while the opening flash
 covers the plate and it appears as the flash clears, then it fades out with the plate.
 
 The clip is 2:1, so it is fitted into the screen instead of being stretched to it, which leaves a
@@ -188,7 +193,9 @@ Immersive Titles is planned as a client side mod that treats every biome like a 
   a short readable hold and an animated exit. It should feel like a location reveal instead of an
   ordinary HUD notification. *(implemented: the clip and the biome name in its plate)*
 - **Later visits** - when the player leaves an already discovered biome and enters it again, the biome
-  name is shown as a much smaller title near the lower-left corner, with a shortened animation.
+  name is shown as a much smaller title near the lower-left corner, with a shortened animation. It is
+  drawn above the room the game's own HUD takes along the bottom of the screen - the hotbar and the
+  row of hearts over it, 39 pixels together - so a biome name is never drawn through the hotbar.
   *(implemented)*
 - **Triggering** - a title is shown when the player's biome actually changes, not continuously while
   standing inside the same biome. Leaving and re-entering a biome triggers it again. *(implemented)*

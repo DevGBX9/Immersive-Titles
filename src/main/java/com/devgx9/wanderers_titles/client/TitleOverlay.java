@@ -95,7 +95,9 @@ import java.util.Set;
  * (see {@link #nameAlpha}). So the reveal works for any biome name, at any length.
  *
  * The corner title is purely programmatic, i.e. it uses no texture at all: the text is drawn with
- * the game font in bold and it fades in, holds and fades out in the lower left corner.
+ * the game font in bold and it fades in, holds and fades out in the lower left corner, above the
+ * room the game's own HUD takes along the bottom of the screen rather than through it (see
+ * {@link #CORNER_HUD_ROOM}).
  *
  * The mod's own key opens the collection of biomes (see {@link BiomeCollectionScreen}): every biome
  * of the world, with the ones that already had their reveal checked, so that what the reveals have
@@ -134,16 +136,35 @@ public final class TitleOverlay
 	// ---------------------------------------------------------------------------------------------
 
 	/**
-	 * The empty box of the plate, in frame pixels. The plate is symmetrical and leaves its middle
-	 * free for the name: the ornaments occupy rows 147 to 196 and 342 to 430, and the box of the
-	 * original render maps onto this one exactly.
+	 * Where the middle of the empty box of the plate is, in frame pixels: the plate is one ornament
+	 * over the name and one under it, and what the name is centred on is the middle of the room they
+	 * leave between them.
+	 *
+	 * Both ornaments are drawn about one column, and it is the middle of the picture the plate is
+	 * drawn into: the middle stroke of the upper one measures 720.00 down the frames and of the lower
+	 * one 720.39, against a picture that is 1440 wide. The room between them is rows 197 to 342, which
+	 * no frame of the plate has any ink in, so its middle is row 269.5.
+	 *
+	 * Both numbers are measured on the frames rather than written down by hand, because the drawing
+	 * is what decides where the middle of it is: the box this used to be centred on, column 727.5 and
+	 * row 258, drew every name 7.5 pixels right of the middle of the plate and 11.5 pixels above the
+	 * middle of the room it sits in.
 	 */
-	private static final int NAME_BOX_X = 324;
-	private static final int NAME_BOX_Y = 198;
-	private static final int NAME_BOX_WIDTH = 807;
-	private static final int NAME_BOX_HEIGHT = 120;
+	private static final float NAME_CENTER_X = 720.0F;
+	private static final float NAME_CENTER_Y = 269.5F;
 
-	/** How much of the box the name may fill, so a long biome name still fits inside the plate. */
+	/**
+	 * The room the name may fill, in frame pixels: what the name is sized against, and not where it is
+	 * put, since where it is put is the middle of the plate (see {@link #NAME_CENTER_X}).
+	 *
+	 * It is not all of the room the name has: {@link #NAME_MAX_HEIGHT} and {@link #NAME_MAX_WIDTH}
+	 * are the shares of it a name may take, so the largest name keeps clear of the ornaments over and
+	 * under it instead of touching them.
+	 */
+	private static final int NAME_ROOM_WIDTH = 807;
+	private static final int NAME_ROOM_HEIGHT = 120;
+
+	/** How much of the room the name may fill, so a long biome name still fits inside the plate. */
 	private static final float NAME_MAX_HEIGHT = 0.70F;
 	private static final float NAME_MAX_WIDTH = 0.94F;
 
@@ -234,8 +255,27 @@ public final class TitleOverlay
 	private static final long CORNER_FADE_OUT_MS = 900L;
 	private static final long CORNER_ANIMATION_MS = CORNER_FADE_IN_MS + CORNER_HOLD_MS + CORNER_FADE_OUT_MS;
 
-	/** Distance between the corner title and the lower left corner of the screen, in gui pixels. */
+	/** Distance between the corner title and the left edge of the screen, in gui pixels. */
 	private static final int CORNER_MARGIN = 20;
+
+	/**
+	 * What a title of the corner keeps over the bottom of the screen, in gui pixels. What is under it
+	 * there is not the edge of the screen but the game's own HUD: the hotbar is 22 pixels tall and is
+	 * drawn from the bottom edge up, and the row of hearts, armor and hunger sits 17 pixels over that
+	 * and is 9 pixels tall, so the bottom 39 pixels of the screen belong to the game.
+	 *
+	 * A title drawn across them reads as one more thing of the inventory rather than as a title over
+	 * the world - the hotbar is 182 pixels wide and centred, so a name at this size, up to about 250
+	 * pixels of it, reaches the hotbar sideways as well on any screen - and that is what the title is
+	 * kept clear of. The numbers are the game's own HUD read sprite by sprite, not a guess at it.
+	 */
+	private static final int CORNER_HUD_ROOM = 39;
+
+	/**
+	 * The room the corner title keeps over that, so that it still reads as a title of the corner:
+	 * what is above the HUD is the world, and the title sits just over it.
+	 */
+	private static final int CORNER_HUD_GAP = 4;
 
 	/** The color of the titles: pure white, only its alpha is animated by the fades. */
 	private static final int TITLE_TEXT_RGB = 0xFFFFFF;
@@ -771,7 +811,8 @@ public final class TitleOverlay
 
 	/**
 	 * Draws the biome name into the empty box of the plate, in the same coordinates the plate was
-	 * drawn in so the two stay in step at any screen size and gui scale.
+	 * drawn in so the two stay in step at any screen size and gui scale, and centred on the middle of
+	 * that box as the frames measure it (see {@link #NAME_CENTER_X}).
 	 */
 	private static void renderName(GuiGraphicsExtractor graphics, int plateX, int plateY, float scale, int frame)
 	{
@@ -782,20 +823,24 @@ public final class TitleOverlay
 		}
 
 		Font font = Minecraft.getInstance().font;
-		float boxX = plateX + NAME_BOX_X * scale;
-		float boxY = plateY + (NAME_BOX_Y - FRAME_CROP) * scale;
-		float boxWidth = NAME_BOX_WIDTH * scale;
-		float boxHeight = NAME_BOX_HEIGHT * scale;
-
 		float textScale = Math.min(
-				boxHeight * NAME_MAX_HEIGHT / FONT_CAP_HEIGHT,
-				boxWidth * NAME_MAX_WIDTH / Math.max(1, font.width(revealName)));
+				NAME_ROOM_HEIGHT * scale * NAME_MAX_HEIGHT / FONT_CAP_HEIGHT,
+				NAME_ROOM_WIDTH * scale * NAME_MAX_WIDTH / Math.max(1, font.width(revealName)));
 		float textWidth = font.width(revealName) * textScale;
 		float textHeight = FONT_CAP_HEIGHT * textScale;
 
+		// the middle of the plate, put where the plate itself is on this screen: down is measured from
+		// the row of the picture the plate is drawn from, since the rows above it are cropped away
+		float centerX = plateX + NAME_CENTER_X * scale;
+		float centerY = plateY + (NAME_CENTER_Y - FRAME_CROP) * scale;
+
+		// what is centred is the cap height of the name and not its whole line: the game draws the
+		// capitals a title is set in from the top of the cell down this far, so that band is the line
+		// as a reader sees it, and the empty room the line keeps under its descenders is not part of
+		// the block that has to sit in the middle
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
-		pose.translate(boxX + (boxWidth - textWidth) / 2.0F, boxY + (boxHeight - textHeight) / 2.0F);
+		pose.translate(centerX - textWidth / 2.0F, centerY - textHeight / 2.0F);
 		pose.scale(textScale, textScale);
 		graphics.text(font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		pose.popMatrix();
@@ -852,7 +897,8 @@ public final class TitleOverlay
 		Minecraft client = Minecraft.getInstance();
 		Font font = client.font;
 		int x = CORNER_MARGIN;
-		int y = client.getWindow().getGuiScaledHeight() - CORNER_MARGIN - (int) (font.lineHeight * CORNER_TEXT_SCALE);
+		int y = client.getWindow().getGuiScaledHeight() - CORNER_HUD_ROOM - CORNER_HUD_GAP
+				- (int) (font.lineHeight * CORNER_TEXT_SCALE);
 
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
