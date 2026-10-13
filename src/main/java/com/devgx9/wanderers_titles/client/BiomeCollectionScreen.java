@@ -109,11 +109,12 @@ import java.util.Set;
  *
  * The rows are drawn rather than made of widgets, because there is next to nothing to press on a
  * biome, and the one thing that can be pressed is drawn where it is shown: a row of a discovered
- * biome that the mouse is on gives up the place of the name of the mod it comes from to the game's
- * own cross button, and pressing that button is what asks about forgetting the biome (see
- * {@link #askToForget}). The row under it stays a row that cannot be clicked, hovered into a
- * highlight or focused, which is what keeps a list of what the game holds from reading as a list of
- * things to press. Everything else the player can do is scroll, filter and close.
+ * biome that the mouse is on gives up the place of the name of the mod it comes from to a button of
+ * the game with a cross in it - a button like the two that filter the list, in the same size and
+ * with a mark of the game's own font over it - and pressing that button is what asks about forgetting
+ * the biome (see {@link #askToForget}). The row under it stays a row that cannot be clicked, hovered
+ * into a highlight or focused, which is what keeps a list of what the game holds from reading as a
+ * list of things to press. Everything else the player can do is scroll, filter and close.
  *
  * Scrolling is smooth: the wheel and the keys move where the list is going, not where it is drawn,
  * and the drawn list eases after it (see {@link #advanceScroll}). Rows therefore slide up and down
@@ -372,6 +373,14 @@ final class BiomeCollectionScreen extends Screen
 	/** The glyph the filter of the biomes that are left to find is marked with. */
 	private static final String QUESTION = "?";
 
+	/**
+	 * The glyph the button that forgets a biome is marked with, from the game's own font: the letter
+	 * the game itself would have used, drawn over that button the way the marks of the two filters are
+	 * drawn over theirs (see {@link #drawButtonMark}), with the check the list uses for a biome that
+	 * was found replaced by the cross that gives it back.
+	 */
+	private static final String FORGET_MARK = "X";
+
 	/** The button of the game a row of a biome still to find is drawn with. */
 	private static final Identifier BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button");
 
@@ -382,13 +391,14 @@ final class BiomeCollectionScreen extends Screen
 	private static final Identifier DISCOVERED_BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button_disabled");
 
 	/**
-	 * The button a row of a discovered biome is given while the mouse is on that row: the game's own
-	 * cross button, at the size the game draws it, with the lit one it draws under the mouse.
+	 * The button a row of a discovered biome is given while the mouse is on that row: a button of the
+	 * game of the same kind as the two that filter the list, at the size those are drawn at, with the
+	 * lit face the game gives a button under the mouse.
 	 */
-	private static final Identifier FORGET_SPRITE = Identifier.withDefaultNamespace("widget/cross_button");
+	private static final Identifier FORGET_BUTTON_SPRITE = BUTTON_SPRITE;
 	private static final Identifier FORGET_HOVERED_SPRITE =
-			Identifier.withDefaultNamespace("widget/cross_button_highlighted");
-	private static final int FORGET_SIZE = 14;
+			Identifier.withDefaultNamespace("widget/button_highlighted");
+	private static final int FORGET_SIZE = 16;
 
 	/** The game's own scroller, and the groove it runs in. */
 	private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("widget/scroller");
@@ -408,6 +418,15 @@ final class BiomeCollectionScreen extends Screen
 	private static final int DISCOVERED_COLOR = 0xFFA0A0A0;
 	private static final int CHECK_COLOR = 0xFF55FF55;
 	private static final int SOURCE_COLOR = 0xFF828282;
+
+	/**
+	 * The mark of the button that forgets a biome, in the two colours it is drawn in: the grey the
+	 * mark is dim in while the mouse is only on the row, and the red it turns while the mouse is on
+	 * the button itself - a button that undoes something says so, and says so louder under the hand
+	 * that is about to press it.
+	 */
+	private static final int FORGET_COLOR = 0xFFA0A0A0;
+	private static final int FORGET_HOVERED_COLOR = 0xFFFF5555;
 
 	/** The mark of a filter that is turned off, and the colour the other one lights up in. */
 	private static final int FILTER_OFF_COLOR = 0xFF909090;
@@ -808,22 +827,29 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws the button that forgets the biome of the row the mouse is on: the game's own cross button,
-	 * at the end of the row, where the name of the mod a biome comes from would be drawn - which is the
-	 * place the button takes while it is there (see {@link #drawRow}).
+	 * Draws the button that forgets the biome of the row the mouse is on: a button of the game at the
+	 * far right end of the row, where the name of the mod a biome comes from would be drawn - which is
+	 * the place the button takes while it is there (see {@link #drawRow}).
 	 *
-	 * It is lit while the mouse is on the button itself and flat while it is only on the row it belongs
-	 * to, since what the mouse is on decides what a press would do: a press anywhere on the row does
+	 * It is the button the two filters are drawn as, with the mark of the game's own font over it, so
+	 * the three buttons of the screen are read as the same kind of thing. It is lit while the mouse is
+	 * on the button itself and flat while it is only on the row it belongs to, and its mark turns red
+	 * there, since what the mouse is on decides what a press would do: a press anywhere on the row does
 	 * nothing, a press on the button asks about forgetting the biome.
 	 */
 	private void drawForgetButton(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int y,
 			int rowRight, int mouseX, int mouseY)
 	{
 		boolean onButton = isOverForgetButton(y, rowRight, mouseX, mouseY);
+		int x = forgetButtonX(rowRight);
+		int buttonY = forgetButtonY(y);
 
 		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
-				onButton ? FORGET_HOVERED_SPRITE : FORGET_SPRITE,
-				forgetButtonX(rowRight), forgetButtonY(y), FORGET_SIZE, FORGET_SIZE);
+				onButton ? FORGET_HOVERED_SPRITE : FORGET_BUTTON_SPRITE,
+				x, buttonY, FORGET_SIZE, FORGET_SIZE);
+
+		drawButtonMark(graphics, FORGET_MARK, x, buttonY, FORGET_SIZE,
+				onButton ? FORGET_HOVERED_COLOR : FORGET_COLOR);
 
 		if (onButton)
 		{
@@ -831,11 +857,14 @@ final class BiomeCollectionScreen extends Screen
 		}
 	}
 
-	/** Where the button that forgets a biome is drawn inside a row: its right end, at the margin the
-	 * name of the mod a biome comes from keeps from it. */
+	/**
+	 * Where the button that forgets a biome is drawn inside a row: its far right end, so that the row
+	 * of a biome that was found ends in a button of the game the way the list itself ends in the two
+	 * that filter it.
+	 */
 	private static int forgetButtonX(int rowRight)
 	{
-		return rowRight - TEXT_MARGIN - FORGET_SIZE;
+		return rowRight - FORGET_SIZE;
 	}
 
 	/** How far down a row the button that forgets a biome is drawn: centred in the row. */
@@ -846,8 +875,8 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * Whether the point is on the button that forgets a biome of the row drawn at {@code y}, which is
-	 * a smaller target than the row it sits at the end of: what a press does is decided by the button
-	 * and not by the row around it.
+	 * the end of the row and not the row itself: what a press does is decided by the button and not by
+	 * the row around it.
 	 */
 	private static boolean isOverForgetButton(int y, int rowRight, double mouseX, double mouseY)
 	{
@@ -901,10 +930,19 @@ final class BiomeCollectionScreen extends Screen
 	/** Draws {@code mark} centred in the filter button at the left or the right end of the list. */
 	private void drawFilterIcon(GuiGraphicsExtractor graphics, boolean left, String mark, int color)
 	{
-		graphics.text(font, mark,
-				filterButtonX(left) + (FILTER_BUTTON_SIZE - font.width(mark)) / 2,
-				listTop + (FILTER_BUTTON_SIZE - font.lineHeight) / 2,
-				color, true);
+		drawButtonMark(graphics, mark, filterButtonX(left), listTop, FILTER_BUTTON_SIZE, color);
+	}
+
+	/**
+	 * Draws {@code mark} centred in a button of the game that starts at ({@code x}, {@code y}) and is
+	 * {@code size} pixels on both sides: the same centring for the marks of the two filters and for the
+	 * cross of the button that forgets a biome, so the three marks sit in their buttons alike.
+	 */
+	private void drawButtonMark(GuiGraphicsExtractor graphics, String mark, int x, int y, int size,
+			int color)
+	{
+		graphics.text(font, mark, x + (size - font.width(mark)) / 2,
+				y + (size - font.lineHeight) / 2, color, true);
 	}
 
 	/** Where the filter button of one side of the list starts, in gui pixels. */

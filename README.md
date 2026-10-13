@@ -140,9 +140,11 @@ focused. The scrollbar, on the other hand, is a scrollbar: it can be taken with 
 dragged, and the list follows the hand exactly.
 
 A biome that was discovered is also the one thing in the list that can be pressed. Hovering its row
-draws the game's own cross button at the end of it, in the place the name of the mod a biome comes
-from is drawn at, and pressing that button asks before anything happens: the game's confirmation
-screen, with the biome's name and what forgetting it means. Forgetting a biome takes its reveal back
+draws a button at the far right end of it, in the place the name of the mod a biome comes from is
+drawn at: the same button the two filters are drawn as, with a cross of the game's own font over it
+in the place of their check or their question mark, and that cross turns red and the button lights up
+while the mouse is on the button itself. Pressing it asks before anything happens: the game's
+confirmation screen, with the biome's name and what forgetting it means. Forgetting a biome takes its reveal back
 out of the world - the line is dropped from the file that world's discoveries are written to, and
 from what the session remembers - so the next time the biome is entered, the full reveal plays again.
 That is for a player who wants a reveal back: a biome walked into by accident, a file edited by hand,
