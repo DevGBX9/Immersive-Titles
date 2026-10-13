@@ -66,9 +66,11 @@ The biome the player is in is checked twice a second, which is why the check is 
   down as discovered. What is titled down there is a biome of its own - the cave biomes of the game,
   a dripstone cave, a lush cave, the deep dark, and the cave biomes of a mod as well, since the two
   are told apart by comparing the biome the player is in with the one over them and not by a list of
-  names. A player counts as being under ground once four blocks of terrain sit over their head, and
-  the ground measured there leaves water and leaves out, so swimming and walking under a canopy are
-  unaffected, and the titles pick up again as soon as the player is back out in the open.
+  names. A player counts as being under ground once four blocks of what the game measures as the
+  ground over them stand over their head. Leaves are left out of that measure, so walking under a
+  canopy is unaffected, while water is part of it: an underground lake is ground like the stone
+  around it, and a player diving that deep in the open sea is told what they swam into on the way
+  back up. Either way the titles pick up again as soon as the player is back out in the open.
 
 The names come from the game's own biome translations, so they follow the language of the client; a
 biome without a translation falls back to its id with underscores as spaces.

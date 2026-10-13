@@ -72,10 +72,16 @@ final class BiomeNames
 	 * begins.
 	 *
 	 * What is measured is the game's own {@code MOTION_BLOCKING_NO_LEAVES} heightmap, which the
-	 * client is sent like the other heightmaps it can draw, and which leaves out exactly the ground
-	 * a player is not under: water, which they swim through, and leaves, which they walk under - so
-	 * a swimmer, and a walker under a canopy, are not taken for players in a cave, while the stone
-	 * of a shallow cave right behind an entrance already is a roof.
+	 * client is sent like the other heightmaps it can draw, and which leaves the leaves out of its
+	 * ground: walking under a canopy is not being under anything, while the stone of a shallow cave
+	 * right behind an entrance already is a roof.
+	 *
+	 * Water does count as ground here, since that is what the game measures in that heightmap: a
+	 * player more than {@link #ROOF_DEPTH} blocks under the surface of a stretch of water is under
+	 * it like a player under the rock of a cave. That is what makes an underground lake behave like
+	 * the stone around it - no surface biome is handed out to someone swimming in one - and it costs
+	 * a player diving that deep in the open sea the title of what they swim into until they are back
+	 * up, which is the one case this reading is wrong about.
 	 */
 	private static final int ROOF_DEPTH = 4;
 
@@ -150,8 +156,8 @@ final class BiomeNames
 	 * player is in.
 	 *
 	 * That is the case while the player is not under ground at all - with less than
-	 * {@link #ROOF_DEPTH} blocks of terrain over their head, so on the surface, in the air, in water
-	 * they swim through, and under the leaves of a canopy, see there - and it is the case in a world
+	 * {@link #ROOF_DEPTH} blocks of ground over their head, so on the surface, up in the air, and
+	 * under the leaves of a canopy, see there - and it is the case in a world
 	 * whose ground a ceiling covers: the nether and a cave world have rock over every place a player
 	 * can be, their biomes are stacked by depth instead of sitting under a surface, and the biome a
 	 * player is in there is the one they are in and not a column they are under.
