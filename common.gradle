@@ -203,8 +203,10 @@ if (project.findProperty('fabric_api_version') != null) {
 }
 
 // The Mod Menu version this build is compiled against, as fabric.mod.json suggests a player asks
-// for it. It is only suggested and never required: the mod works without Mod Menu, and the entry
-// it offers is a second way into a screen the mod's own key already opens.
+// for it, written the way the Fabric API one above is: the operator is part of the value, and
+// fabric.mod.json only names the property. It is only suggested and never required: the mod works
+// without Mod Menu, and the entry it offers is a second way into a screen the mod's own key
+// already opens.
 String modmenuDependency = '>=0.0.0'
 if (project.findProperty('modmenu_version') != null) {
 	modmenuDependency = '>=' + project.modmenu_version

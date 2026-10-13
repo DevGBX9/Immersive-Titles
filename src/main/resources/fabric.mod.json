@@ -34,6 +34,6 @@
   },
 
   "suggests": {
-    "modmenu": ">=${modmenu_dependency}"
+    "modmenu": "${modmenu_dependency}"
   }
 }
