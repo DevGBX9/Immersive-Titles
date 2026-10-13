@@ -60,6 +60,15 @@ The biome the player is in is checked twice a second, which is why the check is 
   first title is about the biome the player ends up standing in instead of about whatever the world
   was showing while it was still loading.
 - Leaving and re-entering a biome counts as an entry again, which is what brings up the corner title.
+- **Being in a cave** - below the surface the game reports the biome of the column a player is
+  under instead of a biome they are in, so a walk through a cave under one surface biome after
+  another is not a walk into biomes: the biome over the player's head is neither titled nor written
+  down as discovered. What is titled down there is a biome of its own - the cave biomes of the game,
+  a dripstone cave, a lush cave, the deep dark, and the cave biomes of a mod as well, since the two
+  are told apart by comparing the biome the player is in with the one over them and not by a list of
+  names. A player counts as being under ground once four blocks of terrain sit over their head, and
+  the ground measured there leaves water and leaves out, so swimming and walking under a canopy are
+  unaffected, and the titles pick up again as soon as the player is back out in the open.
 
 The names come from the game's own biome translations, so they follow the language of the client; a
 biome without a translation falls back to its id with underscores as spaces.

@@ -72,6 +72,11 @@ import java.util.Set;
  * moves, so the first title is about the biome the player ends up standing in once they are playing
  * instead of about whatever the camera saw while the world was still loading.
  *
+ * What is followed is the place the player is in rather than the bare biome the game reports for
+ * them: below the surface that report is the biome of the column they are under, so a walk through
+ * a cave hands out the cave biomes it passes through and none of the surface biomes it passes under,
+ * see {@link #checkBiome} and {@link BiomeNames#place}.
+ *
  * The big reveal draws the clip stored as a numbered PNG sequence at its 1440x720 resolution (see
  * the {@code title} texture folder) minus the two strips of rows {@link #FRAME_CROP} describes,
  * because Minecraft cannot play video. Every frame is a pre
@@ -312,7 +317,11 @@ public final class TitleOverlay
 	/** The world {@link #VISITED_BIOMES} belongs to, or null while there is no world. */
 	private static WorldIdentity world = null;
 
-	/** The biome the player was in when it was last checked, to notice a change. */
+	/**
+	 * The place the player was in when it was last checked, to notice a change, i.e. the biome
+	 * {@link BiomeNames#place} reports and not the biome the game reports for them: a player who
+	 * went into the ground under a biome never entered it, see {@link #checkBiome}.
+	 */
 	private static String lastBiomeId = null;
 
 	/** Where the player stood when the world was joined, until they start moving. */
@@ -429,8 +438,18 @@ public final class TitleOverlay
 	}
 
 	/**
-	 * Watches the biome the player is in and plays the matching title when it changes: the reveal on
+	 * Watches the place the player is in and plays the matching title when it changes: the reveal on
 	 * a first visit, the corner title on every visit after that.
+	 *
+	 * What is watched is {@link BiomeNames#place}, which is the biome the game reports for the player
+	 * except when they are under the biome that covers the sky over their head. That is what keeps a
+	 * player in a cave from being told about the biome over the cave: the game reports the column
+	 * they are under down there, so a walk through a cave under one surface biome after another is
+	 * not a walk into biomes, nothing is titled and nothing is written down as discovered, and the
+	 * titles pick up again once the player is out in the open. A biome of its own is reported there
+	 * just as it is anywhere else, so the cave biomes - a dripstone cave, a lush cave, the deep dark
+	 * - are titled like any other biome, which is what the titles follow while a player is down
+	 * there instead of the rock over their head.
 	 */
 	private static void checkBiome(Minecraft client)
 	{
@@ -442,7 +461,7 @@ public final class TitleOverlay
 
 		ticksUntilBiomeCheck = BIOME_CHECK_INTERVAL_TICKS;
 
-		String biomeId = BiomeNames.id(client).orElse(null);
+		String biomeId = BiomeNames.place(client).orElse(null);
 		if (biomeId == null || biomeId.equals(lastBiomeId))
 		{
 			return;
