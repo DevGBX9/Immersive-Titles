@@ -84,6 +84,15 @@ import java.util.Set;
  * to find instead of scrolling one list of everything the game holds. A section the filter has
  * emptied is left out with the biomes it would have held rather than standing as a line over nothing.
  *
+ * The collection is read as two pages, and the two tabs over it are which one: the biomes, which are
+ * the list this screen is (see {@link Page}), and the structures of the world, which the mod does not
+ * collect yet - that tab and its page are the interface of a collection still to come, and what the
+ * page shows is the panel with a line saying that there is nothing there rather than a list of
+ * nothing. The two belong to the list and not to the screen: the title, the tabs, the frame and the
+ * button that closes it are the same on both pages, while the line counting the discoveries and the
+ * two filters belong to the biomes and step aside on the page that has no biomes, since neither has
+ * anything to count or to filter there.
+ *
  * Everything the screen is made of is the game's own, so it looks like the menus it sits next to
  * and follows a resource pack that redraws them - everything but the two lines the list is framed
  * with, which are the mod's own drawing:
@@ -107,9 +116,11 @@ import java.util.Set;
  *   two says that a section starts here rather than that the list has a biome with a strange name,
  * - the scrollbar is the game's scroller, in the same six pixels of width the game draws it in, and
  *   it can be taken and dragged like any other, see {@link #mouseClicked}, and
- * - the three buttons - the two filters and the one that closes the screen - are buttons of the
- *   game, so they hover, click and speak for themselves. The list is narrower than the screen and
- *   centred, which leaves the room at its sides that those two small buttons sit in.
+ * - the two tabs over the list, the two filters beside it and the one button that closes the screen
+ *   are buttons of the game, so they hover, click and speak for themselves, and what the screen draws
+ *   over them is what they say (see {@link #drawTabNames} and {@link #drawFilterIcons}). The list is
+ *   narrower than the screen and centred, which leaves the room at its sides that the two small
+ *   filters sit in.
  *
  * Lines of the mod's own drawing in a screen of the game's own pieces is a deliberate exception.
  * The rows have to read as the game's own rows, because they are a list of what the game holds, but
@@ -176,6 +187,44 @@ final class BiomeCollectionScreen extends Screen
 		DISCOVERED,
 		/** Only the biomes that have not had it yet, i.e. what is left to find. */
 		REMAINING
+	}
+
+	/**
+	 * The two pages of the collection, which are the two tabs over the list: the one the screen is, and
+	 * the one that is not a list yet.
+	 *
+	 * The biomes are what this screen is for: every biome a world has, each of them checked or waiting
+	 * (see {@link BiomeCatalog}). The structures are the shape of a collection still to come - the mod
+	 * records nothing about them - so the second page is the interface of one and nothing else: the
+	 * title, the tabs, the frame and the button that closes the screen are the same on both pages, and
+	 * where the list of biomes would be, that page says that nothing is collected there rather than
+	 * showing nothing (see {@link #rebuildShown} and {@link #drawRows}). The count line and the two
+	 * filters belong to the biomes and step aside while it is shown, since neither has anything to count
+	 * or to filter there.
+	 */
+	private enum Page
+	{
+		/** Every biome the world has: the page the screen opens on, and the list it is made of. */
+		BIOMES("screen.immersive_titles.collection.tab.biomes"),
+		/** The structures of the world, which no world writes down yet: the interface of a collection. */
+		STRUCTURES("screen.immersive_titles.collection.tab.structures");
+
+		/** The key the name of this tab is read from, in the language file of the mod. */
+		private final String key;
+
+		Page(String key)
+		{
+			this.key = key;
+		}
+
+		/**
+		 * The name of this tab, as it is drawn in it. It is the name of the page and of the tab at once,
+		 * since the two are the same word: what the strip says is which page the list below it holds.
+		 */
+		private Component label()
+		{
+			return Component.translatable(key);
+		}
 	}
 
 	/**
@@ -342,14 +391,35 @@ final class BiomeCollectionScreen extends Screen
 	private static final int FRAME_PADDING = 4;
 
 	/**
-	 * Where the line over the list is drawn, under the line counting the discoveries, and where the
-	 * frame of the list starts under it: the title, the count and that line take the top of the block,
-	 * each with the same small gap under it, and the frame stands {@link #FRAME_PADDING}
-	 * further down than the panel it is drawn around. Both lines are drawn centred on the list rather
-	 * than across it (see {@link #drawLine}); the room they are given is the room their height takes,
-	 * whatever their width comes to, so the list starts at the same place under either of them.
+	 * The strip of tabs over the list: how tall one of them is, how far the two sit apart, and how much
+	 * room the name in one of them keeps at each end of it.
+	 *
+	 * A tab is as tall as a row of the list and as a small button of the screen, so the strip and what it
+	 * switches are read as the same kind of thing, and it is as wide as its own name rather than a fixed
+	 * box (see {@link #tabWidth}): the two names are the two pages of the collection, so a name of any
+	 * length is given the room it takes instead of being cut off in the middle.
 	 */
-	private static final int UP_LINE_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
+	private static final int TAB_HEIGHT = 16;
+	private static final int TAB_GAP = 2;
+	private static final int TAB_PADDING = 6;
+
+	/**
+	 * Where the two tabs are drawn: under the line counting the discoveries, and over the line that
+	 * frames the top of the list. They are set outside that frame on purpose - the two lines of the
+	 * mod's own drawing frame the list, while the strip says which page the list holds, and a strip
+	 * drawn between the frame and the list would be inside the frame it does not belong to.
+	 */
+	private static final int TABS_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
+
+	/**
+	 * Where the line over the list is drawn, under the strip of tabs, and where the frame of the list
+	 * starts under it: the title, the count, the tabs and that line take the top of the block, each with
+	 * the same small gap under it, and the frame stands {@link #FRAME_PADDING} further down than the
+	 * panel it is drawn around. Both lines are drawn centred on the list rather than across it (see
+	 * {@link #drawLine}); the room they are given is the room their height takes, whatever their width
+	 * comes to, so the list starts at the same place under either of them.
+	 */
+	private static final int UP_LINE_Y = TABS_Y + TAB_HEIGHT + LINE_GAP;
 	private static final int LIST_TOP = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP + FRAME_PADDING;
 
 	/** Where the line under the list is drawn, from the bottom of the panel the list is drawn on. */
@@ -455,6 +525,15 @@ final class BiomeCollectionScreen extends Screen
 	private static final String FORGET_MESSAGE_KEY = "screen.immersive_titles.collection.forget.message";
 	private static final String FORGET_CONFIRM_KEY = "screen.immersive_titles.collection.forget.confirm";
 
+	/**
+	 * What a list with nothing in it is drawn with: the line a filter that kept no biome leaves in the
+	 * panel, and the one the page of the structures is drawn with - that page collects nothing yet, and
+	 * the line is what says so in the place the list of biomes would be (see {@link #drawRows}).
+	 */
+	private static final String EMPTY_KEY = "screen.immersive_titles.collection.empty";
+	private static final String EMPTY_STRUCTURES_KEY =
+			"screen.immersive_titles.collection.structures.empty";
+
 	/** The glyph a biome that was discovered is marked with, from the game's own font. */
 	private static final String CHECK = "\u2714";
 
@@ -534,6 +613,14 @@ final class BiomeCollectionScreen extends Screen
 	private static final int FILTER_OFF_COLOR = 0xFF909090;
 	private static final int REMAINING_COLOR = 0xFFFFFFFF;
 
+	/**
+	 * The name of the tab whose page is shown, and the name of the other one: the page being read is lit
+	 * in the white the title of the screen is written in, and the page that is not being read is set
+	 * back in the grey a filter that is off is drawn in.
+	 */
+	private static final int TAB_COLOR = 0xFFFFFFFF;
+	private static final int TAB_OFF_COLOR = FILTER_OFF_COLOR;
+
 	/** The biomes to list, in the order they are shown in. */
 	private final List<BiomeCatalog.Entry> entries;
 
@@ -565,6 +652,17 @@ final class BiomeCollectionScreen extends Screen
 
 	/** Which biomes the list is showing; the two buttons beside it switch this, see {@link #toggleFilter}. */
 	private Filter filter = Filter.ALL;
+
+	/** Which page of the collection is shown; the two tabs over the list switch this, see {@link #show}. */
+	private Page page = Page.BIOMES;
+
+	/**
+	 * The two buttons that filter the list, held on to so that the page with nothing to filter can take
+	 * them off the screen and put them back: they are built again with every {@link #init()}, and the
+	 * page shown is what decides whether they are there at all (see {@link #showFilters}).
+	 */
+	private Button discoveredFilter;
+	private Button remainingFilter;
 
 	/** Where the list has been told to go, in rows: what the wheel and the keys move. */
 	private double scrollTarget;
@@ -718,6 +816,7 @@ final class BiomeCollectionScreen extends Screen
 		// the slide is measured against the clock, so the frame it starts from is this one
 		lastFrameMs = Util.getMillis();
 
+		addTabs();
 		addFilterButtons();
 
 		addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
@@ -748,10 +847,93 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private void addFilterButtons()
 	{
-		addRenderableWidget(filterButton(true, Filter.DISCOVERED,
-				"screen.immersive_titles.collection.filter_discovered"));
-		addRenderableWidget(filterButton(false, Filter.REMAINING,
-				"screen.immersive_titles.collection.filter_remaining"));
+		discoveredFilter = filterButton(true, Filter.DISCOVERED,
+				"screen.immersive_titles.collection.filter_discovered");
+		remainingFilter = filterButton(false, Filter.REMAINING,
+				"screen.immersive_titles.collection.filter_remaining");
+
+		addRenderableWidget(discoveredFilter);
+		addRenderableWidget(remainingFilter);
+
+		showFilters(page == Page.BIOMES);
+	}
+
+	/**
+	 * Adds the two tabs over the list, the one that shows the biomes and the one that shows the
+	 * structures: buttons of the game, so they hover, click and answer to the narrator like the ones
+	 * that filter the list, with their names drawn over them by {@link #drawTabNames} instead of by the
+	 * game - the same way the two filters are drawn as blank buttons with a mark over them.
+	 *
+	 * The two are laid out from the left end of the list and set apart by {@link #TAB_GAP}, each as wide
+	 * as its own name (see {@link #tabWidth}), so the strip is a strip of two rather than two boxes with
+	 * a name in them, and it starts where the list does.
+	 */
+	private void addTabs()
+	{
+		int x = listLeft;
+
+		for (Page tab : Page.values())
+		{
+			int width = tabWidth(tab);
+
+			addRenderableWidget(Button.builder(Component.empty(), button -> show(tab))
+					.size(width, TAB_HEIGHT)
+					.pos(x, tabY())
+					.createNarration(defaultNarration -> tab.label())
+					.build());
+
+			x += width + TAB_GAP;
+		}
+	}
+
+	/** How wide the tab of one page is drawn: as wide as its name, with {@link #TAB_PADDING} at each end. */
+	private int tabWidth(Page tab)
+	{
+		return font.width(tab.label()) + 2 * TAB_PADDING;
+	}
+
+	/** Where the tabs are drawn, from the top of the block the whole collection is set in. */
+	private int tabY()
+	{
+		return blockTop + TABS_Y;
+	}
+
+	/**
+	 * Shows a page of the collection: the list of biomes, or the page that collects nothing yet.
+	 *
+	 * The page already shown is not shown again - nothing about it has changed - and the two filters go
+	 * with it, since they filter the biomes and not the screen (see {@link #showFilters}). The list is
+	 * sent back to its top, which is where a list that has just been replaced should start, and the
+	 * slide is what carries it there, so a tab that is pressed reads as a page being turned rather than
+	 * as one being cut to.
+	 */
+	private void show(Page page)
+	{
+		if (this.page == page)
+		{
+			return;
+		}
+
+		this.page = page;
+
+		showFilters(page == Page.BIOMES);
+		rebuildShown();
+
+		scrollCurrent = clampScroll(scrollCurrent);
+		scrollTarget = 0.0D;
+	}
+
+	/**
+	 * Puts the two filter buttons on the screen or takes them off it: they belong to the list of biomes,
+	 * so the page that lists no biomes has neither of them. They are hidden and made inert both, since
+	 * a button that is only drawn flat is still a button the mouse finds.
+	 */
+	private void showFilters(boolean shown)
+	{
+		discoveredFilter.visible = shown;
+		discoveredFilter.active = shown;
+		remainingFilter.visible = shown;
+		remainingFilter.active = shown;
 	}
 
 	/** Builds one of the two filter buttons, at the left or the right end of the first row. */
@@ -785,10 +967,21 @@ final class BiomeCollectionScreen extends Screen
 	/**
 	 * Fills {@link #shown} with the biomes the current filter keeps, in the order of the catalog, and
 	 * builds {@link #rows} out of what is left of them (see {@link #rebuildRows}).
+	 *
+	 * The page that collects no biomes has nothing to keep and nothing to build a row from, so both the
+	 * biomes it is showing and the rows of the list are emptied: what that page draws in the panel is a
+	 * line saying that there is nothing there yet (see {@link #drawRows}), which is the one thing it has
+	 * to say - an empty panel is the same picture whether the list is empty or broken.
 	 */
 	private void rebuildShown()
 	{
 		shown.clear();
+
+		if (page != Page.BIOMES)
+		{
+			rows.clear();
+			return;
+		}
 
 		for (BiomeCatalog.Entry entry : entries)
 		{
@@ -893,11 +1086,15 @@ final class BiomeCollectionScreen extends Screen
 
 		// what the line under the title says: how much of the world is found, or - while the list is
 		// every world at once - how much of all of them is, which is that same count read against the
-		// list that holds what any of them found
-		drawCentered(graphics,
-				Component.translatable(inWorld ? PROGRESS_KEY : ALL_WORLDS_PROGRESS_KEY,
-						discoveredCount, entries.size()),
-				blockTop + PROGRESS_Y, MUTED_COLOR);
+		// list that holds what any of them found. It belongs to the biomes, so the page that collects
+		// none of them has no count to give and is left with the room the line would have taken
+		if (page == Page.BIOMES)
+		{
+			drawCentered(graphics,
+					Component.translatable(inWorld ? PROGRESS_KEY : ALL_WORLDS_PROGRESS_KEY,
+							discoveredCount, entries.size()),
+					blockTop + PROGRESS_Y, MUTED_COLOR);
+		}
 
 		// the frame of the list: the game's own button, drawn behind the panel and reaching past it on
 		// every side, with the panel itself drawn over all of it but that ring
@@ -918,8 +1115,14 @@ final class BiomeCollectionScreen extends Screen
 		// the buttons added in init() are among the screen's renderables
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
-		// and their marks are drawn over them, once the buttons themselves are on the screen
-		drawFilterIcons(graphics);
+		// and their marks are drawn over them, once the buttons themselves are on the screen: the names
+		// of the two tabs, and the marks of the two filters when the page those belong to is shown
+		drawTabNames(graphics);
+
+		if (page == Page.BIOMES)
+		{
+			drawFilterIcons(graphics);
+		}
 	}
 
 	/**
@@ -972,7 +1175,8 @@ final class BiomeCollectionScreen extends Screen
 	{
 		if (rows.isEmpty())
 		{
-			drawCentered(graphics, Component.translatable("screen.immersive_titles.collection.empty"),
+			drawCentered(graphics, Component.translatable(
+					page == Page.BIOMES ? EMPTY_KEY : EMPTY_STRUCTURES_KEY),
 					listTop + (listBottom - listTop - font.lineHeight) / 2, MUTED_COLOR);
 			return;
 		}
@@ -1268,6 +1472,33 @@ final class BiomeCollectionScreen extends Screen
 	{
 		graphics.text(font, mark, x + (size - font.width(mark)) / 2,
 				y + (size - font.lineHeight) / 2, color, true);
+	}
+
+	/**
+	 * Draws the name of each tab inside it: the name of the page that is shown in the white the title is
+	 * written in, and the name of the other one dim.
+	 *
+	 * A name is lit while its page is shown and dim while it is not, which is the same way the two
+	 * buttons beside the list say which of the two filters is on (see {@link #drawFilterIcons}) - so a
+	 * strip whose page is being read stands out of it, and the tab that would take the player elsewhere
+	 * is the one that is set back. What the two tabs are not is two kinds of button: the buttons below
+	 * them are the game's own, and a name drawn over one of them is all this screen adds to it.
+	 */
+	private void drawTabNames(GuiGraphicsExtractor graphics)
+	{
+		int x = listLeft;
+
+		for (Page tab : Page.values())
+		{
+			Component name = tab.label();
+			int width = tabWidth(tab);
+
+			graphics.text(font, name, x + (width - font.width(name)) / 2,
+					tabY() + (TAB_HEIGHT - font.lineHeight) / 2,
+					tab == page ? TAB_COLOR : TAB_OFF_COLOR, true);
+
+			x += width + TAB_GAP;
+		}
 	}
 
 	/** Where the filter button of one side of the list starts, in gui pixels. */

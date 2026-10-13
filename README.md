@@ -148,6 +148,19 @@ back to every biome. Each carries the mark its filter is about - the check the l
 biome, and a question mark for one that is still waiting - dim while off and lit while on, and says
 what it does in a tooltip.
 
+The collection is read as two pages, and the two tabs over the list are which one: `Biomes`, which is
+the list this screen has always been, and `Structures`, which no world writes down yet. The second
+page is the interface of a collection still to come and nothing else: the title, the tabs, the frame
+and the button that closes the screen are the same on both pages, while the line counting the
+discoveries and the two filters belong to the biomes and step aside while that page is shown, since
+neither has anything to count or to filter there, and where the list of biomes would be, the page says
+that nothing is collected there rather than standing empty. A tab is as tall as a row of the list and
+as wide as its own name, the two start at the left end of the list, and the name of the page being
+read is lit in the white of the title while the other one is dim in the grey a filter that is off is
+drawn in - the same way those two filters say which of them is on. The title over the whole screen
+names the collection itself rather than one of its two pages, since it is the collection that holds
+both and the tabs are what name the pages.
+
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
 resource pack that redraws them: every biome is drawn as one of the game's buttons, a biome that was
 found with its name in full white and a check beside it, a biome whose reveal is still waiting dimmed
@@ -190,7 +203,8 @@ dimension - and not a drawing.
 
 The collection is a block of the screen rather than the screen itself. The list is given at most half
 of the screen's height and 300 gui pixels of its width, the rows sit a pixel closer together, and the
-block - the title, the count, the two lines and the button - is set in the room the list leaves over:
+block - the title, the count, the tabs, the two lines and the button - is set in the room the list
+leaves over:
 half of that room goes over the title and half under the button that closes the screen, so the two
 margins come out the same to the pixel, and a screen of an odd height has the pixel no halving can
 place taken off the list rather than handed to one of them. The same is done across the screen - the

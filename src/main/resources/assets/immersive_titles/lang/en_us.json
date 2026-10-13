@@ -16,5 +16,8 @@
   "screen.immersive_titles.collection.forget.title": "Forget this biome?",
   "screen.immersive_titles.collection.progress": "%s of %s biomes discovered",
   "screen.immersive_titles.collection.progress_all": "%s of %s biomes discovered in your worlds",
-  "screen.immersive_titles.collection.title": "Biome Collection"
+  "screen.immersive_titles.collection.structures.empty": "Structures are not collected yet",
+  "screen.immersive_titles.collection.tab.biomes": "Biomes",
+  "screen.immersive_titles.collection.tab.structures": "Structures",
+  "screen.immersive_titles.collection.title": "Collection"
 }
