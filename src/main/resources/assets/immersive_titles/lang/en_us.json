@@ -10,7 +10,7 @@
   "screen.immersive_titles.collection.forget.confirm": "Forget",
   "screen.immersive_titles.collection.forget.message": "The reveal of %s will play again the next time you enter it.",
   "screen.immersive_titles.collection.forget.title": "Forget this biome?",
-  "screen.immersive_titles.collection.no_world": "Open a world to see its collection",
   "screen.immersive_titles.collection.progress": "%s of %s biomes discovered",
+  "screen.immersive_titles.collection.progress_all": "%s of %s biomes discovered in your worlds",
   "screen.immersive_titles.collection.title": "Biome Collection"
 }

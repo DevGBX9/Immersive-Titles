@@ -27,6 +27,7 @@ package com.devgx9.wanderers_titles.client;
 
 import com.devgx9.wanderers_titles.WandererTitles;
 import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -48,7 +49,8 @@ import java.util.Set;
 
 /**
  * The collection of biomes: every biome the game in front of the player has, with a check on the
- * ones that already had their reveal in this world.
+ * ones that already had their reveal in this world - or, when the mod list of Mod Menu is the way
+ * in, every biome any of the player's worlds has found, counted across all of them at once.
  *
  * It is the list side of what the mod already does. A reveal is remembered per world (see
  * {@link WorldIdentity} and {@link DiscoveredBiomes}), and what a world remembers is the same set
@@ -76,9 +78,10 @@ import java.util.Set;
  * and follows a resource pack that redraws them - everything but the two lines the list is framed
  * with, which are the mod's own drawing:
  *
- * - every biome is a row drawn with the game's own button sprite, and a biome that was discovered
- *   is drawn with the sprite the game draws a button it will not let anyone press in, dimmed with
- *   its name and marked with a check,
+ * - every biome is a row drawn with the game's own button sprite, a biome that was found with its
+ *   name in full white and a check beside it, and one whose reveal is still waiting with the sprite
+ *   the game draws a button it will not let anyone press in, dimmed with its name - so what has been
+ *   found is what stands out and what is left to find is what stays out of the way,
  * - the panel the rows sit on is the colour of the game's own list background inside a world, which
  *   is black at 44% - measured from {@code inworld_menu_list_background.png}, the one the game's
  *   lists are drawn with,
@@ -135,17 +138,20 @@ import java.util.Set;
  * the screen: the key is consumed on the client tick rather than in the screen, so the same press
  * that closes the screen cannot open it again on the way out. The same screen is what the mod list
  * of Mod Menu opens, since it is the one screen this mod has (see {@link ModMenuIntegration}), and
- * from there it can be built with no world behind it at all: the biomes listed are then the ones the
- * mod itself knows (see {@link BiomeCatalog#known()}) and the line under the title says there is no
- * world rather than claiming that none of them were found - and nothing there offers to forget a
- * biome, since a discovery is a discovery of a world.
+ * that way in asks a different question than the key does: the key shows a world, while the mod list
+ * shows the collection itself - every biome found in any of the player's worlds, read together out
+ * of the files each world keeps its own discoveries in (see {@link DiscoveredBiomes#loadAll}), with
+ * no world having to be open behind it. What is checked there is what was found anywhere, the line
+ * under the title counts all of it, and nothing offers to forget a biome: a discovery is a discovery
+ * of a world, and a row of that list is a biome found somewhere rather than in the world the player
+ * is in, so there is no one file to take it back out of (see {@link #canForget}).
  */
 final class BiomeCollectionScreen extends Screen
 {
 	/** Which biomes the list is showing: all of them, or only one end of them. */
 	private enum Filter
 	{
-		/** Every biome of the world, discovered or not. */
+		/** Every biome the list has, found or not. */
 		ALL,
 		/** Only the biomes that already had their reveal here. */
 		DISCOVERED,
@@ -358,8 +364,12 @@ final class BiomeCollectionScreen extends Screen
 	/** How far the text of a row is kept away from the right end of it. */
 	private static final int TEXT_MARGIN = 6;
 
-	/** The line the screen says in place of the count while there is no world to count. */
-	private static final String NO_WORLD_KEY = "screen.immersive_titles.collection.no_world";
+	/**
+	 * The line under the title that counts what is found, of one world and of every world at once: the
+	 * same count read against the list of a world and against the list of all of them.
+	 */
+	private static final String PROGRESS_KEY = "screen.immersive_titles.collection.progress";
+	private static final String ALL_WORLDS_PROGRESS_KEY = "screen.immersive_titles.collection.progress_all";
 
 	/** What the button that forgets a biome says it does, and what the warning about it says. */
 	private static final String FORGET_KEY = "screen.immersive_titles.collection.forget";
@@ -381,14 +391,18 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private static final String FORGET_MARK = "X";
 
-	/** The button of the game a row of a biome still to find is drawn with. */
+	/** The button of the game a row of a biome that was found is drawn with. */
 	private static final Identifier BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button");
 
 	/**
-	 * The button of the game a row of a biome that was found is drawn with: the one it draws a
-	 * button it will not let anyone press in, which is a flat, dimmed panel instead of a button.
+	 * The button of the game a row whose reveal is still waiting is drawn with: the one the game draws
+	 * a button it will not let anyone press in with, which is a flat, dimmed panel instead of a
+	 * button. A biome that still has its reveal to come is the one thing in the list there is nothing
+	 * to do with yet, so it is drawn the way the game draws what cannot be pressed - which is also
+	 * what keeps a long list of them from drawing the eye away from the ones that were found.
 	 */
-	private static final Identifier DISCOVERED_BUTTON_SPRITE = Identifier.withDefaultNamespace("widget/button_disabled");
+	private static final Identifier WAITING_BUTTON_SPRITE =
+			Identifier.withDefaultNamespace("widget/button_disabled");
 
 	/**
 	 * The button a row of a discovered biome is given while the mouse is on that row: a button of the
@@ -414,8 +428,9 @@ final class BiomeCollectionScreen extends Screen
 
 	private static final int TITLE_COLOR = 0xFFFFFFFF;
 	private static final int MUTED_COLOR = 0xFFA0A0A0;
-	private static final int NAME_COLOR = 0xFFFFFFFF;
-	private static final int DISCOVERED_COLOR = 0xFFA0A0A0;
+	/** The name of a biome that was found, and the dimmed name of one that is still waiting. */
+	private static final int FOUND_COLOR = 0xFFFFFFFF;
+	private static final int WAITING_COLOR = 0xFFA0A0A0;
 	private static final int CHECK_COLOR = 0xFF55FF55;
 	private static final int SOURCE_COLOR = 0xFF828282;
 
@@ -439,10 +454,11 @@ final class BiomeCollectionScreen extends Screen
 	private final List<BiomeCatalog.Entry> shown = new ArrayList<>();
 
 	/**
-	 * The biomes of the world that already had their reveal, i.e. the ones that are checked. It is a
-	 * copy of what the mod remembers, and it is this screen's own: a biome that is forgotten is taken
-	 * out of it here, while what the mod remembers is changed through {@link TitleOverlay#forgetBiome}
-	 * and nothing else.
+	 * The biomes that already had their reveal, i.e. the ones that are checked: the ones of the world
+	 * the screen is listing, or - while it is listing every world at once - the ones found in any of
+	 * them (see {@link #ofEveryWorld}). It is a copy of what the mod remembers, and it is this
+	 * screen's own: a biome that is forgotten is taken out of it here, while what the mod remembers is
+	 * changed through {@link TitleOverlay#forgetBiome} and nothing else.
 	 */
 	private final Set<String> discovered;
 
@@ -477,10 +493,13 @@ final class BiomeCollectionScreen extends Screen
 	private int listBottom;
 
 	/**
-	 * Whether the screen is listing a world at all. It is opened from the mod's own key in a world,
-	 * and from the mod list of Mod Menu, where a world may not be open: without one there is no
-	 * registry to read the biomes of, no discoveries to mark, and the screen says so in the place of
-	 * the line that counts them (see {@link #NO_WORLD_KEY}).
+	 * Whether the screen is listing one world or every world at once. The mod's own key opens it in a
+	 * world, where the biomes are that world's registry's and the discoveries are the ones that world
+	 * remembers, and the mod list of Mod Menu opens the collection of all of them, which is what this
+	 * is false for: no world has to be open there at all, the biomes are the ones the mod knows
+	 * together with the ones found anywhere (see {@link BiomeCatalog#known(Set)}), what is checked is
+	 * what was found in any world, and the line under the title counts all of that rather than one
+	 * world.
 	 */
 	private final boolean inWorld;
 
@@ -491,14 +510,49 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private final Screen parent;
 
+	/**
+	 * The collection of the world the player is in, which is what the mod's own key opens: every biome
+	 * that world has registered, and the ones that already had their reveal in it.
+	 */
 	BiomeCollectionScreen(ClientLevel level, Set<String> discovered, Screen parent)
+	{
+		this(BiomeCatalog.all(level), discovered, true, parent);
+	}
+
+	/**
+	 * The collection of every world at once, which is what the mod list of Mod Menu opens.
+	 *
+	 * No world has to be open for it, and none is left out while one is: the discoveries of every
+	 * world this client has written down are read together (see {@link DiscoveredBiomes#loadAll}), and
+	 * the biomes they name are listed with the ones the mod knows (see {@link BiomeCatalog#known(Set)}),
+	 * so the list holds what was found in any of the player's worlds. The world that is open right now
+	 * is added to that set on top of the files, since a world whose own folder cannot be reached keeps
+	 * its discoveries in the session only (see {@link TitleOverlay#discoveredBiomes}).
+	 *
+	 * What the screen is not, built this way, is a world of its own - which is why a row of it never
+	 * offers to forget anything (see {@link #canForget}).
+	 */
+	static BiomeCollectionScreen ofEveryWorld(Minecraft client, Screen parent)
+	{
+		Set<String> found = DiscoveredBiomes.loadAll();
+		found.addAll(TitleOverlay.discoveredBiomes());
+
+		return new BiomeCollectionScreen(BiomeCatalog.known(found), found, false, parent);
+	}
+
+	/**
+	 * Builds the screen out of what it is listing: the biomes to show, the ones of them that already
+	 * had their reveal, and whether that list is one world's or every world's (see {@link #inWorld}).
+	 */
+	private BiomeCollectionScreen(List<BiomeCatalog.Entry> entries, Set<String> discovered,
+			boolean inWorld, Screen parent)
 	{
 		super(Component.translatable("screen.immersive_titles.collection.title"));
 
 		this.parent = parent;
 
-		this.inWorld = level != null;
-		this.entries = level == null ? BiomeCatalog.known() : BiomeCatalog.all(level);
+		this.inWorld = inWorld;
+		this.entries = entries;
 		this.discovered = new HashSet<>(discovered);
 
 		int found = 0;
@@ -625,12 +679,12 @@ final class BiomeCollectionScreen extends Screen
 
 		drawCentered(graphics, title, TITLE_Y, TITLE_COLOR);
 
-		// what the line under the title says: how much of the world is found, or - while there is no
-		// world - that there is no world to count, so an empty row of checks is not read as a bug
+		// what the line under the title says: how much of the world is found, or - while the list is
+		// every world at once - how much of all of them is, which is that same count read against the
+		// list that holds what any of them found
 		drawCentered(graphics,
-				inWorld ? Component.translatable("screen.immersive_titles.collection.progress",
-						discoveredCount, entries.size())
-						: Component.translatable(NO_WORLD_KEY),
+				Component.translatable(inWorld ? PROGRESS_KEY : ALL_WORLDS_PROGRESS_KEY,
+						discoveredCount, entries.size()),
 				PROGRESS_Y, MUTED_COLOR);
 
 		// the frame of the list: the game's own button, drawn behind the panel and reaching past it on
@@ -781,10 +835,13 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws one biome: the game's own button, its name, a check and a dimmed name once it was
-	 * discovered, and either the id of the mod it comes from or - while the mouse is on a row of a
-	 * discovered biome - the button that forgets it, which takes the place of that id so that a long
-	 * list from a modpack stays readable and the button keeps to the end of its own row.
+	 * Draws one biome: the game's own button, its name, and a check on the ones that were found, with
+	 * the row and the name of a biome whose reveal is still waiting dimmed - so the list reads as what
+	 * has been found, with what is left to find set back from it.
+	 *
+	 * Beside the name sits either the id of the mod the biome comes from or - while the mouse is on a
+	 * row of a biome that was found - the button that forgets it, which takes the place of that id so
+	 * that a long list from a modpack stays readable and the button keeps to the end of its own row.
 	 */
 	private void drawRow(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int index, int y,
 			int rowRight, int hovered, int mouseX, int mouseY)
@@ -793,7 +850,7 @@ final class BiomeCollectionScreen extends Screen
 		int textY = y + (ROW_HEIGHT - font.lineHeight) / 2;
 
 		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
-				found ? DISCOVERED_BUTTON_SPRITE : BUTTON_SPRITE,
+				found ? BUTTON_SPRITE : WAITING_BUTTON_SPRITE,
 				listLeft, y, rowRight - listLeft, ROW_HEIGHT);
 
 		if (found)
@@ -801,7 +858,7 @@ final class BiomeCollectionScreen extends Screen
 			graphics.text(font, CHECK, listLeft + CHECK_X, textY, CHECK_COLOR, true);
 		}
 
-		graphics.text(font, entry.name(), listLeft + NAME_X, textY, found ? DISCOVERED_COLOR : NAME_COLOR, true);
+		graphics.text(font, entry.name(), listLeft + NAME_X, textY, found ? FOUND_COLOR : WAITING_COLOR, true);
 
 		if (found && canForget() && index == hovered)
 		{
@@ -817,9 +874,11 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Whether a biome can be forgotten in this screen at all: it can while the screen is listing a
-	 * world, since a discovery is a discovery of a world and there is nothing to take back without
-	 * one, which is the case the Mod Menu way in can open the screen in.
+	 * Whether a biome can be forgotten in this screen at all: it can while the screen is listing one
+	 * world, since a discovery is a discovery of a world and the file to take it out of is that
+	 * world's. The collection the mod list opens is the case where it cannot - what is listed there
+	 * was found in whichever of the player's worlds it was found in, and this screen is not holding
+	 * one of them (see {@link #ofEveryWorld}).
 	 */
 	private boolean canForget()
 	{

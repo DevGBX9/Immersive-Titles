@@ -34,8 +34,10 @@ import net.minecraft.world.level.biome.Biome;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Every biome of the game, in the order the collection screen puts them in.
@@ -194,22 +196,42 @@ final class BiomeCatalog
 	}
 
 	/**
-	 * The biomes the mod itself knows, in display order: the ones of {@link #DISCOVERY_ORDER}, each
-	 * named the way the game names a biome.
+	 * The biomes the mod itself knows, together with the ones in {@code extra} that it does not: the
+	 * ones of {@link #DISCOVERY_ORDER}, each named the way the game names a biome, and then whatever
+	 * the caller has that is not among them, named the same way and shown in the same order.
 	 *
 	 * It is what the collection has to list while there is no world to ask - from the mod list, where
-	 * no world may be open at all (see {@link ModMenuIntegration}) - and it is deliberately only the
-	 * mod's own list: the biomes of a world are its registry's, and without a world there is none to
-	 * read, so what is shown is what the mod tracks rather than a guess at what a world would hold.
-	 * The names still come from the game, so every one of them is translated like any other.
+	 * no world may be open at all (see {@link ModMenuIntegration}) - and it is deliberately only what
+	 * the mod tracks plus what it is handed: the biomes of a world are its registry's, and without a
+	 * world there is none to read, so what is shown is a list of what the mod knows rather than a
+	 * guess at what a world would hold. The names still come from the game, so every one of them is
+	 * translated like any other.
+	 *
+	 * What {@code extra} is for is the collection of every world at once: the biomes a player has
+	 * already found somewhere are handed in here (see {@link DiscoveredBiomes#loadAll}), so a biome
+	 * from a mod that is not installed any more, or one this order was written before, is listed with
+	 * the rest instead of being missing. That is the point of it: the collection of a player's worlds
+	 * is a list of what they have found, and something they have found cannot be the one thing the
+	 * list does not have.
 	 */
-	static List<Entry> known()
+	static List<Entry> known(Set<String> extra)
 	{
-		List<Entry> entries = new ArrayList<>(DISCOVERY_ORDER.size());
+		List<Entry> entries = new ArrayList<>(DISCOVERY_ORDER.size() + extra.size());
+		Set<String> listed = new HashSet<>(DISCOVERY_ORDER);
 
 		for (String id : DISCOVERY_ORDER)
 		{
 			entries.add(new Entry(id, BiomeNames.name(id), rank(id)));
+		}
+
+		// a set is in no order of its own, so what is added here is sorted with everything else at
+		// the end of this method rather than in the order it happened to be found in
+		for (String id : extra)
+		{
+			if (listed.add(id))
+			{
+				entries.add(new Entry(id, BiomeNames.name(id), rank(id)));
+			}
 		}
 
 		entries.sort(DISPLAY_ORDER);

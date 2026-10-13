@@ -69,14 +69,43 @@ final class DiscoveredBiomes
 	 */
 	static Set<String> load(WorldIdentity world)
 	{
+		return world == null ? new HashSet<>() : read(world.file());
+	}
+
+	/**
+	 * Every biome that already had its reveal in any world this client knows of, read from all the
+	 * files the mod has written down (see {@link WorldIdentity#discoveredFiles}).
+	 *
+	 * It is the union of what every world found, which is what the collection is built from when it is
+	 * opened from the mod list rather than from a world (see {@link BiomeCollectionScreen}): a biome
+	 * that had its reveal once, in any world the player has played, is a biome they have seen, and
+	 * which world it was found in is no part of the question here - that is what the file of one world
+	 * answers, and it is the only thing that can, since a discovery belongs to the world it was made
+	 * in.
+	 *
+	 * Reading is best effort for each file on its own (see {@link #read}), so one file this client
+	 * cannot read is one world missing from the list and not an empty list.
+	 */
+	static Set<String> loadAll()
+	{
 		Set<String> discovered = new HashSet<>();
 
-		if (world == null)
+		for (Path file : WorldIdentity.discoveredFiles())
 		{
-			return discovered;
+			discovered.addAll(read(file));
 		}
 
-		Path file = world.file();
+		return discovered;
+	}
+
+	/**
+	 * The biomes written down in {@code file}, or an empty set while it is not there or cannot be
+	 * read: a mod has no business interrupting play over a file it cannot parse, so a failure here is
+	 * a line in the log and the discoveries of that one file stay unknown.
+	 */
+	private static Set<String> read(Path file)
+	{
+		Set<String> discovered = new HashSet<>();
 
 		if (!Files.isRegularFile(file))
 		{
@@ -101,8 +130,7 @@ final class DiscoveredBiomes
 		}
 		catch (IOException | RuntimeException e)
 		{
-			WandererTitles.LOGGER.warn("Could not read the biomes discovered in {} from {}",
-					world.id(), file, e);
+			WandererTitles.LOGGER.warn("Could not read the biomes discovered in {}", file, e);
 		}
 
 		return discovered;

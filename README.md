@@ -106,15 +106,20 @@ kept in `config/immersive_titles/servers`, one file per address the player joine
 
 The list of everything there is to find is a key of the mod's own, `K` by default and rebindable in
 the controls screen: it opens a screen with every biome the world has, the ones already discovered
-checked and dimmed, and a line at the top counting them. Opening it pauses the game exactly like the
-escape menu does, and the world behind it is blurred the same way.
+checked and the ones still waiting dimmed, and a line at the top counting them. Opening it pauses the
+game exactly like the escape menu does, and the world behind it is blurred the same way.
 
 The same screen is what clicking the mod in [Mod Menu](https://modrinth.com/mod/modmenu) opens: it is
-the only screen the mod has, so it is the one the mod list offers. Mod Menu is not a dependency -
-a player without it simply has the mod's own key - and the one thing that differs between the two ways
-in is what is behind them: the key is read in a world, while the mod list can be opened from the title
-screen, where the mod lists the biomes it knows and says there is no world to count rather than
-showing an empty list as if nothing had ever been found.
+the only screen the mod has, so it is the one the mod list offers. Mod Menu is not a dependency - a
+player without it simply has the mod's own key - and the two ways in do not show the same thing. The
+key shows the world in front of the player. The mod list shows the collection itself, over every world
+the player has at once: what each of those worlds remembers is read together - the world folders of
+the worlds they host themselves, and the config files of the servers they have joined - so a biome
+found in any of them is checked here, wherever it was found. That is also why nothing there offers to
+forget a biome: forgetting a discovery takes it out of the file of one world, and this list is not one
+world's. The line under the title counts what was found across all of them, in the same words the
+world view counts one world with, and a biome that was found somewhere is on that list even when the
+mod's own order has never heard of it, since the list is what was found rather than what the mod knows.
 
 The biomes are listed from the ones a player meets while walking around to the ones that take a
 portal, a long trip or a lucky world - mushroom fields, ice spikes and the pale garden are far down
@@ -131,7 +136,8 @@ what it does in a tooltip.
 
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
 resource pack that redraws them: every biome is drawn as one of the game's buttons, a biome that was
-discovered is drawn as one of its disabled buttons, dimmed and checked, the panel behind the list is
+found with its name in full white and a check beside it, a biome whose reveal is still waiting dimmed
+with the sprite the game draws a button it will not let anyone press in, the panel behind the list is
 the colour the game's own lists sit on inside a world, the frame around that panel is one of the
 game's buttons drawn behind it a few pixels wider on every side, and the scrollbar is the one the
 game's own lists are scrolled with. The rows are drawn rather than made of buttons that work, because
@@ -148,8 +154,9 @@ confirmation screen, with the biome's name and what forgetting it means. Forgett
 out of the world - the line is dropped from the file that world's discoveries are written to, and
 from what the session remembers - so the next time the biome is entered, the full reveal plays again.
 That is for a player who wants a reveal back: a biome walked into by accident, a file edited by hand,
-a discovery that should not have been one. Nothing offers to forget anything while there is no world
-being played, which is the way in the mod list can open the screen from the title screen.
+a discovery that should not have been one. Nothing offers to forget anything in the collection the mod
+list opens, whether a world is being played or not: a row of that list is a biome found in whichever
+of the player's worlds it was found in, and the file to take it out of is not this screen's to pick.
 
 The one thing in the screen that is not the game's own is the pair of lines the list is framed with,
 over it and under it. They are the mod's own drawing - two white ornaments on a flat sheet, cut out of

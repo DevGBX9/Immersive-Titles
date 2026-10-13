@@ -40,12 +40,14 @@ import net.minecraft.client.gui.screens.Screen;
  * opens. So the two are the same screen, and the mod list is simply a second way in - the first
  * being the mod's own key (see {@link TitleOverlay}).
  *
- * The one thing that is not the same about the two ways in is what is behind them. The key is only
+ * What the two ways in do not ask the same thing for is whose discoveries they show. The key is only
  * read in a world, where the world's own registry holds the biomes and the world's own file holds
- * what was found in it; the mod list can be opened from the title screen, where neither exists. The
- * screen is built for whichever of the two is true, and says which one it is (see
- * {@link BiomeCollectionScreen}), rather than refusing to open or showing an empty list as if it
- * were a broken one.
+ * what was found in it, and the list it opens is that world's; the mod list can be opened from the
+ * title screen, where no world exists at all, and what it opens is the collection itself - the biomes
+ * found in every world the player has, read together out of all the files the mod has written down
+ * (see {@link BiomeCollectionScreen#ofEveryWorld}). One screen answers both, and the way in is what
+ * decides whether the answer is about one world or about all of them, rather than the screen refusing
+ * to open or showing an empty list as if it were a broken one.
  *
  * Mod Menu is not a dependency of the mod: it is compiled against and declared as an optional
  * dependency in the build (see common.gradle), and the entrypoint below is only ever read by Mod
@@ -58,8 +60,9 @@ public class ModMenuIntegration
 {
 	//#if MC >= 26.3
 	/**
-	 * The screen the mod list opens: the collection of the world in front of the player, with the
-	 * discoveries of that world, or the biomes the mod knows while there is no world.
+	 * The screen the mod list opens: the collection of every world at once, which is what the mod list
+	 * is asked for - not the world in front of the player, which the mod's own key already shows (see
+	 * {@link BiomeCollectionScreen#ofEveryWorld}).
 	 */
 	@Override
 	public ConfigScreenFactory<?> getModConfigScreenFactory()
@@ -68,12 +71,13 @@ public class ModMenuIntegration
 	}
 
 	/**
-	 * The collection for {@code client}, as a screen that closes back into {@code parent} - the mod
-	 * list it was opened from, whether that list was opened in a world or on the title screen.
+	 * The collection of every world {@code client} has written discoveries down for, as a screen that
+	 * closes back into {@code parent} - the mod list it was opened from, whether that list was opened
+	 * in a world or on the title screen.
 	 */
 	private static Screen collectionOf(Minecraft client, Screen parent)
 	{
-		return new BiomeCollectionScreen(client.level, TitleOverlay.discoveredBiomes(), parent);
+		return BiomeCollectionScreen.ofEveryWorld(client, parent);
 	}
 	//#endif
 }

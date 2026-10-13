@@ -98,8 +98,10 @@ import java.util.Set;
  * the game font in bold and it fades in, holds and fades out in the lower left corner.
  *
  * The mod's own key opens the collection of biomes (see {@link BiomeCollectionScreen}): every biome
- * of the world, with the ones that already had their reveal checked and dimmed, so that what the
- * reveals have been remembering per world is something the player can look at.
+ * of the world, with the ones that already had their reveal checked, so that what the reveals have
+ * been remembering per world is something the player can look at - and the mod list of Mod Menu
+ * opens the same collection over every world the player has played at once, rather than over the one
+ * they are in (see {@link ModMenuIntegration}).
  *
  * The big reveal opens with a short sound of the plate arriving, see {@link #REVEAL_SOUND}. Both
  * titles stand still while the pause menu is open over the world, and only then: the menu the player

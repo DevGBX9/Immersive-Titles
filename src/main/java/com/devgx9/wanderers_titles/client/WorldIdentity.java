@@ -34,9 +34,12 @@ import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -68,6 +71,9 @@ final class WorldIdentity
 {
 	/** The folder a hosted world keeps its own data in, inside the world's own folder. */
 	private static final String WORLD_FOLDER = "immersive_titles";
+
+	/** The folder of the game directory the worlds a player hosts themselves are kept in. */
+	private static final String SAVES_FOLDER = "saves";
 
 	/** Below the config directory: where the discoveries of a world on a server are kept. */
 	private static final String SERVERS_FOLDER = "immersive_titles/servers";
@@ -106,6 +112,69 @@ final class WorldIdentity
 	Path file()
 	{
 		return file;
+	}
+
+	/**
+	 * Every file the discoveries of a world have been written to that is on this client: one per
+	 * world the player hosts themselves, in the folder the game keeps its saves in, and one per
+	 * address they have joined a server with, under {@link #SERVERS_FOLDER}.
+	 *
+	 * It is everything the mod has ever written down about what was found, which is what a collection
+	 * of every world at once is read from (see {@link DiscoveredBiomes#loadAll}). Nothing here says
+	 * which world a file belongs to: a caller is after the union of them, and which world found what
+	 * stays in the file of that world, where the id of the world is the name of its folder.
+	 *
+	 * Only the files that are actually there, and a folder that is not there is not a fault: a client
+	 * that has never joined a server has no folder of server worlds to list, and a client that has
+	 * never played a world of its own has no saves. A folder that is there and cannot be listed is
+	 * worth a line in the log, since that is a client whose collection is quietly short.
+	 */
+	static List<Path> discoveredFiles()
+	{
+		List<Path> files = new ArrayList<>();
+
+		Path saves = FabricLoader.getInstance().getGameDir().resolve(SAVES_FOLDER);
+
+		if (Files.isDirectory(saves))
+		{
+			try (DirectoryStream<Path> worlds = Files.newDirectoryStream(saves))
+			{
+				for (Path world : worlds)
+				{
+					Path discovered = world.resolve(WORLD_FOLDER).resolve(DISCOVERED_FILE);
+
+					if (Files.isRegularFile(discovered))
+					{
+						files.add(discovered);
+					}
+				}
+			}
+			catch (IOException | RuntimeException e)
+			{
+				WandererTitles.LOGGER.warn("Could not list the discoveries of the worlds in {}", saves, e);
+			}
+		}
+
+		// the discoveries of a world on a server are one file per address, all of them in one folder,
+		// and every file in there is one of them: the folder holds nothing else
+		Path servers = FabricLoader.getInstance().getConfigDir().resolve(SERVERS_FOLDER);
+
+		if (Files.isDirectory(servers))
+		{
+			try (DirectoryStream<Path> addresses = Files.newDirectoryStream(servers, "*.txt"))
+			{
+				for (Path discovered : addresses)
+				{
+					files.add(discovered);
+				}
+			}
+			catch (IOException | RuntimeException e)
+			{
+				WandererTitles.LOGGER.warn("Could not list the discoveries of the servers in {}", servers, e);
+			}
+		}
+
+		return files;
 	}
 
 	/**
