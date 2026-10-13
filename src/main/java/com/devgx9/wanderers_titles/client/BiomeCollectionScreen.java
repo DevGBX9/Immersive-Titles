@@ -637,6 +637,14 @@ final class BiomeCollectionScreen extends Screen
 	 * drawn at is instead one number - the height - with the width that height comes to, so the line
 	 * keeps its own proportions on any screen, and a narrower list simply has a narrower list with the
 	 * same line centred over it.
+	 *
+	 * The blit it uses is the one that takes a size on the screen and the size of the region it takes
+	 * from the texture as two separate pairs. The screen has a shorter blit as well, which is handed
+	 * one pair of sizes and takes them to mean both at once: it copies that much of the texture, from
+	 * its corner, at its own size. That one is for drawing a piece of a picture as it is, and handing
+	 * it a size smaller than the texture quietly draws the top left corner of the drawing - a quarter
+	 * of an ornament blown up by the gui scale, which is exactly what this screen showed before its
+	 * lines were drawn the whole way across.
 	 */
 	private void drawLine(GuiGraphicsExtractor graphics, Identifier texture, int textureWidth,
 			int textureHeight, int y)
@@ -646,7 +654,7 @@ final class BiomeCollectionScreen extends Screen
 		int x = listLeft + (listRight - listLeft - drawnWidth) / 2;
 
 		graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0.0F, 0.0F,
-				drawnWidth, drawnHeight, textureWidth, textureHeight);
+				drawnWidth, drawnHeight, textureWidth, textureHeight, textureWidth, textureHeight);
 	}
 
 	/** Draws {@code text} centred on the screen, at {@code y}. */
