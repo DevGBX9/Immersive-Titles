@@ -107,11 +107,19 @@ what it does in a tooltip.
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
 resource pack that redraws them: every biome is drawn as one of the game's buttons, a biome that was
 discovered is drawn as one of its disabled buttons, dimmed and checked, the panel behind the list is
-the colour the game's own lists sit on inside a world, and the two lines framing it and the scrollbar
-are the ones the game's own lists are framed and scrolled with. The rows are drawn rather than made
-of buttons that work, because there is nothing to press on a biome: they cannot be clicked, hovered
-into a highlight or focused. The scrollbar, on the other hand, is a scrollbar: it can be taken with
-the mouse and dragged, and the list follows the hand exactly.
+the colour the game's own lists sit on inside a world, and the scrollbar is the one the game's own
+lists are scrolled with. The rows are drawn rather than made of buttons that work, because there is
+nothing to press on a biome: they cannot be clicked, hovered into a highlight or focused. The
+scrollbar, on the other hand, is a scrollbar: it can be taken with the mouse and dragged, and the
+list follows the hand exactly.
+
+The one thing in the screen that is not the game's own is the pair of lines the list is framed with,
+over it and under it. They are the mod's own drawing - two white ornaments on a flat sheet, cut out of
+it so that only the lines are left, and written into the mod's `textures/gui` at twice the height
+they are drawn in. The list is drawn between them as if they were the top and the bottom of its
+frame, which is what tells the player they are looking at a collection of things rather than at a
+menu. `templates/collection_frame` holds the drawings themselves and the script that cuts them out
+of the sheet they were made on, so the texture the mod ships can be remade from them.
 
 Scrolling is smooth. The wheel and the keys say where the list is going, and the drawn list eases
 after them, so the rows slide up and down instead of jumping. The slide is measured against the clock

@@ -25,6 +25,7 @@
 
 package com.devgx9.wanderers_titles.client;
 
+import com.devgx9.wanderers_titles.WandererTitles;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -61,7 +62,8 @@ import java.util.Set;
  * instead of a scroll through everything already found (see {@link #toggleFilter}).
  *
  * Everything the screen is made of is the game's own, so it looks like the menus it sits next to
- * and follows a resource pack that redraws them:
+ * and follows a resource pack that redraws them - everything but the two lines the list is framed
+ * with, which are the mod's own drawing:
  *
  * - every biome is a row drawn with the game's own button sprite, and a biome that was discovered
  *   is drawn with the sprite the game draws a button it will not let anyone press in, dimmed with
@@ -69,13 +71,18 @@ import java.util.Set;
  * - the panel the rows sit on is the colour of the game's own list background inside a world, which
  *   is black at 44% - measured from {@code inworld_menu_list_background.png}, the one the game's
  *   lists are drawn with,
- * - the two lines framing the list are the separators the game's own lists are framed with
- *   ({@link Screen#INWORLD_HEADER_SEPARATOR}),
+ * - the two lines framing the list are the mod's own, one over the list and one under it, drawn
+ *   across the width of the list (see {@link #UP_LINE}),
  * - the scrollbar is the game's scroller, in the same six pixels of width the game draws it in, and
  *   it can be taken and dragged like any other, see {@link #mouseClicked}, and
  * - the three buttons - the two filters and the one that closes the screen - are buttons of the
  *   game, so they hover, click and speak for themselves. The list is narrower than the screen and
  *   centred, which leaves the room at its sides that those two small buttons sit in.
+ *
+ * Two lines of the mod's own drawing in a screen of the game's own pieces is a deliberate exception.
+ * The rows have to read as the game's own rows, because they are a list of what the game holds, but
+ * the frame around them is where the mod says what kind of list this is - a pair of drawn ornaments
+ * over and under it reads as a collection, where the game's own two-pixel separators read as a menu.
  *
  * The rows are drawn rather than made of widgets, because there is nothing to press on a biome:
  * a row that cannot be clicked should not be given a hover highlight, a click, a focus ring or a
@@ -151,8 +158,48 @@ final class BiomeCollectionScreen extends Screen
 	private static final int TITLE_Y = 8;
 	private static final int PROGRESS_Y = 20;
 
-	/** Where the list starts, under the title and the line counting the discoveries. */
-	private static final int LIST_TOP = 36;
+	/** How tall a line of the game's own font is, which every gap of the layout is measured in. */
+	private static final int TEXT_HEIGHT = 9;
+
+	/**
+	 * The two lines the list is framed with, one over it and one under it. They are the mod's own
+	 * drawing: two white lines on a flat dark sheet, cut out of it so that only the lines are left
+	 * (see {@code templates/collection_frame}), and the list is drawn between them as if they were
+	 * the top and the bottom of its frame.
+	 */
+	private static final Identifier UP_LINE = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
+			"textures/gui/collection_up_line.png");
+	private static final Identifier DOWN_LINE = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
+			"textures/gui/collection_down_line.png");
+
+	/**
+	 * The width both of those textures are written at, and the height of each of them there. They are
+	 * written at twice the height they are drawn in: a game at gui scale 2 draws them one to one, and
+	 * a game at gui scale 1 reads them through the area filter the scaling down is, instead of
+	 * dropping every other pixel of a line that is one pixel thin.
+	 */
+	private static final int LINE_TEXTURE_WIDTH = 880;
+	private static final int UP_LINE_TEXTURE_HEIGHT = 44;
+	private static final int DOWN_LINE_TEXTURE_HEIGHT = 52;
+
+	/** How tall each of the two lines is drawn on the screen, in gui pixels. */
+	private static final int UP_LINE_HEIGHT = UP_LINE_TEXTURE_HEIGHT / 2;
+	private static final int DOWN_LINE_HEIGHT = DOWN_LINE_TEXTURE_HEIGHT / 2;
+
+	/**
+	 * The gap kept between a line and the list it frames, and between a line and the line of text it
+	 * sits under: the drawing keeps a little clear room around its own strokes, so the two are set
+	 * off from each other rather than touching.
+	 */
+	private static final int LINE_GAP = 2;
+
+	/**
+	 * Where the line over the list is drawn, under the line counting the discoveries, and where the
+	 * list starts under it: the title, the count and that line take the top of the screen, each with
+	 * the same small gap under it.
+	 */
+	private static final int UP_LINE_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
+	private static final int LIST_TOP = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP;
 
 	/** How wide the panel of the list is kept away from the edges of the screen. */
 	private static final int PANEL_MARGIN = 20;
@@ -171,12 +218,16 @@ final class BiomeCollectionScreen extends Screen
 	/** The room one of those buttons takes at one side of the list, margin included. */
 	private static final int SIDE_SPACE = PANEL_MARGIN + FILTER_BUTTON_GAP + FILTER_BUTTON_SIZE;
 
-	/** Room the list leaves for the hint and the button below it. */
-	private static final int FOOTER_HEIGHT = 54;
+	/** How far the hint above the button is drawn from the bottom of the screen. */
+	private static final int HINT_Y_FROM_BOTTOM = 44;
 
-	/** How high the two lines framing the list are drawn, and the texture they are cut from. */
-	private static final int SEPARATOR_HEIGHT = 2;
-	private static final int SEPARATOR_TEXTURE_WIDTH = 32;
+	/**
+	 * Room the list leaves below itself, in gui pixels: the line that frames its bottom (2 + 26), the
+	 * hint under that line (9), the button that closes the screen (20) and the room under the button
+	 * (8), with a small gap between each of them. The hint and the button keep the places they have
+	 * always had, so the line above them is what this room is larger than it was by.
+	 */
+	private static final int FOOTER_HEIGHT = 74;
 
 	/** The strip at the right end of the list the scrollbar is drawn in, in gui pixels. */
 	private static final int SCROLLBAR_WIDTH = 6;
@@ -395,12 +446,14 @@ final class BiomeCollectionScreen extends Screen
 		drawRows(graphics);
 		drawScrollBar(graphics);
 
-		// the lines the game's own lists are framed with, one above the list and one under it
-		drawSeparator(graphics, Screen.INWORLD_HEADER_SEPARATOR, listTop - SEPARATOR_HEIGHT);
-		drawSeparator(graphics, Screen.INWORLD_FOOTER_SEPARATOR, listBottom);
+		// the two lines of the mod's own drawing the list is framed with, one over it and one under
+		// it, drawn before the text below so that the hint and the button stay on top of everything
+		drawLine(graphics, UP_LINE, UP_LINE_HEIGHT, UP_LINE_TEXTURE_HEIGHT, UP_LINE_Y);
+		drawLine(graphics, DOWN_LINE, DOWN_LINE_HEIGHT, DOWN_LINE_TEXTURE_HEIGHT,
+				listBottom + LINE_GAP);
 
 		drawCentered(graphics, Component.translatable("screen.immersive_titles.collection.hint"),
-				height - 44, MUTED_COLOR);
+				height - HINT_Y_FROM_BOTTOM, MUTED_COLOR);
 
 		// the buttons added in init() are among the screen's renderables
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
@@ -556,11 +609,20 @@ final class BiomeCollectionScreen extends Screen
 		return left ? listLeft - FILTER_BUTTON_GAP - FILTER_BUTTON_SIZE : listRight + FILTER_BUTTON_GAP;
 	}
 
-	/** Draws one of the two lines a list of the game is framed with, across the list it frames. */
-	private void drawSeparator(GuiGraphicsExtractor graphics, Identifier separator, int y)
+	/**
+	 * Draws one of the two lines the list is framed with, across the whole width of the list: the
+	 * drawing is stretched to it, which is what a line of a frame is for - its two ends are the ends
+	 * of the list, and the room it is drawn across is the list it frames, at any screen size.
+	 *
+	 * The height it is drawn at is half the height its texture was written at (see
+	 * {@link #UP_LINE_HEIGHT}), so the line is the same drawing at any screen size, its shape coming
+	 * from the drawing rather than from the room it happens to be given.
+	 */
+	private void drawLine(GuiGraphicsExtractor graphics, Identifier texture, int drawnHeight,
+			int textureHeight, int y)
 	{
-		graphics.blit(RenderPipelines.GUI_TEXTURED, separator, listLeft, y, 0.0F, 0.0F,
-				listRight - listLeft, SEPARATOR_HEIGHT, SEPARATOR_TEXTURE_WIDTH, SEPARATOR_HEIGHT);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, texture, listLeft, y, 0.0F, 0.0F,
+				listRight - listLeft, drawnHeight, LINE_TEXTURE_WIDTH, textureHeight);
 	}
 
 	/** Draws {@code text} centred on the screen, at {@code y}. */
