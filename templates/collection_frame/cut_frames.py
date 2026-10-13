@@ -27,10 +27,13 @@ from anywhere; it writes straight into the mod's assets:
 
     python templates/collection_frame/cut_frames.py
 
-The sizes it writes are not free: the screen draws both lines across the width of the list in gui
-pixels, and these are those pixels at twice the size, so that a game at gui scale 2 draws them one
-to one and a game at gui scale 1 has a clean area filter to read. Changing a size here without
-changing the height the screen draws it in would only change how much of the drawing is resolved.
+The sizes it writes are not free. Each drawing is written at twice the size the screen draws it in,
+so that a game at gui scale 2 draws it one to one and a game at gui scale 1 has a clean area filter
+to read - and, more importantly, at the share of height to width the drawing itself has. A line of
+this kind is a drawing of a thing, not a pattern to be repeated or stretched: it is drawn centred
+above or below the list at a size that keeps its own proportions, and stretching it to the width of
+the list is what makes it read as a smear instead of as an ornament. The sizes below are therefore
+one number each - the height the screen draws it at, doubled - with the width that height comes to.
 """
 
 from pathlib import Path
@@ -52,10 +55,11 @@ CURVE_FROM = 0.10
 CURVE_SPAN = 0.70
 
 # what the screen draws the drawings as: the file, its name in the mod, and the size it is written
-# at, which is the drawn size of the screen at gui scale 2
+# at, which is the size it is drawn at, doubled. The two widths are the heights below at the
+# drawings' own proportions: 22 gui pixels of the up line is 168 wide, 26 of the down line is 164.
 SHEETS = [
-    ("Up-line.png", "collection_up_line.png", 880, 44),
-    ("Down-line.png", "collection_down_line.png", 880, 52),
+    ("Up-line.png", "collection_up_line.png", 336, 44),
+    ("Down-line.png", "collection_down_line.png", 328, 52),
 ]
 
 SOURCE = Path(__file__).resolve().parent

@@ -14,11 +14,19 @@ python templates/collection_frame/cut_frames.py
 
 The script writes
 
-- `assets/immersive_titles/textures/gui/collection_up_line.png`, 880x44, and
-- `assets/immersive_titles/textures/gui/collection_down_line.png`, 880x52,
+- `assets/immersive_titles/textures/gui/collection_up_line.png`, 336x44, and
+- `assets/immersive_titles/textures/gui/collection_down_line.png`, 328x52,
 
-and the screen draws each of them 22 or 26 gui pixels tall - half of what is written, so that a game
-at gui scale 2 draws them one to one and a game at gui scale 1 reads them through an area filter.
+and the screen draws each of them at half of that - 168x22 gui pixels over the list, 164x26 under it
+- so that a game at gui scale 2 draws them one to one and a game at gui scale 1 reads them through an
+area filter.
+
+The size is a decision about the drawing, not about the room it is given. Both lines are drawn
+**centred** over and under the list, at their own proportions, and neither is stretched to reach the
+ends of the list: widening a drawing of a thing to fit a wider list does not make a longer line, it
+makes a squashed one, with every ornament in it flattened by the same amount. If a line looks too
+small or too large for the list, the number to change is the height it is drawn at - here and in the
+screen's `UP_LINE_HEIGHT`/`DOWN_LINE_HEIGHT` - and the width follows from the drawing.
 
 What it does with a sheet is worth knowing before changing it: the sheet is not simply made
 transparent, it is measured. The art is white on a sheet of one grey, so how much of a pixel is art
@@ -26,4 +34,5 @@ is how far that pixel's brightness sits between the two - the antialiasing of th
 as the alpha of its edges, exactly as much of it as was covered. The sheet's own noise, and the ring
 a JPEG leaves around every strong edge, are both a few percent of that and are dropped before
 anything is scaled, so they cannot be baked into the line. Then the drawing is cut down to the
-rectangle the art itself takes up and scaled, with an area filter, to the size above.
+rectangle the art itself takes up and scaled, with an area filter, to the size above - and that size
+is at the drawing's own proportions, so nothing is stretched on the way.
