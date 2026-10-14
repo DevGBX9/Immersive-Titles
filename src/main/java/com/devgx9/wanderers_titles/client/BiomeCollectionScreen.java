@@ -970,8 +970,8 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private void addThemeButton()
 	{
-		Component description = Component.translatable("screen.immersive_titles.collection.theme.button",
-				theme.name());
+		MutableComponent description = Component.translatable(
+				"screen.immersive_titles.collection.theme.button", theme.name());
 
 		themeButton = Button.builder(Component.empty(), button -> toggleTheme())
 				.size(THEME_BUTTON_SIZE, THEME_BUTTON_SIZE)
