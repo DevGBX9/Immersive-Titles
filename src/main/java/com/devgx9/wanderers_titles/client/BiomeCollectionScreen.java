@@ -1954,13 +1954,24 @@ final class BiomeCollectionScreen extends Screen
 				&& mouseY >= buttonY && mouseY < buttonY + FORGET_SIZE;
 	}
 
-	/** The name of the mod a biome comes from, or null while the biome is one of the game's own. */
+	/**
+	 * The name of the mod an entry comes from, or null while the entry is not a mod's to show - which
+	 * is what keeps a row clean: the column is for what a modpack adds, an entry read under the
+	 * namespace its author registered it in, and both the namespace of the game and the mod's own are
+	 * left out of it.
+	 *
+	 * The mod's own is the one that would otherwise be read on rows the mod itself made: the groups of
+	 * the game's structures the list remembers by an id of its own (see {@link StructureCatalog}).
+	 * They are the mod's bookkeeping and not a source a player is reading - the group of villages is
+	 * still the game's villages - so a grouped row ends where the game's own rows do, in nothing.
+	 */
 	private static String source(String id)
 	{
 		int separator = id.indexOf(':');
 		String namespace = separator < 0 ? "" : id.substring(0, separator);
 
-		return namespace.isEmpty() || namespace.equals("minecraft") ? null : namespace;
+		return namespace.isEmpty() || namespace.equals("minecraft")
+				|| namespace.equals(WandererTitles.MOD_ID) ? null : namespace;
 	}
 
 	/** Draws where the list is, in the game's own scroller, while there is more of it than fits. */
