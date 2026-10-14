@@ -103,16 +103,12 @@ import java.util.Set;
  *   name in full white and a check beside it, and one whose reveal is still waiting with the sprite
  *   the game draws a button it will not let anyone press in, dimmed with its name - so what has been
  *   found is what stands out and what is left to find is what stays out of the way,
- * - the panel the rows sit on is the flat grey inside the game's own window in the mod's own theme,
- *   with the block dropping a light shadow under it, and the colour of the game's own list background
- *   inside a world in the game's own theme - the black at 44% measured from
- *   {@code inworld_menu_list_background.png}, which is what the game's own lists are drawn with - and
- *   which of the two a player reads is the player's (see {@link CollectionTheme}),
- * - the frame around that panel is a sprite of the game in both themes, drawn {@link #FRAME_PADDING}
- *   past the list on every side and nine sliced to the size the block comes to, so what holds the
- *   list is drawn by the game and follows a resource pack that redraws its windows and its buttons
- *   like everything else here does, with the strip of the two tabs resting on the top of it (see
- *   {@link #TABS_GAP}),
+ * - the panel the rows sit on and the frame around it are one sprite of the game - its own window, the
+ *   frame of a list of things, drawn {@link #FRAME_PADDING} past the list on every side and nine
+ *   sliced to the size the block comes to - with the block dropping a light shadow under it (see
+ *   {@link #FRAME_SHADOW}), so what holds the list is drawn by the game and follows a resource pack
+ *   that redraws its windows like everything else here does, with the strip of the two tabs resting
+ *   on the top of it (see {@link #TABS_GAP}),
  * - the two lines framing the list are the mod's own - a needle with a thread through it, drawn once
  *   over the list and once under it - each drawn centred on the list at the size it is made at rather
  *   than stretched to a width of its own (see {@link #drawLine}), the one over it being the plate the
@@ -124,11 +120,12 @@ import java.util.Set;
  * - the scrollbar is the game's scroller, in four pixels of width rather than the six the game draws
  *   it in (see {@link #SCROLLBAR_WIDTH}), and it can be taken and dragged like any other, see
  *   {@link #mouseClicked}, and
- * - the two tabs over the list, the two filters beside it, the button that closes the screen and the
- *   one that turns the theme over are buttons of the game, so they hover, click and speak for
- *   themselves, and what the screen draws over them is what they say (see {@link #drawTabs},
- *   {@link #drawFilterIcons} and {@link #drawThemeMark}). The list is narrower than the screen and
- *   centred, which leaves the room at its sides that the two small filters sit in.
+ * - the two tabs over the list, the two filters beside it and the button that closes the screen are
+ *   buttons of the game, so they hover, click and speak for themselves, and what the screen draws
+ *   over them is what they say (see {@link #drawTabs} and {@link #drawFilterIcons}). The list is
+ *   narrower than the screen and centred, which leaves the room at its sides that the two small
+ *   filters stand in: each of the two is set off the frame of the list rather than off the list
+ *   itself, so neither is drawn over the block it belongs to (see {@link #filterButtonX}).
  *
  * Lines of the mod's own drawing in a screen of the game's own pieces is a deliberate exception.
  * The rows have to read as the game's own rows, because they are a list of what the game holds, but
@@ -154,11 +151,11 @@ import java.util.Set;
  * the game with a cross in it - a button like the two that filter the list, in the same size and
  * with a mark of the game's own font over it - and pressing that button is what asks about forgetting
  * the biome (see {@link #askToForget}). The row the mouse is on is held in a thin line of the
- * theme's own, which is what says which row is being read - and with it which biome's name the
- * button at the end of the row belongs to. The row under it stays a row that cannot be clicked,
- * hovered into a highlight or focused, which is what keeps a list of what the game holds from
- * reading as a list of things to press. Everything else the player can do is scroll, filter and
- * close, and turn the theme over (see {@link #addThemeButton}).
+ * collection's own gold, which is what says which row is being read - and with it which biome's
+ * name the button at the end of the row belongs to - and the row under it stays a row that cannot
+ * be clicked, hovered into a highlight or focused, which is what keeps a list of what the game
+ * holds from reading as a list of things to press. Everything else the player can do is scroll,
+ * filter and close.
  *
  * Scrolling is smooth: the wheel and the keys move where the list is going, not where it is drawn,
  * and the drawn list eases after it (see {@link #advanceScroll}). Rows therefore slide up and down
@@ -179,13 +176,17 @@ import java.util.Set;
  * A screen opened with no world behind it at all - the mod list of Mod Menu, from the title screen -
  * keeps the game's own background, since a panorama is a thing to leave alone.
  *
- * The two themes the collection can be read in are the one thing about it a player chooses (see
- * {@link CollectionTheme}): the mod's own is what the screen opens on and what every screen of it
- * was built for - the game's own window in its own greys, gold accents, text read by brightness - and
- * the game's own is the screen as it was before there was a theme, for a player who wants the
- * collection to look like one more menu of the game. The choice is made in the corner button the screen draws (see
- * {@link #addThemeButton}) and written down by {@link WandererConfig}, so it is the same the next
- * time the game is started: the mod has one setting and this is it.
+ * The collection is read in one look, and it is a dark one, because every shape in it is a sprite of
+ * the game: the window the list is held in, the buttons its rows and its two tabs are, the scroller,
+ * the experience bar under the count and the two small filters beside the list. That is what a
+ * player's resource pack draws, so a pack that redraws the game's gui in dark greys - Reimagined GUI
+ * is the one this screen is read against - draws the whole of this screen with them, down to the
+ * frame around the block, and the mod paints nothing over a sprite but the shadow the block drops and
+ * the washes of its own (see {@link #FRAME_SHADOW}). Everything the screen does draw itself is a
+ * colour of that drawing and not a shape of its own: the gold of a dimension and of the row the mouse
+ * is on, the green of a check, and the greys the text is read in by brightness, so what has been
+ * found, what is left to find and what is only a name are told apart before a word of them is read
+ * (see {@link #TITLE_COLOR}).
  *
  * The key that opens it is the mod's own (see {@link TitleOverlay}), and pressing it again closes
  * the screen: the key is consumed on the client tick rather than in the screen, so the same press
@@ -429,17 +430,13 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * How far the block of the list stands out past the list it is drawn around, in gui pixels: eight,
-	 * which is the band the game's own window keeps around what it holds.
-	 *
-	 * What the block is depends on the theme (see {@link CollectionTheme}), but how far it reaches does
-	 * not: both are one of the game's own sprites, nine sliced to the size the block comes to - the
-	 * window in the mod's own theme, a button in the game's own - and both of those keep their band
-	 * outside what they hold rather than over it, so the number is the width of a band and not a margin
-	 * the screen asks for. It is the window's band because that is the wider of the two: drawn narrower
-	 * than the eight pixels the sprite keeps, the band is cut off inside its own black line and the
-	 * block reads as a panel with a thick edge, while a button of the game drawn the same eight pixels
-	 * out is simply one of its buttons drawn at the size of the block.
-	 */
+ * which is the band the game's own window keeps around what it holds.
+ *
+ * The block is one of the game's own sprites, nine sliced to the size it comes to, and a sprite of
+ * that kind keeps its band outside what it holds rather than over it, so this is the width of a band
+ * rather than a margin the screen asks for: drawn narrower than the eight pixels the window keeps, the
+ * band is cut off inside its own black line and the block reads as a panel with a thick edge.
+ */
 	private static final int FRAME_PADDING = 8;
 
 	/**
@@ -448,9 +445,6 @@ final class BiomeCollectionScreen extends Screen
 	 * the game's own drawing, so what is under the block is shaded on the side away from it.
 	 */
 	private static final int SHADOW_OFFSET = 2;
-
-	/** The character of a theme mark that is a pixel of the mark, and the one that is left clear. */
-	private static final char DRAWING = '#';
 
 	/**
 	 * The strip of tabs under the line over the list: how tall one of them is, how far the two sit apart,
@@ -516,17 +510,15 @@ final class BiomeCollectionScreen extends Screen
 	/** Where the line under the list is drawn, from the bottom of the panel the list is drawn on. */
 	private static final int DOWN_LINE_OFFSET = FRAME_PADDING + LINE_GAP;
 
-	/** How wide the panel of the list is kept away from the edges of the screen. */
-	private static final int PANEL_MARGIN = 20;
-
 	/**
 	 * How much of the screen the list takes at most: {@link #LIST_MAX_WIDTH} gui pixels of its width,
 	 * and {@link #LIST_MAX_HEIGHT_PERCENT} hundredths of the height of the screen of its height.
 	 *
 	 * The list is narrower than the screen on purpose - the room beside it is what the two filter
-	 * buttons sit in, and a row that stretches from edge to edge is read as a bar rather than as an
-	 * item of a list - and it is kept short of the screen in both directions as well, so that a screen
-	 * of any size has room around the collection rather than a collection drawn to its edges.
+	 * buttons stand in (see {@link #SIDE_SPACE}), and a row that stretches from edge to edge is read as
+	 * a bar rather than as an item of a list - and it is kept short of the screen in both directions as
+	 * well, so that a screen of any size has room around the collection rather than a collection drawn
+	 * to its edges.
 	 */
 	private static final int LIST_MAX_WIDTH = 320;
 
@@ -542,24 +534,52 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private static final int LIST_MAX_HEIGHT_PERCENT = 50;
 
-	/** How big the two filter buttons are, and how far they sit from the list they filter. */
+	/**
+	 * How big the two filter buttons are, and how far they sit from the frame of the list they filter.
+	 *
+	 * The gap is measured from the frame and not from the list, because the frame is what the button
+	 * would otherwise be drawn over: it reaches {@link #FRAME_PADDING} past the list on every side, so
+	 * a button set off the list itself is a button half buried in the band of the block, which is what
+	 * the two of them were - drawn at the ends of the first row, inside the frame of the list, reading
+	 * as two marks dropped in the panel rather than as two controls standing beside it (see
+	 * {@link #filterButtonX}).
+	 */
 	private static final int FILTER_BUTTON_SIZE = 16;
 	private static final int FILTER_BUTTON_GAP = 4;
 
-	/** The room one of those buttons takes at one side of the list, margin included. */
-	private static final int SIDE_SPACE = PANEL_MARGIN + FILTER_BUTTON_GAP + FILTER_BUTTON_SIZE;
+	/**
+	 * The least room the screen keeps off its own edges, and the floor the layout is built on: it is
+	 * what the block of the collection is set in where the screen cannot hold it at its own size (see
+	 * {@link #blockTop}), and what the two filter buttons that stand beside the list keep at the sides
+	 * of the screen - so on a screen that is too narrow for the collection at its own width, what gives
+	 * is the list, which is narrower, and not the room the block and its two buttons are read in.
+	 */
+	private static final int SCREEN_MARGIN = 8;
 
 	/**
-	 * The size of the button that closes the screen, and the least room the block of the screen keeps
-	 * off its own top and bottom edges: the button is drawn under the frame of the list, which is what
-	 * puts it where it is, and the room over the title and under the button is the room left over by
-	 * the list, split between them (see {@link #blockTop}). This is the floor of those two margins
-	 * rather than their size, and it is what a screen that cannot hold the whole block keeps around
-	 * what is left of it.
+	 * The room one of those buttons takes at one side of the list, its own margin included: what the
+	 * screen keeps clear of the list on each side is the frame of the list, the gap, the button and
+	 * {@link #SCREEN_MARGIN} over it, so the block and both of its filters fit whatever the screen is.
+	 *
+	 * The room is the frame's own before it is anything else, since the frame is what the two buttons
+	 * stand beside, and it is what the list of a screen too narrow to hold it is narrowed by (see
+	 * {@link #init()}): on the smallest screen the game draws, 320 gui pixels wide, the two buttons, the
+	 * frames of the list and the two margins come to 72 of them, so the list between them is 248 - which
+	 * is still wider than the 228-pixel strip of the two tabs that stands over it.
+	 */
+	private static final int SIDE_SPACE = FRAME_PADDING + FILTER_BUTTON_GAP + FILTER_BUTTON_SIZE
+			+ SCREEN_MARGIN;
+
+	/**
+	 * The size of the button that closes the screen, and the room the block of the screen keeps off its
+	 * own top and bottom edges: the button is drawn under the frame of the list, which is what puts it
+	 * where it is, and the room over the title and under the button is the room left over by the list,
+	 * split between them (see {@link #blockTop}). This is the floor of those two margins rather than
+	 * their size - it is the same {@link #SCREEN_MARGIN} the sides are kept in - and it is what a screen
+	 * that cannot hold the whole block keeps around what is left of it.
 	 */
 	private static final int DONE_WIDTH = 110;
 	private static final int DONE_HEIGHT = 16;
-	private static final int SCREEN_MARGIN = 8;
 
 	/**
 	 * Room the panel leaves below itself: the frame around it, the gap under it, the line that frames
@@ -677,11 +697,16 @@ final class BiomeCollectionScreen extends Screen
 			Identifier.withDefaultNamespace("widget/scroller_background");
 
 	/**
-	 * The window the block of the list is drawn as in the mod's own theme (see
-	 * {@link CollectionTheme#frame()}), and the two halves of the bar that counts the collection: the
-	 * game's own window sprite - the frame of a list, with one flat grey inside it, drawn at the size
-	 * the block comes to - and the trough and the fill of the game's own experience bar, each of them
-	 * {@link #BAR_WIDTH} x {@link #BAR_HEIGHT} gui pixels of texture.
+	 * The two sprites of the game the block of the list and the bar that counts it are made of: the
+	 * game's own window - the frame of a list of things, with one flat panel inside it, drawn at the
+	 * size the block comes to - and the trough and the fill of the game's own experience bar, each of
+	 * them {@link #BAR_WIDTH} x {@link #BAR_HEIGHT} gui pixels of texture.
+	 *
+	 * Both are sprites of the game and are drawn out of the player's resource pack rather than out of
+	 * the jar, which is the whole of what makes this screen a dark one: a pack that redraws the game's
+	 * gui in dark greys - Reimagined GUI in its dark reading is the one it is read against - redraws
+	 * the block of the list with it, and the mod paints nothing over that beyond the shadow the block
+	 * drops (see {@link #FRAME_SHADOW}).
 	 *
 	 * The window is a sprite and is drawn as one, since the whole of it is drawn at once. The bar is
 	 * not: what is drawn of the fill is a share of it - the same share the line over it counts in words
@@ -690,7 +715,7 @@ final class BiomeCollectionScreen extends Screen
 	 * size on the screen and the size of the region it takes from the texture as two separate pairs (see
 	 * {@link #drawProgressBar}).
 	 */
-	private static final Identifier WINDOW_SPRITE =
+	private static final Identifier FRAME_SPRITE =
 			Identifier.withDefaultNamespace("social_interactions/background");
 	private static final Identifier BAR_TRACK =
 			Identifier.withDefaultNamespace("textures/gui/sprites/hud/experience_bar_background.png");
@@ -698,20 +723,69 @@ final class BiomeCollectionScreen extends Screen
 			Identifier.withDefaultNamespace("textures/gui/sprites/hud/experience_bar_progress.png");
 
 	/**
+	 * The shadow the block of the list drops over what is behind it: the black at 35%, set
+	 * {@link #SHADOW_OFFSET} pixels down and to the right, which is what stands the block off the
+	 * world it is read over. It is a shade rather than a shape - nothing of the block's own drawing
+	 * is in it - so a pack that redraws the window redraws the block over this unchanged.
+	 */
+	private static final int FRAME_SHADOW = 0x59000000;
+
+	/**
+	 * The colours the screen draws itself, which is everything the game's own sprites are not: the
+	 * text of the title and of the line that counts the collection, the name of a dimension and the
+	 * rule over it, the name of a biome that was found and the name of one that is still waiting, the
+	 * name of the mod a biome comes from, the check beside a found one, the line around the row the
+	 * mouse is on, and the silver around the button the keyboard is on.
+	 *
+	 * They are read by brightness, from the title down: the title is the brightest thing on the screen,
+	 * then the count, then the name of a biome that was found, then the name of one whose reveal is
+	 * still waiting, and the name of the mod a biome comes from is dimmer than either of those - so the
+	 * eye has an order to read the screen in before anything is gold. The gold is the one accent the
+	 * collection has, and it is spent on three places: the name of a dimension, the tab of the page
+	 * being read and the row the mouse is on.
+	 */
+	private static final int TITLE_COLOR = 0xFFE8E8E8;
+	private static final int COUNT_COLOR = 0xFFC9C9C9;
+	private static final int SECTION_COLOR = 0xFFE0B15A;
+	private static final int RULE_COLOR = 0x33FFFFFF;
+	private static final int FOUND_COLOR = 0xFFF2F2F2;
+	private static final int WAITING_COLOR = 0xFF787878;
+	private static final int SOURCE_COLOR = 0xFF6A6A6A;
+
+	/** The accent the three places above are drawn in, and the two marks that go with it. */
+	private static final int ACCENT_COLOR = 0xFFE0B15A;
+	private static final int CHECK_COLOR = 0xFF66E06A;
+	private static final int HOVER_COLOR = 0x99E0B15A;
+
+	/** The silver the button the keyboard is on is held in, one pixel outside its own edge. */
+	private static final int FOCUS_COLOR = 0xFFC9CCD1;
+
+	/**
+	 * What is laid over the two tabs of the game under their names, and what the names are written
+	 * in: the wash of the page being read, a lighter wash of the page that is not, and the line of the
+	 * accent the tab being read carries along its bottom edge.
+	 */
+	private static final int TAB_ACTIVE_WASH = 0x99000000;
+	private static final int TAB_INACTIVE_WASH = 0x40000000;
+	private static final int TAB_ON_COLOR = 0xFFFFFFFF;
+	private static final int TAB_OFF_COLOR = 0xFF8A8A8A;
+
+	/**
 	 * The mark of the button that forgets a biome, in the two colours it is drawn in: the grey the
 	 * mark is dim in while the mouse is only on the row, and the red it turns while the mouse is on
 	 * the button itself - a button that undoes something says so, and says so louder under the hand
-	 * that is about to press it. The red is the one alarm the screen has, and it is not a colour of
-	 * either theme: what it marks is the one press in the collection that takes something away.
+	 * that is about to press it. The red is the one alarm the screen has, and it is not one of the
+	 * colours of the collection (see {@link #CHECK_COLOR}): what it marks is the one press in the
+	 * collection that takes something away.
 	 */
 	private static final int FORGET_COLOR = 0xFFA0A0A0;
 	private static final int FORGET_HOVERED_COLOR = 0xFFFF5555;
 
 	/**
 	 * The mark of a filter that is turned off, and the colour the other one lights up in. The two are
-	 * the game's own greys and white rather than the theme's: the filters are the game's own buttons
-	 * and their marks are the game's own glyphs, and the check of the filter of what was found is the
-	 * green of the checks in the list (see {@link CollectionTheme#check()}).
+	 * the game's own greys and white rather than the collection's: the filters are the game's own
+	 * buttons and their marks are the game's own glyphs, and the check of the filter of what was found
+	 * is the green of the checks in the list (see {@link #CHECK_COLOR}).
 	 */
 	private static final int FILTER_OFF_COLOR = 0xFF909090;
 	private static final int REMAINING_COLOR = 0xFFFFFFFF;
@@ -727,35 +801,12 @@ final class BiomeCollectionScreen extends Screen
 	 * a bright sky or a dark cave alike. It is a little lighter than the game's own veil for the same
 	 * reason it is not blurred: a blurred world is a world no longer read, and the room the collection is
 	 * set in is worth leaving legible. What keeps the block itself readable on top of it is the block:
-	 * the panel is drawn over the world in the theme's own colours either way - the flat grey inside the
-	 * game's own window in the mod's own theme, and the black at 44% in the game's own (see
-	 * {@link #drawFrame}) - so the veil has nothing to do beyond setting the block off from what is
-	 * behind it.
+	 * the panel the rows sit on is the panel of the game's own window, drawn by the player's own pack
+	 * over the world (see {@link #drawFrame}), so the veil has nothing to do beyond setting the block
+	 * off from what is behind it.
 	 */
 	private static final int VEIL_TOP = 0xA0121216;
 	private static final int VEIL_BOTTOM = 0xB0121216;
-
-	/**
-	 * The button that turns the collection from one theme to the other, and the marks it is drawn
-	 * with: a small button of the game in the corner of the screen, with the moon of the dark theme on
-	 * it while the dark theme is the one being read and the sun of the game's own while that one is.
-	 *
-	 * A mark is drawn pixel by pixel rather than written in a glyph of the game's font, because the two
-	 * marks are the two themes of the screen and the game's font has neither of them: what is drawn is
-	 * a crescent and a disc with four rays, both inside a box the size of one of the two filters beside
-	 * the list, so the button reads as the same kind of thing as everything else the screen offers.
-	 */
-	private static final int THEME_BUTTON_SIZE = 16;
-	private static final String[] THEME_MARK_DARK =
-			{"..####.", ".#####.", "###....", "###....", "###....", ".#####.", "..####."};
-	private static final String[] THEME_MARK_GAME =
-			{"#.....#", "..###..", ".#####.", ".#####.", ".#####.", "..###..", "#.....#"};
-
-	/**
-	 * The theme the screen is drawn in, read once by {@link #init()} and held for the frames after it:
-	 * the dark one unless the config file says otherwise (see {@link WandererConfig}).
-	 */
-	private CollectionTheme theme;
 
 	/** The biomes to list, in the order they are shown in. */
 	private final List<BiomeCatalog.Entry> entries;
@@ -801,13 +852,10 @@ final class BiomeCollectionScreen extends Screen
 	private Button remainingFilter;
 
 	/**
-	 * The button that closes the screen, and the one that turns the theme over: both are held on to for
-	 * what is drawn over them once the game has drawn them - the silver border of the button the
-	 * keyboard is on (see {@link #drawDoneFocus}) and the mark of the theme being read (see
-	 * {@link #drawThemeMark}).
+	 * The button that closes the screen, held on to for what is drawn over it once the game has drawn
+	 * it: the silver border of the button the keyboard is on (see {@link #drawDoneFocus}).
 	 */
 	private Button doneButton;
-	private Button themeButton;
 
 	/** Where the list has been told to go, in rows: what the wheel and the keys move. */
 	private double scrollTarget;
@@ -972,69 +1020,14 @@ final class BiomeCollectionScreen extends Screen
 		// the slide is measured against the clock, so the frame it starts from is this one
 		lastFrameMs = Util.getMillis();
 
-		// the theme is read once for this screen rather than once a frame: it is what every colour the
-		// screen draws itself is taken from, and the one thing that changes it is the theme button
-		theme = WandererConfig.theme();
-
 		addTabs();
 		addFilterButtons();
-		addThemeButton();
 
 		doneButton = Button.builder(Component.translatable("gui.done"), button -> onClose())
 				.bounds(width / 2 - DONE_WIDTH / 2, doneY(), DONE_WIDTH, DONE_HEIGHT)
 				.build();
 
 		addRenderableWidget(doneButton);
-	}
-
-	/**
-	 * Adds the button that turns the theme over, in the room over the collection at the right end of the
-	 * screen: the one button of the screen that is about the screen rather than about the collection, so
-	 * it is kept out of the block - with the two filters, the two tabs and the button that closes it -
-	 * and set in the corner instead, where a button about the screen is looked for.
-	 *
-	 * What it says it does depends on the theme being read (see {@link #toggleTheme}), and it is a button
-	 * of the game like every other one here, so it hovers, clicks and answers to the narrator; its mark
-	 * is drawn over it (see {@link #drawThemeMark}).
-	 */
-	private void addThemeButton()
-	{
-		MutableComponent description = Component.translatable(
-				"screen.immersive_titles.collection.theme.button", theme.name());
-
-		themeButton = Button.builder(Component.empty(), button -> toggleTheme())
-				.size(THEME_BUTTON_SIZE, THEME_BUTTON_SIZE)
-				.pos(themeButtonX(), themeButtonY())
-				.tooltip(Tooltip.create(description))
-				.createNarration(defaultNarration -> description)
-				.build();
-
-		addRenderableWidget(themeButton);
-	}
-
-	/** Where the theme button is drawn: the top right corner of the screen, one margin in from both edges. */
-	private int themeButtonX()
-	{
-		return width - SCREEN_MARGIN - THEME_BUTTON_SIZE;
-	}
-
-	private static int themeButtonY()
-	{
-		return SCREEN_MARGIN;
-	}
-
-	/**
-	 * Turns the collection over to the other theme, writes the choice down (see
-	 * {@link WandererConfig#setTheme}) and opens the screen again: the theme is not a colour a screen
-	 * swaps as it draws but the palette the whole of it is built out of, so what is done about it is what
-	 * is done about a changed screen - a new one, which is the same screen built again with the other
-	 * theme, from the tooltip of the button to the shadow under the panel.
-	 */
-	private void toggleTheme()
-	{
-		WandererConfig.setTheme(theme.next());
-
-		minecraft.setScreenAndShow(this);
 	}
 
 	/**
@@ -1050,8 +1043,10 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Adds the two buttons that filter the list: the one at the left end of the first row keeps the
-	 * biomes that were discovered, the one at the right end keeps the ones that are left to find.
+	 * Adds the two buttons that filter the list: the one beside the left of the list keeps the biomes
+	 * that were discovered, the one beside its right keeps the ones that are left to find. Both stand
+	 * outside the frame of the list, level with the first row of it, so what they filter is the list
+	 * they are beside without either of them being drawn over it (see {@link #filterButtonX}).
 	 *
 	 * Both are buttons of the game, so they hover, click, play the game's click and answer to the
 	 * narrator like any other, and each one carries the mark its filter is about as its face (see
@@ -1142,7 +1137,10 @@ final class BiomeCollectionScreen extends Screen
 		remainingFilter.active = shown;
 	}
 
-	/** Builds one of the two filter buttons, at the left or the right end of the first row. */
+	/**
+	 * Builds one of the two filter buttons: the one beside the left of the list, or the one beside its
+	 * right, both at the height of the first row of the list and both clear of the frame of it.
+	 */
 	private Button filterButton(boolean left, Filter filter, String descriptionKey)
 	{
 		return Button.builder(Component.empty(), button -> toggleFilter(filter))
@@ -1290,7 +1288,7 @@ final class BiomeCollectionScreen extends Screen
 	 *
 	 * The order is the order of the block, front to back: what is behind is drawn first, and everything
 	 * this screen draws over a button of the game is drawn after the game has drawn it (see
-	 * {@link #drawTabs}, {@link #drawThemeMark} and {@link #drawDoneFocus}), which is what keeps a
+	 * {@link #drawTabs}, {@link #drawFilterIcons} and {@link #drawDoneFocus}), which is what keeps a
 	 * button hovering, clicking and speaking for itself while the mod's own mark sits on it.
 	 */
 	@Override
@@ -1310,7 +1308,7 @@ final class BiomeCollectionScreen extends Screen
 			drawCentered(graphics,
 					Component.translatable(inWorld ? PROGRESS_KEY : ALL_WORLDS_PROGRESS_KEY,
 							discoveredCount, entries.size()),
-					blockTop + PROGRESS_Y, theme.text().count());
+					blockTop + PROGRESS_Y, COUNT_COLOR);
 
 			drawProgressBar(graphics);
 		}
@@ -1328,8 +1326,7 @@ final class BiomeCollectionScreen extends Screen
 
 		// and what the screen draws over them, once the buttons themselves are on the screen: the bar of
 		// the two pages with the names of both in it, the marks of the two filters while the page they
-		// belong to is shown, the mark of the theme being read, and the border of the button the
-		// keyboard is on
+		// belong to is shown, and the border of the button the keyboard is on
 		drawTabs(graphics);
 
 		if (page == Page.BIOMES)
@@ -1337,7 +1334,6 @@ final class BiomeCollectionScreen extends Screen
 			drawFilterIcons(graphics);
 		}
 
-		drawThemeMark(graphics);
 		drawDoneFocus(graphics);
 	}
 
@@ -1365,9 +1361,9 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws the title of the screen, in the theme's own colour and a fifth smaller than the game's own
-	 * font (see {@link #TITLE_SIZE_PERCENT}): the one line of the screen that is drawn at a size of its
-	 * own, and the reason the count under it is what the eye lands on first.
+	 * Draws the title of the screen, in the brightest colour of the collection and a fifth smaller
+	 * than the game's own font (see {@link #TITLE_SIZE_PERCENT}): the one line of the screen drawn at
+	 * a size of its own, and the reason the count under it is what the eye lands on first.
 	 *
 	 * The size is what the line is asked for and not what the font is built at, so the title is the same
 	 * font as everything else here, drawn scaled and centred by its own scaled width - which is what keeps
@@ -1381,15 +1377,14 @@ final class BiomeCollectionScreen extends Screen
 		pose.pushMatrix();
 		pose.translate((width - font.width(title) * scale) / 2.0F, (float) (blockTop + TITLE_Y));
 		pose.scale(scale, scale);
-		graphics.text(font, title, 0, 0, theme.text().title(), true);
+		graphics.text(font, title, 0, 0, TITLE_COLOR, true);
 		pose.popMatrix();
 	}
 
 	/**
-	 * Draws the bar counting the collection, under the line that counts it in words: in the mod's own
-	 * theme the game's own experience bar - the trough of it drawn whole, and the found share of it cut
-	 * out of the sprite the game fills it with - and in the game's own theme the flat trough and fill
-	 * that theme is drawn with.
+	 * Draws the bar counting the collection, under the line that counts it in words: the game's own
+	 * experience bar - the trough of it drawn whole, and the found share of it cut out of the sprite the
+	 * game fills it with - which is the one shape every player already reads a share of progress in.
 	 *
 	 * The share is the same count the line above says in words, taken against the whole list rather than
 	 * against what the filter is showing, so the bar and the line can never disagree, and a list that is
@@ -1400,23 +1395,10 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private void drawProgressBar(GuiGraphicsExtractor graphics)
 	{
-		CollectionTheme.Bar bar = theme.bar();
 		int x = (width - BAR_WIDTH) / 2;
 		int y = blockTop + BAR_Y;
 		int filled = entries.isEmpty() ? 0
 				: (int) Math.round((double) discoveredCount / entries.size() * BAR_WIDTH);
-
-		if (!bar.gameBar())
-		{
-			graphics.fill(x, y, x + BAR_WIDTH, y + BAR_HEIGHT, bar.track());
-
-			if (filled > 0)
-			{
-				graphics.fill(x, y, x + Math.min(filled, BAR_WIDTH), y + BAR_HEIGHT, bar.fill());
-			}
-
-			return;
-		}
 
 		graphics.blit(RenderPipelines.GUI_TEXTURED, BAR_TRACK, x, y, 0.0F, 0.0F,
 				BAR_WIDTH, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT);
@@ -1429,45 +1411,36 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws the block the list is held in: the shadow it drops, the frame around it and the panel under
-	 * it, in the theme being read (see {@link CollectionTheme.Frame}).
+	 * Draws the block the list is held in: the shadow it drops and the frame around it, which is the
+	 * game's own window - the frame of a list of things - with the panel of it left for the rows of the
+	 * list to sit on (see {@link #FRAME_SPRITE}).
 	 *
-	 * The frame and the panel are one sprite of the game in both themes - the window in the mod's own,
-	 * one of its buttons in the game's own, both of them nine sliced to the size the block comes to - so
-	 * what the screen draws itself here is what is left over: the shadow the block drops in the theme
-	 * that drops one, and the panel the game's own theme lays over the button it is framed with. Which
-	 * of the two sprites a theme names is the only thing about this that a theme decides, and both of
-	 * them are drawn from {@link #FRAME_PADDING} past the list on every side.
+	 * The frame and the panel are one sprite of the game, nine sliced to the size the block comes to, so
+	 * the whole of the block is drawn by the player's own resource pack, and what the screen draws itself
+	 * here is what is left over: the shadow the block drops over the world behind it, which is drawn
+	 * under the sprite rather than over it and reaches {@link #SHADOW_OFFSET} past it on two sides. The
+	 * sprite itself is drawn from {@link #FRAME_PADDING} past the list on every side, so the band of it
+	 * is outside what it holds rather than over it.
 	 */
 	private void drawFrame(GuiGraphicsExtractor graphics)
 	{
-		CollectionTheme.Frame frame = theme.frame();
 		int left = listLeft - FRAME_PADDING;
 		int top = listTop - FRAME_PADDING;
 		int right = listRight + FRAME_PADDING;
 		int bottom = listBottom + FRAME_PADDING;
 
-		if (frame.shadow() != 0)
-		{
-			graphics.fill(left + SHADOW_OFFSET, top + SHADOW_OFFSET, right + SHADOW_OFFSET,
-					bottom + SHADOW_OFFSET, frame.shadow());
-		}
+		graphics.fill(left + SHADOW_OFFSET, top + SHADOW_OFFSET, right + SHADOW_OFFSET,
+				bottom + SHADOW_OFFSET, FRAME_SHADOW);
 
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
-				frame.window() ? WINDOW_SPRITE : BUTTON_SPRITE,
-				left, top, right - left, bottom - top);
-
-		if (frame.panel() != 0)
-		{
-			graphics.fill(listLeft, listTop, listRight, listBottom, frame.panel());
-		}
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, FRAME_SPRITE, left, top, right - left,
+				bottom - top);
 	}
 
 	/**
-	 * Draws a line one pixel wide around the box between the four numbers, which is what the mod's own
-	 * theme draws the edge of the block, the edge of the bar and the focus of a button with: a line of
-	 * one pixel on a screen of gui pixels is a line, and nothing about a block of the game is drawn with
-	 * a thickness of its own.
+	 * Draws a line one pixel wide around the box between the four numbers, which is what the collection
+	 * draws the line around the row the mouse is on and the silver around the button the keyboard is on
+	 * with: a line of one pixel on a screen of gui pixels is a line, and nothing about a block of the
+	 * game is drawn with a thickness of its own.
 	 */
 	private static void drawBorder(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom,
 			int color)
@@ -1479,64 +1452,25 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws the mark of the theme being read inside the theme button: the moon while the collection is
-	 * drawn in the mod's own theme, and the sun while it is drawn in the game's own.
-	 *
-	 * The mark says which theme is being read, and the tooltip of the button says the same in words and
-	 * adds what a press would do - the pair is the whole of how the button explains itself, since a mark
-	 * alone says what a button is about rather than what pressing it does (see {@link #addThemeButton}).
-	 */
-	private void drawThemeMark(GuiGraphicsExtractor graphics)
-	{
-		drawMark(graphics, theme == CollectionTheme.DARK ? THEME_MARK_DARK : THEME_MARK_GAME,
-				themeButtonX(), themeButtonY(), THEME_BUTTON_SIZE, theme.text().title());
-	}
-
-	/**
-	 * Draws one of those marks, pixel by pixel: every {@code #} of the pattern is one gui pixel of the
-	 * colour, and the pattern is centred in the button it belongs to. The marks are the mod's own
-	 * drawing of two small things - a crescent and a rayed disc - written out as they are drawn rather
-	 * than cut out of a sheet, since neither of them is more than a few dozen pixels.
-	 */
-	private static void drawMark(GuiGraphicsExtractor graphics, String[] mark, int x, int y, int size,
-			int color)
-	{
-		int width = mark[0].length();
-		int left = x + (size - width) / 2;
-		int top = y + (size - mark.length) / 2;
-
-		for (int row = 0; row < mark.length; row++)
-		{
-			for (int column = 0; column < width; column++)
-			{
-				if (mark[row].charAt(column) == DRAWING)
-				{
-					graphics.fill(left + column, top + row, left + column + 1, top + row + 1, color);
-				}
-			}
-		}
-	}
-
-	/**
 	 * Draws a thin line around the button that closes the screen while the keyboard is on it, in the
-	 * theme's own silver (see {@link CollectionTheme#focus()}).
+	 * silver of the collection (see {@link #FOCUS_COLOR}).
 	 *
 	 * It is drawn under the button rather than over it, one pixel outside its edges, so the game's own
 	 * drawing of a focused button is left as it is and what the player sees is a border around the button
 	 * the keyboard has come to - which is what says where the keys would land, for a player who never
-	 * touches the mouse. A theme without a silver of its own (see {@link CollectionTheme.GAME}) draws
-	 * nothing here and gets exactly what the game draws.
+	 * touches the mouse, and what the game's own focus of a button is too faint to say on a panel as
+	 * dark as this one.
 	 */
 	private void drawDoneFocus(GuiGraphicsExtractor graphics)
 	{
-		if (doneButton == null || theme.focus() == 0 || !doneButton.isFocused())
+		if (doneButton == null || !doneButton.isFocused())
 		{
 			return;
 		}
 
 		drawBorder(graphics, doneButton.getX() - 1, doneButton.getY() - 1,
 				doneButton.getX() + doneButton.getWidth() + 1,
-				doneButton.getY() + doneButton.getHeight() + 1, theme.focus());
+				doneButton.getY() + doneButton.getHeight() + 1, FOCUS_COLOR);
 	}
 
 	/**
@@ -1591,7 +1525,7 @@ final class BiomeCollectionScreen extends Screen
 		{
 			drawCentered(graphics, Component.translatable(
 					page == Page.BIOMES ? EMPTY_KEY : EMPTY_STRUCTURES_KEY),
-					listTop + (listBottom - listTop - font.lineHeight) / 2, theme.text().count());
+					listTop + (listBottom - listTop - font.lineHeight) / 2, COUNT_COLOR);
 			return;
 		}
 
@@ -1700,10 +1634,10 @@ final class BiomeCollectionScreen extends Screen
 		int textY = y + (ROW_HEIGHT - font.lineHeight) / 2;
 		String count = section.found() + " / " + section.total();
 
-		graphics.fill(listLeft, y - 1, rowRight, y, theme.text().rule());
+		graphics.fill(listLeft, y - 1, rowRight, y, RULE_COLOR);
 		graphics.text(font, Component.translatable(dimensionKey(section.dimension())),
-				listLeft + NAME_X, textY, theme.text().section(), true);
-		graphics.text(font, count, rowRight - TEXT_MARGIN - font.width(count), textY, theme.text().count(), true);
+				listLeft + NAME_X, textY, SECTION_COLOR, true);
+		graphics.text(font, count, rowRight - TEXT_MARGIN - font.width(count), textY, COUNT_COLOR, true);
 	}
 
 	/** The name the section of {@code dimension} is read by, from the language file of the mod. */
@@ -1737,21 +1671,21 @@ final class BiomeCollectionScreen extends Screen
 				found ? BUTTON_SPRITE : WAITING_BUTTON_SPRITE,
 				listLeft, y, rowRight - listLeft, ROW_HEIGHT);
 
-		// the row the mouse is on is held in a thin line of the theme's own - what says which row the
-		// mouse is on, and with it which biome's name is being read - and it is drawn under the text of
-		// the row rather than over it, so a name is never read through a line
-		if (index == hovered && theme.hover() != 0)
+		// the row the mouse is on is held in a thin line of the collection's own gold - what says which
+		// row the mouse is on, and with it which biome's name is being read - and it is drawn under the
+		// text of the row rather than over it, so a name is never read through a line
+		if (index == hovered)
 		{
-			drawBorder(graphics, listLeft, y, rowRight, y + ROW_HEIGHT, theme.hover());
+			drawBorder(graphics, listLeft, y, rowRight, y + ROW_HEIGHT, HOVER_COLOR);
 		}
 
 		if (found)
 		{
-			graphics.text(font, CHECK, listLeft + CHECK_X, textY, theme.check(), true);
+			graphics.text(font, CHECK, listLeft + CHECK_X, textY, CHECK_COLOR, true);
 		}
 
 		graphics.text(font, entry.name(), listLeft + NAME_X, textY,
-				found ? theme.text().found() : theme.text().waiting(), true);
+				found ? FOUND_COLOR : WAITING_COLOR, true);
 
 		if (found && canForget() && index == hovered)
 		{
@@ -1763,7 +1697,7 @@ final class BiomeCollectionScreen extends Screen
 		if (source != null)
 		{
 			graphics.text(font, source, rowRight - TEXT_MARGIN - font.width(source), textY,
-					theme.text().source(), true);
+					SOURCE_COLOR, true);
 		}
 	}
 
@@ -1876,11 +1810,11 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private void drawFilterIcons(GuiGraphicsExtractor graphics)
 	{
-		drawFilterIcon(graphics, true, CHECK, filter == Filter.DISCOVERED ? theme.check() : FILTER_OFF_COLOR);
+		drawFilterIcon(graphics, true, CHECK, filter == Filter.DISCOVERED ? CHECK_COLOR : FILTER_OFF_COLOR);
 		drawFilterIcon(graphics, false, QUESTION, filter == Filter.REMAINING ? REMAINING_COLOR : FILTER_OFF_COLOR);
 	}
 
-	/** Draws {@code mark} centred in the filter button at the left or the right end of the list. */
+	/** Draws {@code mark} centred in the filter button beside the left or the right of the list. */
 	private void drawFilterIcon(GuiGraphicsExtractor graphics, boolean left, String mark, int color)
 	{
 		drawButtonMark(graphics, mark, filterButtonX(left), listTop, FILTER_BUTTON_SIZE, color);
@@ -1900,21 +1834,20 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * Draws the strip of the two tabs: two buttons of the game are already on the screen (see
-	 * {@link #addTabs}), and what this adds is the wash of the theme over them and the name of each page
-	 * in its own half.
+	 * {@link #addTabs}), and what this adds is the wash over them and the name of each page in its own
+	 * half.
 	 *
-	 * The tab of the page being read is washed in the theme's own colour and carries a line of the
-	 * theme's accent along its bottom edge; the tab that would take the player elsewhere is washed more
-	 * lightly and keeps the plain button of the game. So which page the list below is holding is said
-	 * twice - by the wash and the line before a word of it is read, and by the two names after - and the
-	 * name being read is lit where the other one is set back, which is the same way the two filters
-	 * beside the list say which of them is on (see {@link #drawFilterIcons}). What the two tabs are not
-	 * is two kinds of button: the buttons under them are the game's own, and what this screen adds to
-	 * them is what its theme draws and the names it writes.
+	 * The tab of the page being read is washed in the dark of the collection and carries a line of its
+	 * accent along its bottom edge; the tab that would take the player elsewhere is washed more lightly
+	 * and keeps the plain button of the game (see {@link #TAB_ACTIVE_WASH}). So which page the list below
+	 * is holding is said twice - by the wash and the line before a word of it is read, and by the two
+	 * names after - and the name being read is lit where the other one is set back, which is the same way
+	 * the two filters beside the list say which of them is on (see {@link #drawFilterIcons}). What the
+	 * two tabs are not is two kinds of button: the buttons under them are the game's own, and what this
+	 * screen adds to them is what it washes them with and the names it writes.
 	 */
 	private void drawTabs(GuiGraphicsExtractor graphics)
 	{
-		CollectionTheme.Tabs tabs = theme.tabs();
 		int x = tabStripLeft;
 
 		for (Page tab : Page.values())
@@ -1922,30 +1855,38 @@ final class BiomeCollectionScreen extends Screen
 			boolean reading = tab == page;
 			Component name = tab.label();
 			int y = tabY();
-			int wash = reading ? tabs.active() : tabs.inactive();
 
-			if (wash != 0)
-			{
-				graphics.fill(x, y, x + TAB_WIDTH, y + TAB_HEIGHT, wash);
-			}
+			graphics.fill(x, y, x + TAB_WIDTH, y + TAB_HEIGHT,
+					reading ? TAB_ACTIVE_WASH : TAB_INACTIVE_WASH);
 
-			if (reading && tabs.accent() != 0)
+			if (reading)
 			{
-				graphics.fill(x, y + TAB_HEIGHT - 1, x + TAB_WIDTH, y + TAB_HEIGHT, tabs.accent());
+				graphics.fill(x, y + TAB_HEIGHT - 1, x + TAB_WIDTH, y + TAB_HEIGHT, ACCENT_COLOR);
 			}
 
 			graphics.text(font, name, x + (TAB_WIDTH - font.width(name)) / 2,
 					y + (TAB_HEIGHT - font.lineHeight) / 2,
-					reading ? tabs.on() : tabs.off(), true);
+					reading ? TAB_ON_COLOR : TAB_OFF_COLOR, true);
 
 			x += TAB_WIDTH + TAB_GAP;
 		}
 	}
 
-	/** Where the filter button of one side of the list starts, in gui pixels. */
+	/**
+	 * Where the filter button of one side of the list starts, in gui pixels: just outside the frame of
+	 * the list, so that the whole of the button is beside the block rather than on it.
+	 *
+	 * The gap is taken from the frame and not from the list (see {@link #FILTER_BUTTON_GAP}): the frame
+	 * reaches {@link #FRAME_PADDING} past the list on every side, so a button set off the list itself is
+	 * a button drawn over the band of the block - which is what the two of them were, at the ends of the
+	 * first row of the list, reading as two marks dropped inside the panel instead of as two controls
+	 * standing beside it.
+	 */
 	private int filterButtonX(boolean left)
 	{
-		return left ? listLeft - FILTER_BUTTON_GAP - FILTER_BUTTON_SIZE : listRight + FILTER_BUTTON_GAP;
+		int offList = FRAME_PADDING + FILTER_BUTTON_GAP;
+
+		return left ? listLeft - offList - FILTER_BUTTON_SIZE : listRight + offList;
 	}
 
 	/**

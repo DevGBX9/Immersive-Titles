@@ -153,7 +153,10 @@ buttons of the mod's own: the one on the left keeps only the biomes that were di
 the right only the ones that are left to find, and pressing the one that is already on puts the list
 back to every biome. Each carries the mark its filter is about - the check the list uses for a found
 biome, and a question mark for one that is still waiting - dim while off and lit while on, and says
-what it does in a tooltip.
+what it does in a tooltip. Both stand outside the block rather than in it: each is set off the frame
+of the list and not off the list itself, at the height of the first row, so the two of them are read
+as two controls beside the collection - which is what they were not, drawn at the ends of the first
+row of the list, half inside the frame of it.
 
 The collection is read as two pages, and the two tabs over the list are which one: `Biomes`, which is
 the list this screen has always been, and `Structures`, which no world writes down yet. The second
@@ -173,21 +176,22 @@ drawn in - the same way those two filters say which of them is on. The title ove
 names the collection itself rather than one of its two pages, since it is the collection that holds
 both and the tabs are what name the pages.
 
-The collection can be read in two themes, and both of them are built out of the game's own gui sprites.
-The one it opens on is the mod's own: the block the list is held in is the game's own window - a band
-of grey with a black line around it, a lit edge over a darker one and a single flat grey inside it -
-the rows are the game's own buttons, a biome that was found the lit one and one whose reveal is still
-waiting the flat dim one, and the bar counting the collection is the game's own experience bar, trough
-and fill both, so how much of the world has been found is read in the one shape every player already
-reads a share of progress in. Its text is read by brightness rather than by the game's own three
-colours, the block drops a light shadow over the world behind it, and the gold is spent on the name of
-a dimension, the tab of the page being read and the row the mouse is on. The other theme is the game's
-own, which is the screen as it was before there was a theme at all - the same window drawn as one of
-the game's buttons, the panel the black at 44% the game's own lists sit on, the flat bar it was, and
-none of the gold. What a player chooses is written down in
-`config/immersive_titles.json`, so it is the same the next time the game is started, and the button
-that turns it over is the small one in the top right corner of the screen: it carries the moon of the
-theme being read, says which one that is in its tooltip, and the mod still has one setting.
+The collection is a dark one, and it is dark because every shape in it is a sprite of the game: the
+block the list is held in is the game's own window - a band around a flat panel, with a shadow under
+it - the rows are the game's own buttons, a biome that was found the lit one and one whose reveal is
+still waiting the flat dim one, the bar counting the collection is the game's own experience bar,
+trough and fill both, so how much of the world has been found is read in the one shape every player
+already reads a share of progress in, and the tabs, the two filters and the scroller are the game's
+buttons and the game's scroller. A resource pack that redraws the game's gui therefore redraws this
+screen with it, and the pack it is read against is Reimagined GUI in its dark reading: with it on, the
+whole of the collection comes out in the dark greys of that pack, down to the frame around the block,
+and with it off the same screen is drawn in the game's own greys. Nothing about it is a theme or a
+setting - there is no theme button and nothing is written to the config folder - so it is dark with
+the pack and the game's own grey without it, and what the mod paints over those sprites is the colours
+of the drawing and nothing else: the shadow under the block, the washes over the two tabs, the gold of
+a dimension, of the tab being read and of the row the mouse is on, the green of a check, and the greys
+the text is read in by brightness - the title, then the count, then a biome that was found, then one
+that is still waiting, then the mod it comes from.
 
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
 resource pack that redraws them - the window around the list, the buttons the rows and the tabs are,
@@ -200,7 +204,7 @@ and the scrollbar is the one the game's own lists are scrolled with, drawn four 
 than the six the game draws it in, since a bar of a list that is read rather than scrolled through is
 not worth the width of a row. The rows are drawn rather than made of buttons that work, because there
 is next to nothing to press on a biome: they cannot be clicked, hovered into a highlight or focused.
-The row the mouse is on is held in a thin gold line in the mod's theme - which is what says which row
+The row the mouse is on is held in a thin gold line - which is what says which row
 is being read, and with it which biome the button at the end of the row would forget - and the scrollbar
 is a scrollbar: it can be taken with the mouse and dragged, and the list follows the hand exactly.
 
