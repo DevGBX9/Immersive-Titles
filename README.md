@@ -173,17 +173,26 @@ drawn in - the same way those two filters say which of them is on. The title ove
 names the collection itself rather than one of its two pages, since it is the collection that holds
 both and the tabs are what name the pages.
 
-The collection can be read in two themes. The one it opens on is the mod's own: charcoal with one
-lighter edge and a light shadow, gold where it accents anything, and its text read by brightness rather
-than by the game's three colours. The other is the game's own, which is the screen as it was before
-there was a theme at all - the frame one of the game's buttons, the panel the black at 44% the game's
-own lists sit on, and none of the gold. What a player chooses is written down in
+The collection can be read in two themes, and both of them are built out of the game's own gui sprites.
+The one it opens on is the mod's own: the block the list is held in is the game's own window - a band
+of grey with a black line around it, a lit edge over a darker one and a single flat grey inside it -
+the rows are the game's own buttons, a biome that was found the lit one and one whose reveal is still
+waiting the flat dim one, and the bar counting the collection is the game's own experience bar, trough
+and fill both, so how much of the world has been found is read in the one shape every player already
+reads a share of progress in. Its text is read by brightness rather than by the game's own three
+colours, the block drops a light shadow over the world behind it, and the gold is spent on the name of
+a dimension, the tab of the page being read and the row the mouse is on. The other theme is the game's
+own, which is the screen as it was before there was a theme at all - the same window drawn as one of
+the game's buttons, the panel the black at 44% the game's own lists sit on, the flat bar it was, and
+none of the gold. What a player chooses is written down in
 `config/immersive_titles.json`, so it is the same the next time the game is started, and the button
 that turns it over is the small one in the top right corner of the screen: it carries the moon of the
 theme being read, says which one that is in its tooltip, and the mod still has one setting.
 
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
-resource pack that redraws them: every biome is drawn as one of the game's buttons, a biome that was
+resource pack that redraws them - the window around the list, the buttons the rows and the tabs are,
+the bar under the count and the scroller of the list are all sprites of the game, and one resource pack
+that redraws any of them redraws this screen with it: every biome is drawn as one of the game's buttons, a biome that was
 found with a small green check and its name in clear white, a biome whose reveal is still waiting dimmed
 with the sprite the game draws a button it will not let anyone press in and its name the dimmest text on
 the screen - so what has been found is what stands out and what is left to find stays out of the way -
@@ -230,8 +239,10 @@ into a texture of the mod's, because what it says is a line of the mod's languag
 dimension - and not a drawing.
 
 The collection is a block of the screen rather than the screen itself. The list is given at most half
-of the screen's height and 320 gui pixels of its width, the rows are two gui pixels shorter than they
-were with the same room under each of them, so two more of the collection fit on any screen, and the
+of the screen's height and 320 gui pixels of its width, the block it is held in is a sprite of the game
+drawn eight gui pixels past it on every side - the band the game's own window keeps around what it
+holds - the rows are two gui pixels shorter than they were with the same room under each of them, so
+two more of the collection fit on any screen, and the
 block - the title, the count, its bar, the plate, the tabs, the list, the line under it and the button
 - is set in the room the list leaves over:
 half of that room goes over the title and half under the button that closes the screen, so the two
