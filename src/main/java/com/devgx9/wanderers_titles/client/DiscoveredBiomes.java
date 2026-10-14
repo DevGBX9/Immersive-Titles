@@ -45,9 +45,13 @@ import java.util.Set;
  * so it is part of the world like its {@code level.dat} - a deleted world takes its discoveries
  * with it, and a copied one carries them along - while the discoveries of a world on a server, whose
  * folder a client cannot write to, are kept in {@code config/immersive_titles/servers} under the
- * address it was joined with. Either way the file holds one biome id per line, and the format is
- * deliberately plain: the file stays readable, a user can delete one line to get a single reveal
- * again, or delete the whole file to start over in that world.
+ * address it was joined with. Either way the file holds the reveals that world has already played,
+ * one per line: a biome as its id alone, which is how this file has always read, and a structure as
+ * its id behind {@link WorldIdentity#STRUCTURE_PREFIX}, which is what keeps the two kinds of
+ * discovery apart in it (see {@link DiscoveredStructures}). What this class reads is the lines of its
+ * own kind, so the file is read here as it has always been read. The format is deliberately plain:
+ * the file stays readable, a user can delete one line to get a single reveal again, or delete the
+ * whole file to start over in that world.
  *
  * A discovery is appended as it happens rather than the whole set being written when the world is
  * left, because a game that crashed or was killed would otherwise lose everything found in that
@@ -119,6 +123,14 @@ final class DiscoveredBiomes
 			for (String line : lines)
 			{
 				String biomeId = line.trim();
+
+				// a line that carries the marker of a structure is a discovery of
+				// DiscoveredStructures and not one of the biomes of this file, which is the only
+				// reading of a line this class has to know about the other kind
+				if (biomeId.startsWith(WorldIdentity.STRUCTURE_PREFIX))
+				{
+					continue;
+				}
 
 				// the id of a biome is never empty and never starts with a hash, so the rest of a
 				// line is a comment a user wrote into the file

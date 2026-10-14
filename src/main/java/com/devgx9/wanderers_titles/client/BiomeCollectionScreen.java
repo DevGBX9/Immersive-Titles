@@ -50,59 +50,66 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The collection of biomes: every biome the game in front of the player has, with a check on the
- * ones that already had their reveal in this world - or, when the mod list of Mod Menu is the way
- * in, every biome any of the player's worlds has found, counted across all of them at once.
+ * The collection: every biome the game in front of the player has, and the structures the game itself
+ * recognizes a player entering, each of the two a page of the list - with a check on the ones that
+ * already had their reveal in this world, or, when the mod list of Mod Menu is the way in, on the ones
+ * any of the player's worlds has found, counted across all of them at once.
  *
  * It is the list side of what the mod already does. A reveal is remembered per world (see
- * {@link WorldIdentity} and {@link DiscoveredBiomes}), and what a world remembers is the same set
- * this screen marks, so the two can never disagree about what the player has found: what is
- * checked here is exactly what no longer plays its reveal, and what is not checked is what still
- * has one waiting. The bar at the top is that same count.
+ * {@link WorldIdentity}, {@link DiscoveredBiomes} and {@link DiscoveredStructures}), and what a world
+ * remembers is the same set this screen marks, so the two can never disagree about what the player
+ * has found: what is checked here is exactly what no longer plays its reveal, and what is not checked
+ * is what still has one waiting. The bar at the top is that same count.
  *
- * The screen is also where a discovery can be given back. A row of a discovered biome offers to
- * forget it while the mouse is on the row, and forgetting one is asked about first (see
- * {@link #askToForget}): it drops the biome from what the world remembers - on disk with
- * {@link DiscoveredBiomes#forget}, in this session with {@link TitleOverlay#forgetBiome} - so the
- * reveal plays again the next time the biome is entered. That is for a player who wants a reveal
- * back: a biome walked into by accident, a world whose file was edited by hand, a discovery that was
- * written down wrongly. It is the one thing in this screen that changes anything, which is why it is
- * the one thing that comes with a warning.
+ * The screen is also where a discovery can be given back. A row of a discovered biome or structure
+ * offers to forget it while the mouse is on the row, and forgetting one is asked about first (see
+ * {@link #askToForget}): it drops it from what the world remembers - on disk with
+ * {@link DiscoveredBiomes#forget} or {@link DiscoveredStructures#forget}, in this session with
+ * {@link TitleOverlay#forgetBiome} or {@link TitleOverlay#forgetStructure} - so the reveal plays
+ * again the next time it is entered. That is for a player who wants a reveal back: a biome walked
+ * into by accident, a world whose file was edited by hand, a discovery that was written down wrongly.
+ * It is the one thing in this screen that changes anything, which is why it is the one thing that
+ * comes with a warning.
  *
- * The order is the mod's own, from the biomes a player meets while walking around to the ones that
- * take a portal or a search (see {@link BiomeCatalog}), because a list that starts with the biomes
- * everyone has is a list that says something: what is left below them is what is left to find. The
- * two buttons beside the list are for reading that list two ways: each one keeps a single end of it
- * - what was found, and what is left - so the question "what have I got left" is one press away
- * instead of a scroll through everything already found (see {@link #toggleFilter}).
+ * The order of a page is the mod's own: the biomes run from the ones a player meets while walking
+ * around to the ones that take a portal or a search (see {@link BiomeCatalog}), and the structures
+ * from the ones found by digging down to the ones at the end of a walk of their own (see
+ * {@link StructureCatalog}), because a list that starts with what everyone has is a list that says
+ * something: what is left below it is what is left to find. The two buttons beside the list are for
+ * reading that list two ways: each one keeps a single end of it - what was found, and what is left -
+ * so the question "what have I got left" is one press away instead of a scroll through everything
+ * already found (see {@link #toggleFilter}).
  *
- * The list is divided by dimension before it is read in any other order: the biomes of the overworld
- * together at the top, then the nether's, then the end's, and last the ones that are no dimension's
- * (see {@link BiomeCatalog.Dimension}) - each of them under a line of the mod's own drawing that names
- * the dimension and counts what the collection has of it. Which dimension a biome is in is the game's
- * own answer and not the mod's: a world generates its dimensions from the biome tags it holds, and
- * those are what the list is divided by (see {@link BiomeCatalog#all}), so a biome of a mod is filed
- * under the dimension its author wrote it for, and a player can read what of each dimension is left
- * to find instead of scrolling one list of everything the game holds. A section the filter has
- * emptied is left out with the biomes it would have held rather than standing as a line over nothing.
+ * The list of either page is divided by dimension before it is read in any other order: what is in
+ * the overworld together at the top, then the nether's, then the end's, and last the things that are
+ * no dimension's (see {@link BiomeCatalog.Dimension}) - each of them under a line of the mod's own
+ * drawing that names the dimension and counts what the collection has of it. Which dimension a biome
+ * is in is the game's own answer and not the mod's: a world generates its dimensions from the biome
+ * tags it holds, and those are what the list of biomes is divided by (see {@link BiomeCatalog#all}),
+ * so a biome of a mod is filed under the dimension its author wrote it for, and a player can read
+ * what of each dimension is left to find instead of scrolling one list of everything the game holds.
+ * The structures are divided by the same three dimensions, which the mod reads off each of them by
+ * the biomes the game generates it in (see {@link StructureCatalog}), so the two pages are read
+ * section by section alike. A section the filter has emptied is left out with the entries it would
+ * have held rather than standing as a line over nothing.
  *
- * The collection is read as two pages, and the two tabs over it are which one: the biomes, which are
- * the list this screen is (see {@link Page}), and the structures of the world, which the mod does not
- * collect yet - that tab and its page are the interface of a collection still to come, and what the
- * page shows is the panel with a line saying that there is nothing there rather than a list of
- * nothing. The two belong to the list and not to the screen: the title, the tabs, the frame and the
- * button that closes it are the same on both pages, while the line counting the discoveries and the
- * two filters belong to the biomes and step aside on the page that has no biomes, since neither has
- * anything to count or to filter there.
+ * The collection is read as two pages, and the two tabs over it are which one: the biomes (see
+ * {@link Page}), and the structures. The two are the same screen twice: the title, the line counting
+ * the discoveries and the bar under it, the two filters, the frame, the sections and the button that
+ * closes the screen are the same on both, and what a page changes is the list they hold and the words
+ * the count is read in. Everything the list is made of is read the same way whichever page it is on -
+ * a row, a check beside it, the button that gives a discovery back (see {@link #askToForget}) - since
+ * a biome and a structure are one thing to a list of what the player has found (see
+ * {@link CollectionEntry}), and only the word for what is being counted tells the two pages apart.
  *
  * Everything the screen is made of is a sprite of the gui - the pack's, in the shape the screen draws
  * them in, so that the collection is the same dark one whatever a player runs - everything but the
  * two lines the list is framed with, which are the mod's own drawing:
  *
- * - every biome is a row drawn with the pack's button sprite, a biome that was found with its name in
- *   full white and a check beside it, and one whose reveal is still waiting with the sprite the game
- *   draws a button it will not let anyone press in, dimmed with its name - so what has been found is
- *   what stands out and what is left to find is what stays out of the way,
+ * - every entry of the list is a row drawn with the pack's button sprite, one that was found with its
+ *   name in full white and a check beside it, and one whose reveal is still waiting with the sprite
+ *   the game draws a button it will not let anyone press in, dimmed with its name - so what has been
+ *   found is what stands out and what is left to find is what stays out of the way,
  * - the panel the rows sit on and the frame around it are one sprite of the pack - its own window, the
  *   frame of a list of things, drawn {@link #FRAME_PADDING} past the list on every side and nine
  *   sliced to the size the block comes to - with the block dropping a light shadow under it (see
@@ -113,9 +120,9 @@ import java.util.Set;
  *   than stretched to a width of its own (see {@link #drawLine}), the one over it being the plate the
  *   two tabs stand under and as wide as the two of them together (see {@link #TAB_STRIP_WIDTH}),
  * - the line that opens a section of the list is the mod's own drawing too: the name of the dimension
- *   at the left end, where the names of the biomes under it are, the count of that dimension at the
- *   right end, where the names of the mods a biome comes from are, and a rule across the row over the
- *   two says that a section starts here rather than that the list has a biome with a strange name,
+ *   at the left end, where the names of the entries under it are, the count of that dimension at the
+ *   right end, where the names of the mods an entry comes from are, and a rule across the row over the
+ *   two says that a section starts here rather than that the list has an entry with a strange name,
  * - the scrollbar is the game's scroller, in four pixels of width rather than the six the game draws
  *   it in (see {@link #SCROLLBAR_WIDTH}), and it can be taken and dragged like any other, see
  *   {@link #mouseClicked}, and
@@ -133,7 +140,7 @@ import java.util.Set;
  * the frame around them is where the mod says what kind of list this is - a pair of drawn ornaments
  * over and under it reads as a collection, where the game's own two-pixel separators read as a menu -
  * and the same is asked of the one line inside it: what opens a section has to read as a heading over
- * the biomes under it, and the game draws no heading over a list of its own.
+ * the entries under it, and the game draws no heading over a list of its own.
  *
  * The collection is a block of the screen rather than the screen itself, and it is set on the screen
  * the way a block of one is: it is given at most {@link #LIST_MAX_HEIGHT_PERCENT} of the screen's
@@ -146,14 +153,14 @@ import java.util.Set;
  * even the smallest of it keeps {@link #SCREEN_MARGIN} over and under the block and gives the list
  * everything between them.
  *
- * The rows are drawn rather than made of widgets, because there is next to nothing to press on a
- * biome, and the one thing that can be pressed is drawn where it is shown: a row of a discovered
- * biome that the mouse is on gives up the place of the name of the mod it comes from to a button of
+ * The rows are drawn rather than made of widgets, because there is next to nothing to press on one
+ * of them, and the one thing that can be pressed is drawn where it is shown: a row of a discovery
+ * that the mouse is on gives up the place of the name of the mod it comes from to a button of
  * the game with a cross in it - a button like the two that filter the list, in the same size and
  * with a mark of the game's own font over it - and pressing that button is what asks about forgetting
- * the biome (see {@link #askToForget}). The row the mouse is on is held in a thin line of the
- * collection's own gold, which is what says which row is being read - and with it which biome's
- * name the button at the end of the row belongs to - and the row under it stays a row that cannot
+ * the discovery (see {@link #askToForget}). The row the mouse is on is held in a thin line of the
+ * collection's own gold, which is what says which row is being read - and with it which name
+ * the button at the end of the row belongs to - and the row under it stays a row that cannot
  * be clicked, hovered into a highlight or focused, which is what keeps a list of what the game
  * holds from reading as a list of things to press. Everything else the player can do is scroll,
  * filter and close.
@@ -198,23 +205,24 @@ import java.util.Set;
  * that closes the screen cannot open it again on the way out. The same screen is what the mod list
  * of Mod Menu opens, since it is the one screen this mod has (see {@link ModMenuIntegration}), and
  * that way in asks a different question than the key does: the key shows a world, while the mod list
- * shows the collection itself - every biome found in any of the player's worlds, read together out
- * of the files each world keeps its own discoveries in (see {@link DiscoveredBiomes#loadAll}), with
- * no world having to be open behind it. What is checked there is what was found anywhere, the line
- * under the title counts all of it, and nothing offers to forget a biome: a discovery is a discovery
- * of a world, and a row of that list is a biome found somewhere rather than in the world the player
- * is in, so there is no one file to take it back out of (see {@link #canForget}).
+ * shows the collection itself - everything found in any of the player's worlds, read together out of
+ * the files each world keeps its own discoveries in (see {@link DiscoveredBiomes#loadAll} and
+ * {@link DiscoveredStructures#loadAll}), with no world having to be open behind it. What is checked
+ * there is what was found anywhere, the line under the title counts all of it, and nothing offers to
+ * forget anything: a discovery is a discovery of a world, and a row of that list is a biome or a
+ * structure found somewhere rather than in the world the player is in, so there is no one file to
+ * take it back out of (see {@link #canForget}).
  */
 final class BiomeCollectionScreen extends Screen
 {
-	/** Which biomes the list is showing: all of them, or only one end of them. */
+	/** Which entries of the list are showing: all of them, or only one end of them. */
 	private enum Filter
 	{
-		/** Every biome the list has, found or not. */
+		/** Every entry the list has, found or not. */
 		ALL,
-		/** Only the biomes that already had their reveal here. */
+		/** Only the entries that already had their reveal here. */
 		DISCOVERED,
-		/** Only the biomes that have not had it yet, i.e. what is left to find. */
+		/** Only the entries that have not had it yet, i.e. what is left to find. */
 		REMAINING
 	}
 
@@ -222,20 +230,20 @@ final class BiomeCollectionScreen extends Screen
 	 * The two pages of the collection, which are the two tabs over the list: the one the screen is, and
 	 * the one that is not a list yet.
 	 *
-	 * The biomes are what this screen is for: every biome a world has, each of them checked or waiting
-	 * (see {@link BiomeCatalog}). The structures are the shape of a collection still to come - the mod
-	 * records nothing about them - so the second page is the interface of one and nothing else: the
-	 * title, the tabs, the frame and the button that closes the screen are the same on both pages, and
-	 * where the list of biomes would be, that page says that nothing is collected there rather than
-	 * showing nothing (see {@link #rebuildShown} and {@link #drawRows}). The count line and the two
-	 * filters belong to the biomes and step aside while it is shown, since neither has anything to count
-	 * or to filter there.
+	 * The biomes are the list of everything a world can hand out - every biome it has, each of them
+	 * checked or waiting (see {@link BiomeCatalog}) - and the structures are the list of everything the
+	 * game can say a player is inside, a row per structure it ships and a row per family of them,
+	 * checked and waiting the same way (see
+	 * {@link StructureCatalog}). So the two pages are one collection read twice, and what a page of it
+	 * changes is the list: a page of its own is built from the list of its page whenever it is shown
+	 * (see {@link #rebuildShown}), the count over the list counts that list, and the two filters keep an
+	 * end of that list like they keep an end of the other (see {@link #toggleFilter}).
 	 */
 	private enum Page
 	{
 		/** Every biome the world has: the page the screen opens on, and the list it is made of. */
 		BIOMES("screen.immersive_titles.collection.tab.biomes"),
-		/** The structures of the world, which no world writes down yet: the interface of a collection. */
+		/** The structures the game recognizes a player entering, listed the same way. */
 		STRUCTURES("screen.immersive_titles.collection.tab.structures");
 
 		/** The key the name of this tab is read from, in the language file of the mod. */
@@ -257,21 +265,21 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * One line of the list as it is drawn: the line that opens a section of the collection, or one biome
-	 * under it.
+	 * One line of the list as it is drawn: the line that opens a section of the collection, or one entry
+	 * of it under that line.
 	 *
 	 * The two are rows of the same height and the same width, and that is the whole of how the list
 	 * works: it is drawn, scrolled and read from the mouse a row at a time (see {@link #rowTop} and
 	 * {@link #rowAt}), so a section is a row of the list like any other and everything that counts rows
-	 * counts it - which is what keeps a list of sections scrolling exactly like the list of biomes it
-	 * was. What the two are told apart for is what is drawn in them and what can be pressed in them: a
-	 * biome can be hovered and forgotten, a section is read.
+	 * counts it - which is what keeps a list of sections scrolling exactly like the list it was. What
+	 * the two are told apart for is what is drawn in them and what can be pressed in them: an entry can
+	 * be hovered and forgotten, a section is read.
 	 */
 	private sealed interface Row
 	{
 		/**
 		 * The line that opens the section of one dimension: which dimension it holds, and what the
-		 * collection has of it - how many of its biomes were found and how many of them there are, both
+		 * collection has of it - how many of its entries were found and how many of them there are, both
 		 * counted over the whole dimension rather than over what the filter is showing, so that the line
 		 * says what is left to find in that dimension and not what of it happens to be on the screen.
 		 */
@@ -279,16 +287,16 @@ final class BiomeCollectionScreen extends Screen
 		{
 		}
 
-		/** One biome of the collection, drawn under the line of the dimension it belongs to. */
-		record Biome(BiomeCatalog.Entry entry) implements Row
+		/** One biome or structure of the collection, drawn under the line of its dimension. */
+		record Item(CollectionEntry entry) implements Row
 		{
 		}
 	}
 
 	/**
-	 * Height of one row, i.e. of one biome: a line of the game's font with the room around it a row
+	 * Height of one row, i.e. of one entry: a line of the game's font with the room around it a row
 	 * needs, rather than the height of a button of the game. The rows are a list to read, not buttons
-	 * to press - there is nothing to press on a biome - so they are drawn as small as the text in them
+	 * to press - there is nothing to press on one of them - so they are drawn as small as the text in them
 	 * allows, which is what leaves the collection small enough for a screen to hold it with room around
 	 * it instead of filling the screen with it.
 	 *
@@ -630,9 +638,20 @@ final class BiomeCollectionScreen extends Screen
 	/**
 	 * The line under the title that counts what is found, of one world and of every world at once: the
 	 * same count read against the list of a world and against the list of all of them.
+	 *
+	 * There is a pair of them for each page of the collection, because the sentence is about what is
+	 * being counted - a number of biomes on one page and a number of structures on the other - and a
+	 * sentence is not something a count can be handed for a language to put the word into: the word is
+	 * part of the line, so the line is written once per page. What the two pairs are not is two kinds of
+	 * count: the count itself, the list it is taken against and the place it is drawn in are the same,
+	 * and what a page chooses is the sentence it says it in (see {@link #progressKey}).
 	 */
 	private static final String PROGRESS_KEY = "screen.immersive_titles.collection.progress";
 	private static final String ALL_WORLDS_PROGRESS_KEY = "screen.immersive_titles.collection.progress_all";
+	private static final String PROGRESS_STRUCTURES_KEY =
+			"screen.immersive_titles.collection.progress_structures";
+	private static final String ALL_WORLDS_PROGRESS_STRUCTURES_KEY =
+			"screen.immersive_titles.collection.progress_all_structures";
 
 	/**
 	 * The names the four sections of the list are read by, one for each dimension of
@@ -651,13 +670,10 @@ final class BiomeCollectionScreen extends Screen
 	private static final String FORGET_CONFIRM_KEY = "screen.immersive_titles.collection.forget.confirm";
 
 	/**
-	 * What a list with nothing in it is drawn with: the line a filter that kept no biome leaves in the
-	 * panel, and the one the page of the structures is drawn with - that page collects nothing yet, and
-	 * the line is what says so in the place the list of biomes would be (see {@link #drawRows}).
+	 * What a list with nothing in it is drawn with: the line a filter that kept nothing leaves in the
+	 * panel, on either page of the collection (see {@link #drawRows}).
 	 */
 	private static final String EMPTY_KEY = "screen.immersive_titles.collection.empty";
-	private static final String EMPTY_STRUCTURES_KEY =
-			"screen.immersive_titles.collection.structures.empty";
 
 	/** The glyph a biome that was discovered is marked with, from the game's own font. */
 	private static final String CHECK = "\u2714";
@@ -837,17 +853,30 @@ final class BiomeCollectionScreen extends Screen
 	private static final int VEIL_TOP = 0xA0121216;
 	private static final int VEIL_BOTTOM = 0xB0121216;
 
-	/** The biomes to list, in the order they are shown in. */
-	private final List<BiomeCatalog.Entry> entries;
-
-	/** The biomes of {@link #entries} the list is showing right now, i.e. the ones the filter keeps. */
-	private final List<BiomeCatalog.Entry> shown = new ArrayList<>();
+	/**
+	 * The biomes to list, in the order they are shown in: the page the screen opens on.
+	 */
+	private final List<CollectionEntry> biomes;
 
 	/**
-	 * The lines of the list as it is drawn: each section of {@link BiomeCatalog.Dimension} it has biomes
-	 * of, with the biomes of that dimension under it (see {@link #rebuildRows}). What the list is read by
-	 * goes through this and not through {@link #shown}: what is drawn, scrolled, hovered and counted is a
-	 * row, and the line a section opens with takes a row like the biomes under it do.
+	 * The structures to list, in the order they are shown in (see {@link StructureCatalog#all}): the
+	 * same list in every world, being the game's own registry rather than one a world generates, so it
+	 * is built once and read by both ways into the screen.
+	 */
+	private final List<CollectionEntry> structures;
+
+	/**
+	 * The entries of the page being shown that the list has, i.e. the ones the filter keeps: rebuilt
+	 * whenever the page or the filter changes (see {@link #rebuildShown}), so what is in here is always
+	 * the list of the page that is on the screen.
+	 */
+	private final List<CollectionEntry> shown = new ArrayList<>();
+
+	/**
+	 * The lines of the list as it is drawn: each section of {@link BiomeCatalog.Dimension} it has
+	 * entries of, with the entries of that dimension under it (see {@link #rebuildRows}). What the list
+	 * is read by goes through this and not through {@link #shown}: what is drawn, scrolled, hovered and
+	 * counted is a row, and the line a section opens with takes a row like the entries under it do.
 	 */
 	private final List<Row> rows = new ArrayList<>();
 
@@ -858,24 +887,28 @@ final class BiomeCollectionScreen extends Screen
 	 * screen's own: a biome that is forgotten is taken out of it here, while what the mod remembers is
 	 * changed through {@link TitleOverlay#forgetBiome} and nothing else.
 	 */
-	private final Set<String> discovered;
+	private final Set<String> discoveredBiomes;
 
 	/**
-	 * How many of {@link #entries} are in {@link #discovered}: counted when the screen opens and held
-	 * up to date from there, since a biome that is forgotten stops being one of them.
+	 * The structures that already had their reveal, read and given back exactly like
+	 * {@link #discoveredBiomes} and kept apart from it for the same reason: the two are what the two
+	 * pages of the collection are marked by, and a discovery of one kind says nothing about the other.
 	 */
-	private int discoveredCount;
+	private final Set<String> discoveredStructures;
 
-	/** Which biomes the list is showing; the two buttons beside it switch this, see {@link #toggleFilter}. */
+	/**
+	 * Which entries of the list are showing; the two buttons beside it switch this, see
+	 * {@link #toggleFilter}.
+	 */
 	private Filter filter = Filter.ALL;
 
 	/** Which page of the collection is shown; the two tabs over the list switch this, see {@link #show}. */
 	private Page page = Page.BIOMES;
 
 	/**
-	 * The two buttons that filter the list, held on to so that the page with nothing to filter can take
-	 * them off the screen and put them back: they are built again with every {@link #init()}, and the
-	 * page shown is what decides whether they are there at all (see {@link #showFilters}).
+	 * The two buttons that filter the list, held on to for the marks the screen draws over them (see
+	 * {@link #drawFilterIcons}): they are built again with every {@link #init()}, and both pages of the
+	 * collection are filtered by the same two, since either page is a list with two ends to it.
 	 */
 	private Button discoveredFilter;
 	private Button remainingFilter;
@@ -939,7 +972,10 @@ final class BiomeCollectionScreen extends Screen
 	 * is false for: no world has to be open there at all, the biomes are the ones the mod knows
 	 * together with the ones found anywhere (see {@link BiomeCatalog#known(Set, ClientLevel)}), what is
 	 * checked is what was found in any world, and the line under the title counts all of that rather
-	 * than one world.
+	 * than one world. The structures are the same list either way, being the game's own and not a
+	 * world's (see {@link StructureCatalog}), and
+	 * what this changes about them is the discoveries its page is marked by, exactly as it changes
+	 * those of the biomes.
 	 */
 	private final boolean inWorld;
 
@@ -952,11 +988,18 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * The collection of the world the player is in, which is what the mod's own key opens: every biome
-	 * that world has registered, and the ones that already had their reveal in it.
+	 * that world has registered together with the structures the game recognizes a player entering, and
+	 * the ones of either kind that already had their reveal in it.
+	 *
+	 * The structures are the same in every world and both of the two sets are handed in by the
+	 * caller, since the discoveries of a world are the mod's to read and the screen is not the one that
+	 * remembers them (see {@link TitleOverlay#discoveredBiomes} and
+	 * {@link TitleOverlay#discoveredStructures}).
 	 */
-	BiomeCollectionScreen(ClientLevel level, Set<String> discovered, Screen parent)
+	BiomeCollectionScreen(ClientLevel level, Set<String> discoveredBiomes, Set<String> discoveredStructures,
+			Screen parent)
 	{
-		this(BiomeCatalog.all(level), discovered, true, parent);
+		this(BiomeCatalog.all(level), discoveredBiomes, discoveredStructures, true, parent);
 	}
 
 	/**
@@ -981,33 +1024,38 @@ final class BiomeCollectionScreen extends Screen
 		Set<String> found = DiscoveredBiomes.loadAll();
 		found.addAll(TitleOverlay.discoveredBiomes());
 
-		return new BiomeCollectionScreen(BiomeCatalog.known(found, client.level), found, false, parent);
+		// the structures of every world are read the same way out of the same files (see
+		// WorldIdentity and DiscoveredStructures): what a world has already handed out is in the file
+		// of that world, and both kinds of discovery are read from all of them
+		Set<String> foundStructures = DiscoveredStructures.loadAll();
+		foundStructures.addAll(TitleOverlay.discoveredStructures());
+
+		return new BiomeCollectionScreen(BiomeCatalog.known(found, client.level), found, foundStructures,
+				false, parent);
 	}
 
 	/**
 	 * Builds the screen out of what it is listing: the biomes to show, the ones of them that already
-	 * had their reveal, and whether that list is one world's or every world's (see {@link #inWorld}).
+	 * had their reveal, the structures that already had theirs, and whether that is one world's list or
+	 * every world's (see {@link #inWorld}).
+	 *
+	 * The list of structures is built here rather than handed in (see {@link StructureCatalog#all}): it
+	 * is the game's own list of the structures it can recognize a player inside, which is the same
+	 * whatever world the screen was opened over, so there is nothing about the world in front of the
+	 * player for the caller to read for it.
 	 */
-	private BiomeCollectionScreen(List<BiomeCatalog.Entry> entries, Set<String> discovered,
-			boolean inWorld, Screen parent)
+	private BiomeCollectionScreen(List<CollectionEntry> biomes, Set<String> discoveredBiomes,
+			Set<String> discoveredStructures, boolean inWorld, Screen parent)
 	{
 		super(Component.translatable("screen.immersive_titles.collection.title"));
 
 		this.parent = parent;
 
 		this.inWorld = inWorld;
-		this.entries = entries;
-		this.discovered = new HashSet<>(discovered);
-
-		int found = 0;
-		for (BiomeCatalog.Entry entry : entries)
-		{
-			if (discovered.contains(entry.id()))
-			{
-				found++;
-			}
-		}
-		this.discoveredCount = found;
+		this.biomes = biomes;
+		this.structures = StructureCatalog.all();
+		this.discoveredBiomes = new HashSet<>(discoveredBiomes);
+		this.discoveredStructures = new HashSet<>(discoveredStructures);
 
 		rebuildShown();
 	}
@@ -1076,7 +1124,7 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Adds the two buttons that filter the list: the one beside the left of the list keeps the biomes
+	 * Adds the two buttons that filter the list: the one beside the left of the list keeps the entries
 	 * that were discovered, the one beside its right keeps the ones that are left to find. Both stand
 	 * outside the frame of the list, level with the first row of it, so what they filter is the list
 	 * they are beside without either of them being drawn over it (see {@link #filterButtonX}).
@@ -1095,8 +1143,6 @@ final class BiomeCollectionScreen extends Screen
 
 		addRenderableWidget(discoveredFilter);
 		addRenderableWidget(remainingFilter);
-
-		showFilters(page == Page.BIOMES);
 	}
 
 	/**
@@ -1136,10 +1182,12 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Shows a page of the collection: the list of biomes, or the page that collects nothing yet.
+	 * Shows a page of the collection: the list of biomes, or the list of the structures.
 	 *
-	 * The page already shown is not shown again - nothing about it has changed - and the two filters go
-	 * with it, since they filter the biomes and not the screen (see {@link #showFilters}). The list is
+	 * The page already shown is not shown again - nothing about it has changed - and what switching the
+	 * page does is build the list again out of the entries of the page arrived at (see
+	 * {@link #rebuildShown}), which is what the two filters keep an end of from then on: the filter that
+	 * was turned on stays on, and it is the list of the new page that it keeps an end of. The list is
 	 * sent back to its top, which is where a list that has just been replaced should start, and the
 	 * slide is what carries it there, so a tab that is pressed reads as a page being turned rather than
 	 * as one being cut to.
@@ -1153,24 +1201,10 @@ final class BiomeCollectionScreen extends Screen
 
 		this.page = page;
 
-		showFilters(page == Page.BIOMES);
 		rebuildShown();
 
 		scrollCurrent = clampScroll(scrollCurrent);
 		scrollTarget = 0.0D;
-	}
-
-	/**
-	 * Puts the two filter buttons on the screen or takes them off it: they belong to the list of biomes,
-	 * so the page that lists no biomes has neither of them. They are hidden and made inert both, since
-	 * a button that is only drawn flat is still a button the mouse finds.
-	 */
-	private void showFilters(boolean shown)
-	{
-		discoveredFilter.visible = shown;
-		discoveredFilter.active = shown;
-		remainingFilter.visible = shown;
-		remainingFilter.active = shown;
 	}
 
 	/**
@@ -1205,27 +1239,28 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Fills {@link #shown} with the biomes the current filter keeps, in the order of the catalog, and
-	 * builds {@link #rows} out of what is left of them (see {@link #rebuildRows}).
+	 * Fills {@link #shown} with the entries of the page being shown that the current filter keeps, in the
+	 * order of the catalog of that page, and builds {@link #rows} out of what is left of them (see
+	 * {@link #rebuildRows}).
 	 *
-	 * The page that collects no biomes has nothing to keep and nothing to build a row from, so both the
-	 * biomes it is showing and the rows of the list are emptied: what that page draws in the panel is a
-	 * line saying that there is nothing there yet (see {@link #drawRows}), which is the one thing it has
-	 * to say - an empty panel is the same picture whether the list is empty or broken.
+	 * It is called whenever the list is made different, which is the three ways it can be: the screen is
+	 * built with one of the two pages on it, a tab switches to the other page, and a filter is turned on
+	 * or off (see {@link #show} and {@link #toggleFilter}). The page is what decides which of the two
+	 * lists and which of the two sets of discoveries are read - see {@link #entries} and
+	 * {@link #discovered} - so nothing below has to know which page it is on.
+	 *
+	 * A filter that keeps nothing of the page leaves both the list it is showing and the rows of the
+	 * panel empty: what is drawn then is a line saying that there is nothing to show (see
+	 * {@link #drawRows}), which is the one thing an empty panel has to say - an empty panel is the same
+	 * picture whether the list is empty or broken.
 	 */
 	private void rebuildShown()
 	{
 		shown.clear();
 
-		if (page != Page.BIOMES)
+		for (CollectionEntry entry : entries())
 		{
-			rows.clear();
-			return;
-		}
-
-		for (BiomeCatalog.Entry entry : entries)
-		{
-			boolean found = discovered.contains(entry.id());
+			boolean found = discovered().contains(entry.id());
 
 			if ((filter == Filter.DISCOVERED && !found) || (filter == Filter.REMAINING && found))
 			{
@@ -1236,6 +1271,65 @@ final class BiomeCollectionScreen extends Screen
 		}
 
 		rebuildRows();
+	}
+
+	/**
+	 * The entries of the page being shown, in the order they are listed in: the biomes of the world the
+	 * screen was opened over, or the structures the game recognizes a player entering (see
+	 * {@link #biomes} and {@link #structures}). It is what everything that reads the list reads, so the
+	 * page is the only place the two are told apart.
+	 */
+	private List<CollectionEntry> entries()
+	{
+		return page == Page.BIOMES ? biomes : structures;
+	}
+
+	/**
+	 * The discoveries of the page being shown, i.e. the ids its entries are checked against and the set a
+	 * discovery is given back out of (see {@link #ofEveryWorld} and {@link #forget}).
+	 */
+	private Set<String> discovered()
+	{
+		return page == Page.BIOMES ? discoveredBiomes : discoveredStructures;
+	}
+
+	/**
+	 * How many entries of the page being shown have been discovered: what the line under the title counts
+	 * and what the bar under it reads at a glance.
+	 *
+	 * It is counted over the list it is about on the frames it is drawn on rather than kept in a field: a
+	 * page is a few dozen entries, the count is asked for twice per frame, and a count that is worked out
+	 * from the list cannot come adrift from the checks beside it - a discovery that is given back stops
+	 * being counted for the same reason it stops being checked (see {@link #forget}).
+	 */
+	private int foundCount()
+	{
+		int found = 0;
+
+		for (CollectionEntry entry : entries())
+		{
+			if (discovered().contains(entry.id()))
+			{
+				found++;
+			}
+		}
+
+		return found;
+	}
+
+	/**
+	 * The line under the title of the page being shown: the count of it read against one world or against
+	 * every world at once, which is the pair of sentences the page and the way in choose between (see
+	 * {@link #PROGRESS_KEY}).
+	 */
+	private String progressKey()
+	{
+		if (page == Page.STRUCTURES)
+		{
+			return inWorld ? PROGRESS_STRUCTURES_KEY : ALL_WORLDS_PROGRESS_STRUCTURES_KEY;
+		}
+
+		return inWorld ? PROGRESS_KEY : ALL_WORLDS_PROGRESS_KEY;
 	}
 
 	/**
@@ -1261,20 +1355,20 @@ final class BiomeCollectionScreen extends Screen
 
 			rows.add(new Row.Section(dimension, found(dimension), size(dimension)));
 
-			for (BiomeCatalog.Entry entry : shown)
+			for (CollectionEntry entry : shown)
 			{
 				if (entry.dimension() == dimension)
 				{
-					rows.add(new Row.Biome(entry));
+					rows.add(new Row.Item(entry));
 				}
 			}
 		}
 	}
 
-	/** Whether the filter is keeping any biome of {@code dimension} right now. */
+	/** Whether the filter is keeping any entry of {@code dimension} right now. */
 	private boolean shows(BiomeCatalog.Dimension dimension)
 	{
-		for (BiomeCatalog.Entry entry : shown)
+		for (CollectionEntry entry : shown)
 		{
 			if (entry.dimension() == dimension)
 			{
@@ -1285,12 +1379,12 @@ final class BiomeCollectionScreen extends Screen
 		return false;
 	}
 
-	/** How many biomes of {@code dimension} the collection holds at all, found or not. */
+	/** How many entries of {@code dimension} the page being shown holds at all, found or not. */
 	private int size(BiomeCatalog.Dimension dimension)
 	{
 		int size = 0;
 
-		for (BiomeCatalog.Entry entry : entries)
+		for (CollectionEntry entry : entries())
 		{
 			if (entry.dimension() == dimension)
 			{
@@ -1301,14 +1395,14 @@ final class BiomeCollectionScreen extends Screen
 		return size;
 	}
 
-	/** How many biomes of {@code dimension} the world has already had the reveal of. */
+	/** How many entries of {@code dimension} the world has already had the reveal of. */
 	private int found(BiomeCatalog.Dimension dimension)
 	{
 		int found = 0;
 
-		for (BiomeCatalog.Entry entry : entries)
+		for (CollectionEntry entry : entries())
 		{
-			if (entry.dimension() == dimension && discovered.contains(entry.id()))
+			if (entry.dimension() == dimension && discovered().contains(entry.id()))
 			{
 				found++;
 			}
@@ -1336,18 +1430,14 @@ final class BiomeCollectionScreen extends Screen
 
 		// what the line under the title says: how much of the world is found, or - while the list is
 		// every world at once - how much of all of them is, which is that same count read against the
-		// list that holds what any of them found, and the bar under it is that count read at a glance. It
-		// belongs to the biomes, so the page that collects none of them has no count to give and no bar
-		// to draw, and is left with the room the line and the bar would have taken
-		if (page == Page.BIOMES)
-		{
-			drawCentered(graphics,
-					Component.translatable(inWorld ? PROGRESS_KEY : ALL_WORLDS_PROGRESS_KEY,
-							discoveredCount, entries.size()),
-					blockTop + PROGRESS_Y, COUNT_COLOR);
+		// list that holds what any of them found, and the bar under it is that count read at a glance.
+		// What the page being shown changes about the two is the word the count is read with and the
+		// list it is taken against, which is what progressKey and entries are for
+		drawCentered(graphics,
+				Component.translatable(progressKey(), foundCount(), entries().size()),
+				blockTop + PROGRESS_Y, COUNT_COLOR);
 
-			drawProgressBar(graphics);
-		}
+		drawProgressBar(graphics);
 
 		drawFrame(graphics);
 		drawRows(graphics, mouseX, mouseY);
@@ -1362,16 +1452,11 @@ final class BiomeCollectionScreen extends Screen
 
 		// and what the screen draws over them, once the buttons themselves are on the screen: the face of
 		// each of them in the pack's own button, the bar of the two pages with the names of both in it,
-		// the marks of the two filters while the page they belong to is shown, the name of the button
-		// that closes the screen and the border of it the keyboard is on
+		// the marks of the two filters, the name of the button that closes the screen and the border of
+		// it the keyboard is on
 		drawButtonFaces(graphics);
 		drawTabs(graphics);
-
-		if (page == Page.BIOMES)
-		{
-			drawFilterIcons(graphics);
-		}
-
+		drawFilterIcons(graphics);
 		drawDoneLabel(graphics);
 		drawDoneFocus(graphics);
 	}
@@ -1436,8 +1521,9 @@ final class BiomeCollectionScreen extends Screen
 	{
 		int x = (width - BAR_WIDTH) / 2;
 		int y = blockTop + BAR_Y;
-		int filled = entries.isEmpty() ? 0
-				: (int) Math.round((double) discoveredCount / entries.size() * BAR_WIDTH);
+		int total = entries().size();
+		int filled = total == 0 ? 0
+				: (int) Math.round((double) foundCount() / total * BAR_WIDTH);
 
 		graphics.blit(RenderPipelines.GUI_TEXTURED, BAR_TRACK, x, y, 0.0F, 0.0F,
 				BAR_WIDTH, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT);
@@ -1506,12 +1592,8 @@ final class BiomeCollectionScreen extends Screen
 			drawButtonFace(graphics, tab);
 		}
 
-		if (page == Page.BIOMES)
-		{
-			drawButtonFace(graphics, discoveredFilter);
-			drawButtonFace(graphics, remainingFilter);
-		}
-
+		drawButtonFace(graphics, discoveredFilter);
+		drawButtonFace(graphics, remainingFilter);
 		drawButtonFace(graphics, doneButton);
 	}
 
@@ -1621,8 +1703,7 @@ final class BiomeCollectionScreen extends Screen
 	{
 		if (rows.isEmpty())
 		{
-			drawCentered(graphics, Component.translatable(
-					page == Page.BIOMES ? EMPTY_KEY : EMPTY_STRUCTURES_KEY),
+			drawCentered(graphics, Component.translatable(EMPTY_KEY),
 					listTop + (listBottom - listTop - font.lineHeight) / 2, COUNT_COLOR);
 			return;
 		}
@@ -1698,9 +1779,9 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws one row of the list, which is one of two things: a biome, or the line that opens a section
-	 * of them. Which of the two a row is, is what the list itself holds and not what this decides (see
-	 * {@link Row}), so the row is read for it here and handed on to what draws it.
+	 * Draws one row of the list, which is one of two things: an entry of the collection, or the line that
+	 * opens a section of them. Which of the two a row is, is what the list itself holds and not what this
+	 * decides (see {@link Row}), so the row is read for it here and handed on to what draws it.
 	 */
 	private void drawRow(GuiGraphicsExtractor graphics, Row row, int index, int y, int rowRight,
 			int hovered, int mouseX, int mouseY)
@@ -1709,17 +1790,17 @@ final class BiomeCollectionScreen extends Screen
 		{
 			drawSection(graphics, section, y, rowRight);
 		}
-		else if (row instanceof Row.Biome biome)
+		else if (row instanceof Row.Item item)
 		{
-			drawBiome(graphics, biome.entry(), index, y, rowRight, hovered, mouseX, mouseY);
+			drawItem(graphics, item.entry(), index, y, rowRight, hovered, mouseX, mouseY);
 		}
 	}
 
 	/**
 	 * Draws the line that opens a section of the list: the name of its dimension at the left end, where
-	 * the names of the biomes under it are, the count of that dimension at the right end, where the
-	 * names of the mods a biome comes from are, and a rule across the row over the two - which is what
-	 * says that a section starts here rather than that the list has a biome with a name that is not one.
+	 * the names of the entries under it are, the count of that dimension at the right end, where the
+	 * names of the mods an entry comes from are, and a rule across the row over the two - which is what
+	 * says that a section starts here rather than that the list has an entry with a name that is not one.
 	 *
 	 * The rule is drawn in the last pixel of the room above the row, which is the room the rows are set
 	 * apart by, so a section is set off from the one before it without the list spending a row of its own
@@ -1751,18 +1832,18 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws one biome: the pack's own button, its name, and a check on the ones that were found, with
-	 * the row and the name of a biome whose reveal is still waiting dimmed - so the list reads as what
-	 * has been found, with what is left to find set back from it.
+	 * Draws one entry of the list: the pack's own button, its name, and a check on the ones that were
+	 * found, with the row and the name of an entry whose reveal is still waiting dimmed - so the list
+	 * reads as what has been found, with what is left to find set back from it.
 	 *
-	 * Beside the name sits either the id of the mod the biome comes from or - while the mouse is on a
-	 * row of a biome that was found - the button that forgets it, which takes the place of that id so
-	 * that a long list from a modpack stays readable and the button keeps to the end of its own row.
+	 * Beside the name sits either the id of the mod the entry comes from or - while the mouse is on a
+	 * row of a discovery - the button that forgets it, which takes the place of that id so that a long
+	 * list from a modpack stays readable and the button keeps to the end of its own row.
 	 */
-	private void drawBiome(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int index, int y,
+	private void drawItem(GuiGraphicsExtractor graphics, CollectionEntry entry, int index, int y,
 			int rowRight, int hovered, int mouseX, int mouseY)
 	{
-		boolean found = discovered.contains(entry.id());
+		boolean found = discovered().contains(entry.id());
 		int textY = y + (ROW_HEIGHT - font.lineHeight) / 2;
 
 		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
@@ -1770,8 +1851,8 @@ final class BiomeCollectionScreen extends Screen
 				listLeft, y, rowRight - listLeft, ROW_HEIGHT);
 
 		// the row the mouse is on is held in a thin line of the collection's own gold - what says which
-		// row the mouse is on, and with it which biome's name is being read - and it is drawn under the
-		// text of the row rather than over it, so a name is never read through a line
+		// row the mouse is on, and with it which name is being read - and it is drawn under the text of
+		// the row rather than over it, so a name is never read through a line
 		if (index == hovered)
 		{
 			drawBorder(graphics, listLeft, y, rowRight, y + ROW_HEIGHT, HOVER_COLOR);
@@ -1800,11 +1881,12 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Whether a biome can be forgotten in this screen at all: it can while the screen is listing one
-	 * world, since a discovery is a discovery of a world and the file to take it out of is that
-	 * world's. The collection the mod list opens is the case where it cannot - what is listed there
-	 * was found in whichever of the player's worlds it was found in, and this screen is not holding
-	 * one of them (see {@link #ofEveryWorld}).
+	 * Whether a discovery can be given back in this screen at all: it can while the screen is listing one
+	 * world, since a discovery is a discovery of a world and the file to take it out of is that world's -
+	 * the same file for a structure as for a biome (see {@link WorldIdentity}). The collection the mod
+	 * list opens is the case where it cannot - what is listed there was found in whichever of the
+	 * player's worlds it was found in, and this screen is not holding one of them (see
+	 * {@link #ofEveryWorld}).
 	 */
 	private boolean canForget()
 	{
@@ -1812,9 +1894,9 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws the button that forgets the biome of the row the mouse is on: a button of the game at the
-	 * far right end of the row, where the name of the mod a biome comes from would be drawn - which is
-	 * the place the button takes while it is there (see {@link #drawBiome}).
+	 * Draws the button that forgets the entry of the row the mouse is on: a button of the game at the
+	 * far right end of the row, where the name of the mod an entry comes from would be drawn - which is
+	 * the place the button takes while it is there (see {@link #drawItem}).
 	 *
 	 * It is the button the two filters are drawn as, with the mark of the game's own font over it, so
 	 * the three buttons of the screen are read as the same kind of thing. It is lit while the mouse is
@@ -1822,7 +1904,7 @@ final class BiomeCollectionScreen extends Screen
 	 * there, since what the mouse is on decides what a press would do: a press anywhere on the row does
 	 * nothing, a press on the button asks about forgetting the biome.
 	 */
-	private void drawForgetButton(GuiGraphicsExtractor graphics, BiomeCatalog.Entry entry, int y,
+	private void drawForgetButton(GuiGraphicsExtractor graphics, CollectionEntry entry, int y,
 			int rowRight, int mouseX, int mouseY)
 	{
 		boolean onButton = isOverForgetButton(y, rowRight, mouseX, mouseY);
@@ -2026,9 +2108,9 @@ final class BiomeCollectionScreen extends Screen
 	 * that is already holding it, while a press on the groove brings the thumb under the cursor
 	 * first, so that a press anywhere on the scrollbar is followed by the drag the player expects.
 	 *
-	 * The row area answers a press for one thing only, the button a row of a discovered biome shows
-	 * while the mouse is on it (see {@link #forgetTargetAt}); anywhere else it is left to the rest of
-	 * the screen, so a row of a biome is still not something that answers a click of its own.
+	 * The row area answers a press for one thing only, the button a row of a discovery shows while the
+	 * mouse is on it (see {@link #forgetTargetAt}); anywhere else it is left to the rest of the screen,
+	 * so a row of the list is still not something that answers a click of its own.
 	 */
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
@@ -2049,7 +2131,7 @@ final class BiomeCollectionScreen extends Screen
 
 		if (event.button() == LEFT_BUTTON)
 		{
-			BiomeCatalog.Entry forget = forgetTargetAt(event.x(), event.y());
+			CollectionEntry forget = forgetTargetAt(event.x(), event.y());
 
 			if (forget != null)
 			{
@@ -2062,12 +2144,12 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * The biome whose button a press at the point would land on, or null while it lands on none: a row
-	 * shows its button only while the mouse is on that row and only for a biome that was discovered
-	 * (see {@link #drawBiome}), and the point has to be on the button itself, so a press can never reach
-	 * a button that is not drawn.
+	 * The entry whose button a press at the point would land on, or null while it lands on none: a row
+	 * shows its button only while the mouse is on that row and only for a discovery (see
+	 * {@link #drawItem}), and the point has to be on the button itself, so a press can never reach a
+	 * button that is not drawn.
 	 */
-	private BiomeCatalog.Entry forgetTargetAt(double mouseX, double mouseY)
+	private CollectionEntry forgetTargetAt(double mouseX, double mouseY)
 	{
 		if (!canForget())
 		{
@@ -2081,9 +2163,9 @@ final class BiomeCollectionScreen extends Screen
 			return null;
 		}
 
-		BiomeCatalog.Entry entry = biomeAt(index);
+		CollectionEntry entry = entryAt(index);
 
-		if (entry == null || !discovered.contains(entry.id()))
+		if (entry == null || !discovered().contains(entry.id()))
 		{
 			return null;
 		}
@@ -2092,27 +2174,27 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * The biome of the row at {@code index}, or null while that row is the line of a section: a section
-	 * is not a biome, so there is nothing under a heading for a press to reach.
+	 * The entry of the row at {@code index}, or null while that row is the line of a section: a section
+	 * is not an entry, so there is nothing under a heading for a press to reach.
 	 */
-	private BiomeCatalog.Entry biomeAt(int index)
+	private CollectionEntry entryAt(int index)
 	{
 		Row row = rows.get(index);
 
-		return row instanceof Row.Biome biome ? biome.entry() : null;
+		return row instanceof Row.Item item ? item.entry() : null;
 	}
 
 	/**
-	 * Asks about forgetting a biome before anything is forgotten: the game's own confirmation screen,
-	 * carrying the name of the biome and what forgetting it does - the reveal plays again the next
-	 * time it is entered - because a button at the end of a row is a small thing to press by mistake,
-	 * and a reveal that has already played is the one thing a collection is made of.
+	 * Asks about forgetting an entry before anything is forgotten: the game's own confirmation screen,
+	 * carrying the name of it and what forgetting it does - the reveal plays again the next time it is
+	 * entered - because a button at the end of a row is a small thing to press by mistake, and a reveal
+	 * that has already played is the one thing a collection is made of.
 	 *
 	 * The collection is what both answers come back to, so a press that was a mistake costs a press of
 	 * cancel and nothing else, and closing the confirmation with escape is cancel as well, since the
 	 * game's own confirmation screen answers its own close with no.
 	 */
-	private void askToForget(BiomeCatalog.Entry entry)
+	private void askToForget(CollectionEntry entry)
 	{
 		minecraft.setScreenAndShow(new ConfirmScreen(
 				confirmed ->
@@ -2131,23 +2213,31 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Forgets the biome of a row: the reveal is taken back out of what the world remembers, on disk as
-	 * well as in this session (see {@link TitleOverlay#forgetBiome}), and the list is built again with
-	 * that row as a biome that still has its reveal waiting, which is what it is now.
+	 * Forgets the entry of a row: the reveal is taken back out of what the world remembers, on disk as
+	 * well as in this session, for the kind of entry the page is showing (see
+	 * {@link TitleOverlay#forgetBiome} and {@link TitleOverlay#forgetStructure}), and the list is built
+	 * again with that row as an entry that still has its reveal waiting, which is what it is now.
 	 *
-	 * The count over the list comes down with it, and the list is held where it is: a row that leaves
-	 * a filtered list is one row out of a list the player is reading, not a reason to throw them back
-	 * to the top.
+	 * The count over the list follows the list rather than being told about this (see
+	 * {@link #foundCount}), so the line under the title and the bar under it come down together, and the
+	 * list is held where it is: a row that leaves a filtered list is one row out of a list the player is
+	 * reading, not a reason to throw them back to the top.
 	 */
-	private void forget(BiomeCatalog.Entry entry)
+	private void forget(CollectionEntry entry)
 	{
-		if (!discovered.remove(entry.id()))
+		if (!discovered().remove(entry.id()))
 		{
 			return;
 		}
 
-		TitleOverlay.forgetBiome(entry.id());
-		discoveredCount--;
+		if (page == Page.BIOMES)
+		{
+			TitleOverlay.forgetBiome(entry.id());
+		}
+		else
+		{
+			TitleOverlay.forgetStructure(entry.id());
+		}
 
 		rebuildShown();
 

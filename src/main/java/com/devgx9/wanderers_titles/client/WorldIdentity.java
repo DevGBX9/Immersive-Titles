@@ -44,13 +44,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * The world the player is in, as the remembered biome discoveries need it: the world's own id and
- * the file its discoveries belong in.
+ * The world the player is in, as the remembered discoveries need it: the world's own id and the file
+ * its discoveries belong in.
  *
  * A world the player hosts themselves is kept at home, in the world's own folder next to its
  * {@code level.dat}. The mod writes an id there once - a random UUID, which no other world has had
  * or will have - and keeps the discoveries of that world in the same folder, see
- * {@link DiscoveredBiomes}. Two things follow from that, and both of them are the point:
+ * {@link DiscoveredBiomes} and {@link DiscoveredStructures}. Two things follow from that, and both
+ * of them are the point:
  *
  * - The id is a value the world carries around with it, and nothing is read from its name. Two
  *   worlds both called {@code New World} cannot end up sharing anything, renaming a world for
@@ -87,13 +88,27 @@ final class WorldIdentity
 	/** The file ends every line the same way on every system, so it stays comparable and editable. */
 	static final String LINE_SEPARATOR = "\n";
 
+	/**
+	 * What a line of that file which names a structure begins with.
+	 *
+	 * The two kinds of discovery a world writes down - the biomes of it and the structures the game
+	 * recognizes a player entering - are kept in the one file, because they are one thing to the world
+	 * that hands them out: the reveals it has already played. What tells the two apart in there is this
+	 * marker, and it is on the side of the structures on purpose, since the file has always held the
+	 * biomes of a world as their ids alone: a file written before structures were collected is a file of
+	 * biomes still, a player who has never entered a fortress has no line of one, and a line of either
+	 * kind stays readable, editable and deletable by hand (see {@link DiscoveredBiomes} and
+	 * {@link DiscoveredStructures}).
+	 */
+	static final String STRUCTURE_PREFIX = "structure ";
+
 	/** How many characters of a server address are kept in front of its hash. */
 	private static final int MAX_ADDRESS_LENGTH = 64;
 
 	/** The world's own id: the UUID of a hosted world, the address of a world on a server. */
 	private final String id;
 
-	/** The file the biomes discovered in this world are written to. */
+	/** The file the discoveries of this world are written to, biomes and structures alike. */
 	private final Path file;
 
 	private WorldIdentity(String id, Path file)
@@ -108,7 +123,7 @@ final class WorldIdentity
 		return id;
 	}
 
-	/** The file the biomes discovered in this world are written to. */
+	/** The file the discoveries of this world are written to, biomes and structures alike. */
 	Path file()
 	{
 		return file;
@@ -120,9 +135,10 @@ final class WorldIdentity
 	 * address they have joined a server with, under {@link #SERVERS_FOLDER}.
 	 *
 	 * It is everything the mod has ever written down about what was found, which is what a collection
-	 * of every world at once is read from (see {@link DiscoveredBiomes#loadAll}). Nothing here says
-	 * which world a file belongs to: a caller is after the union of them, and which world found what
-	 * stays in the file of that world, where the id of the world is the name of its folder.
+	 * of every world at once is read from (see {@link DiscoveredBiomes#loadAll} and
+	 * {@link DiscoveredStructures#loadAll}). Nothing here says which world a file belongs to: a caller
+	 * is after the union of them, and which world found what stays in the file of that world, where the
+	 * id of the world is the name of its folder.
 	 *
 	 * Only the files that are actually there, and a folder that is not there is not a fault: a client
 	 * that has never joined a server has no folder of server worlds to list, and a client that has

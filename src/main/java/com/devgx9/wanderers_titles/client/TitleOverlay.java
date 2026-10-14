@@ -77,6 +77,18 @@ import java.util.Set;
  * a cave hands out the cave biomes it passes through and none of the surface biomes it passes under,
  * see {@link #checkBiome} and {@link BiomeNames#place}.
  *
+ * The structures are the second thing the titles follow, and they are read the other way round: what
+ * the game recognizes a player entering is worked out on the server while a world is generated - the
+ * client is sent the blocks a structure is made of and told nothing about the structure itself - so
+ * the mod asks the server of a world the player hosts themselves and keeps the answer beside the
+ * client (see {@link StructurePresence}). What is titled there is the same two titles out of the same
+ * kind of memory: the reveal the first time the player is inside one in a world, the corner title on
+ * every visit after that (see {@link #checkStructure}), and the structures that can be titled are the
+ * ones the game can recognize a player inside, which is every structure it ships (see
+ * {@link StructureCatalog}). A world on a server is the one place
+ * this cannot reach, because its server is another machine and this mod is not in it, so the titles of
+ * such a world name biomes and no structures.
+ *
  * The big reveal draws the clip stored as a numbered PNG sequence at its 1440x720 resolution (see
  * the {@code title} texture folder) minus the two strips of rows {@link #FRAME_CROP} describes,
  * because Minecraft cannot play video. Every frame is a pre
@@ -99,11 +111,12 @@ import java.util.Set;
  * room the game's own HUD takes along the bottom of the screen rather than through it (see
  * {@link #CORNER_HUD_ROOM}).
  *
- * The mod's own key opens the collection of biomes (see {@link BiomeCollectionScreen}): every biome
- * of the world, with the ones that already had their reveal checked, so that what the reveals have
- * been remembering per world is something the player can look at - and the mod list of Mod Menu
- * opens the same collection over every world the player has played at once, rather than over the one
- * they are in (see {@link ModMenuIntegration}).
+ * The mod's own key opens the collection (see {@link BiomeCollectionScreen}): the biomes of the world
+ * and the structures the game recognizes a player entering, each of the two a page of it, with the
+ * ones that already had their reveal checked - so that what the reveals have been remembering per
+ * world is something the player can look at - and the mod list of Mod Menu opens the same collection
+ * over every world the player has played at once, rather than over the one they are in (see
+ * {@link ModMenuIntegration}).
  *
  * The big reveal opens with a short sound of the plate arriving, see {@link #REVEAL_SOUND}. Both
  * titles stand still while the pause menu is open over the world, and only then: the menu the player
@@ -232,10 +245,13 @@ public final class TitleOverlay
 	// ---------------------------------------------------------------------------------------------
 
 	/**
-	 * How many ticks between two biome checks. The title is a reveal for entering a biome, so half a
-	 * second of latency is fine and it keeps the per tick cost of the check irrelevant.
+	 * How many ticks between two checks of the place the player is in, which is what the automatic
+	 * titles follow: the biome they are in and the structure the game says they are inside (see
+	 * {@link #checkPlace}). The title is a reveal for entering one, so half a second of latency is fine,
+	 * and it keeps the per tick cost of the two checks irrelevant - the structures of a level are read
+	 * at this same interval (see {@link StructurePresence}).
 	 */
-	private static final int BIOME_CHECK_INTERVAL_TICKS = 10;
+	private static final int CHECK_INTERVAL_TICKS = 10;
 
 	/**
 	 * How far the player has to move after joining a world before the titles start, in blocks
@@ -356,6 +372,11 @@ public final class TitleOverlay
 	 * discovered, see {@link DiscoveredBiomes}. */
 	private static final Set<String> VISITED_BIOMES = new HashSet<>();
 
+	/** The structures of the current world that already had their reveal, read exactly like
+	 * {@link #VISITED_BIOMES}: loaded when the world is joined, and written to disk as a structure is
+	 * discovered, see {@link DiscoveredStructures}. */
+	private static final Set<String> VISITED_STRUCTURES = new HashSet<>();
+
 	/** The world {@link #VISITED_BIOMES} belongs to, or null while there is no world. */
 	private static WorldIdentity world = null;
 
@@ -365,6 +386,14 @@ public final class TitleOverlay
 	 * went into the ground under a biome never entered it, see {@link #checkBiome}.
 	 */
 	private static String lastBiomeId = null;
+
+	/**
+	 * The structure the player was inside when they were last checked, to notice entering one: it is
+	 * read where the game keeps it (see {@link StructurePresence}), and it is null while they are inside
+	 * none - so leaving a structure and coming back to it is a visit and a visit after it, which is what
+	 * decides between the reveal and the corner title.
+	 */
+	private static String lastStructureId = null;
 
 	/** Where the player stood when the world was joined, until they start moving. */
 	private static Vec3 joinPosition = null;
@@ -377,8 +406,8 @@ public final class TitleOverlay
 	 */
 	private static boolean inLevel = false;
 
-	/** Ticks left until the biome is checked again. */
-	private static int ticksUntilBiomeCheck = 0;
+	/** Ticks left until the place the player is in is checked again. */
+	private static int ticksUntilCheck = 0;
 
 	/** The frame textures that are currently loaded, oldest first. */
 	private static final Deque<Identifier> LOADED_FRAMES = new ArrayDeque<>();
@@ -402,6 +431,11 @@ public final class TitleOverlay
 		// watched from the tick, see levelChanged and tick.
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register(TitleOverlay::levelChanged);
 		ClientTickEvents.END_CLIENT_TICK.register(TitleOverlay::tick);
+
+		// The structures of a world are known to the server side of a game and to nothing else, so
+		// they are read where they are - which is the server of a world the player hosts themselves,
+		// running in this same game - and the answers are kept here, see StructurePresence.
+		StructurePresence.initialize();
 	}
 
 	/**
@@ -427,9 +461,17 @@ public final class TitleOverlay
 		inLevel = true;
 		joinPosition = null;
 		lastBiomeId = null;
+		lastStructureId = null;
 		world = WorldIdentity.of(client).orElse(null);
 		VISITED_BIOMES.clear();
 		VISITED_BIOMES.addAll(DiscoveredBiomes.load(world));
+		VISITED_STRUCTURES.clear();
+		VISITED_STRUCTURES.addAll(DiscoveredStructures.load(world));
+
+		// what the game last saw the player inside belongs to the world that was left: a structure of it
+		// is not one of this one, so the titles wait for the game to say what the player is in now
+		// instead of reading an answer about another world
+		StructurePresence.clear();
 		logWorld();
 	}
 
@@ -475,13 +517,44 @@ public final class TitleOverlay
 
 		if (client.player.position().distanceToSqr(joinPosition) >= MOVED_DISTANCE_SQR)
 		{
-			checkBiome(client);
+			checkPlace(client);
 		}
 	}
 
 	/**
-	 * Watches the place the player is in and plays the matching title when it changes: the reveal on
-	 * a first visit, the corner title on every visit after that.
+	 * Watches the place the player is in, half a second at a time, and plays the titles of what changed:
+	 * the biome they are in (see {@link #checkBiome}) and the structure the game says they are inside
+	 * (see {@link #checkStructure}).
+	 *
+	 * The two are checked together because they are one question - where is the player - asked of the two
+	 * sides that can answer it: the biome is read where the titles stand, out of the world the client was
+	 * sent, and the structure is read where the game worked it out, on the server (see
+	 * {@link StructurePresence}). What each of the two plays is the same: the big reveal for the first
+	 * visit of that biome or structure in this world and the corner title for every visit after it, both
+	 * out of the discoveries the world has written down.
+	 *
+	 * A check that finds both changed at once - a player who walks into a trial chamber in the same half
+	 * second they cross the border of a biome - starts the two titles one after the other, and the
+	 * second of them, the structure, is the one that stays: it is the rarer of the two and the one the
+	 * player is standing inside.
+	 */
+	private static void checkPlace(Minecraft client)
+	{
+		if (ticksUntilCheck > 0)
+		{
+			ticksUntilCheck--;
+			return;
+		}
+
+		ticksUntilCheck = CHECK_INTERVAL_TICKS;
+
+		checkBiome(client);
+		checkStructure(client);
+	}
+
+	/**
+	 * Watches the biome the player is in and plays the matching title when it changes: the reveal on a
+	 * first visit, the corner title on every visit after that.
 	 *
 	 * What is watched is {@link BiomeNames#place}, which is the biome the game reports for the player
 	 * except where the game is reporting ground rather than a place: under the biome that covers the
@@ -497,14 +570,6 @@ public final class TitleOverlay
 	 */
 	private static void checkBiome(Minecraft client)
 	{
-		if (ticksUntilBiomeCheck > 0)
-		{
-			ticksUntilBiomeCheck--;
-			return;
-		}
-
-		ticksUntilBiomeCheck = BIOME_CHECK_INTERVAL_TICKS;
-
 		String biomeId = BiomeNames.place(client).orElse(null);
 		if (biomeId == null || biomeId.equals(lastBiomeId))
 		{
@@ -526,7 +591,43 @@ public final class TitleOverlay
 	}
 
 	/**
-	 * Opens the collection of biomes, or closes it again while it is open, so that one key both
+	 * Watches the structure the game says the player is inside and plays the matching title when they
+	 * enter one: the reveal on their first visit to it in this world, the corner title on every visit
+	 * after that - exactly what {@link #checkBiome} does for a biome, out of a second set of discoveries
+	 * that is remembered per world the same way (see {@link DiscoveredStructures}).
+	 *
+	 * What it watches is {@link StructurePresence}, which is the game's own answer. A structure of a
+	 * world is not something the client is sent: the world is generated with it on the server, the game
+	 * keeps its own knowledge of who is inside one there, and that is where the mod asks for it - which
+	 * in a world the player hosts themselves is this same game (see {@link StructurePresence}). A world
+	 * on a server is the case this cannot reach, and it is this method where that shows: nothing is ever
+	 * inside a structure, the structure stays null, no title of one is played and nothing is written
+	 * down, while the biomes of that world are titled as they always were.
+	 */
+	private static void checkStructure(Minecraft client)
+	{
+		String structureId = StructurePresence.of(client).orElse(null);
+		if (structureId == null || structureId.equals(lastStructureId))
+		{
+			return;
+		}
+
+		lastStructureId = structureId;
+		Component name = StructureNames.displayName(structureId);
+
+		if (VISITED_STRUCTURES.add(structureId))
+		{
+			DiscoveredStructures.remember(world, structureId);
+			startReveal(name);
+		}
+		else
+		{
+			startCornerTitle(name);
+		}
+	}
+
+	/**
+	 * Opens the collection, or closes it again while it is open, so that one key both
 	 * shows the list and puts it away.
 	 *
 	 * A screen the player opened themselves is left alone: the collection only opens on a client that
@@ -551,7 +652,8 @@ public final class TitleOverlay
 		}
 
 		// opened from the game rather than out of another screen, so it closes back into the world
-		client.setScreenAndShow(new BiomeCollectionScreen(client.level, discoveredBiomes(), null));
+		client.setScreenAndShow(new BiomeCollectionScreen(client.level, discoveredBiomes(),
+				discoveredStructures(), null));
 	}
 
 	/**
@@ -563,6 +665,16 @@ public final class TitleOverlay
 	static Set<String> discoveredBiomes()
 	{
 		return Set.copyOf(VISITED_BIOMES);
+	}
+
+	/**
+	 * The structures of the world the player is in that already had their reveal, i.e. the ones the
+	 * collection marks as found on its other page: a copy for the same reason {@link #discoveredBiomes}
+	 * is one, and an empty set while there is no world.
+	 */
+	static Set<String> discoveredStructures()
+	{
+		return Set.copyOf(VISITED_STRUCTURES);
 	}
 
 	/**
@@ -586,6 +698,25 @@ public final class TitleOverlay
 	}
 
 	/**
+	 * Forgets that the structure {@code structureId} had its reveal in the world the player is in, so
+	 * that entering it plays the reveal again: it is dropped from what this session remembers, which is
+	 * what the titles read on every check, and its line is taken out of the world's own file, which is
+	 * what a later session loads (see {@link DiscoveredStructures#forget}).
+	 *
+	 * It is the counterpart of {@link #forgetBiome} for the other kind of discovery, and the collection
+	 * screen is what asks for it, after warning the player about it (see {@link BiomeCollectionScreen}).
+	 */
+	static void forgetStructure(String structureId)
+	{
+		if (!VISITED_STRUCTURES.remove(structureId))
+		{
+			return;
+		}
+
+		DiscoveredStructures.forget(world, structureId);
+	}
+
+	/**
 	 * Says once per world which world the titles are being kept for and how much of it is already
 	 * discovered, so a world whose own folder cannot be reached shows up in the log instead of
 	 * quietly losing its discoveries.
@@ -594,13 +725,13 @@ public final class TitleOverlay
 	{
 		if (world == null)
 		{
-			WandererTitles.LOGGER.warn("This world cannot be identified; the biome reveals of this"
-					+ " session will be remembered in this session only");
+			WandererTitles.LOGGER.warn("This world cannot be identified; the biome and structure"
+					+ " reveals of this session will be remembered in this session only");
 		}
 		else
 		{
-			WandererTitles.LOGGER.info("Biome reveals of world {}: {} already discovered",
-					world.id(), VISITED_BIOMES.size());
+			WandererTitles.LOGGER.info("Reveals of world {}: {} biomes and {} structures already"
+					+ " discovered", world.id(), VISITED_BIOMES.size(), VISITED_STRUCTURES.size());
 		}
 	}
 

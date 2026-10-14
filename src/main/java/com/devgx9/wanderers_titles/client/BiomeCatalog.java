@@ -161,7 +161,14 @@ final class BiomeCatalog
 
 	/**
 	 * The dimensions the collection is divided into: the three a player can build, mine and travel
-	 * in, and the one place left for the biomes that are none of them.
+	 * in, and the one place left for the things that belong to none of them.
+	 *
+	 * They are the sections of the collection whatever a page of it is made of: the biomes of a world
+	 * are filed under them by the world's own tags (see {@link #dimensions}), and the structures the
+	 * game recognizes a player entering are filed under them by the mod's own reading of which
+	 * dimension each is in (see {@link StructureCatalog}), so the two pages of the collection are read
+	 * section by section alike - and the structures, being of the three dimensions a player travels in,
+	 * are a list of the three with no {@link #UNPLACED} among them.
 	 *
 	 * The constants are in the order the collection shows its sections in, which is the order
 	 * {@link #DISCOVERY_ORDER} is written in as well: the overworld first, because that is where a
@@ -249,8 +256,13 @@ final class BiomeCatalog
 	 * One biome of the game, as the collection lists it: the id its reveal is remembered by, its
 	 * name as the game translates it, the dimension it is listed under, and where it sits in the
 	 * order of the mod's own list.
+	 *
+	 * The first three of those are what every entry of the collection is, whichever catalog built it
+	 * (see {@link CollectionEntry}), and the collection reads a biome no further than that. The rank is
+	 * the biome's own: where the mod's own order puts it, which is what the list of biomes is sorted by
+	 * and what nothing else in the mod has any use for (see {@link #DISCOVERY_ORDER}).
 	 */
-	record Entry(String id, Component name, Dimension dimension, int rank)
+	record Entry(String id, Component name, Dimension dimension, int rank) implements CollectionEntry
 	{
 		/** The name as plain text, for the alphabetical part of the order. */
 		String sortKey()
@@ -263,8 +275,12 @@ final class BiomeCatalog
 	 * Every biome {@code level} has registered, in display order: what the player has to collect in
 	 * that world, and the order the collection screen shows it in. Each biome is filed under the
 	 * dimension the world's own tags put it in (see {@link #dimensions}).
+	 *
+	 * What is handed back is a list of the shape the collection reads, not of this class's own record:
+	 * a page of the collection is a list of its entries whichever catalog built it (see
+	 * {@link CollectionEntry}), and the two pages of it are handed over the same way.
 	 */
-	static List<Entry> all(ClientLevel level)
+	static List<CollectionEntry> all(ClientLevel level)
 	{
 		Registry<Biome> biomes = level.registryAccess().lookupOrThrow(Registries.BIOME);
 		Map<String, Dimension> dimensions = dimensions(biomes);
@@ -309,7 +325,7 @@ final class BiomeCatalog
 	 * in other worlds are still filed under the dimension they are in, and only what not even a world
 	 * places stays unplaced.
 	 */
-	static List<Entry> known(Set<String> extra, ClientLevel level)
+	static List<CollectionEntry> known(Set<String> extra, ClientLevel level)
 	{
 		Map<String, Dimension> dimensions = level == null
 				? Map.of()
