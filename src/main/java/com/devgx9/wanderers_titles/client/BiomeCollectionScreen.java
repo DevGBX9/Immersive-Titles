@@ -106,8 +106,9 @@ import java.util.Set;
  *   is black at 44% - measured from {@code inworld_menu_list_background.png}, the one the game's
  *   lists are drawn with,
  * - the frame around that panel is the game's own button again, drawn behind the panel and reaching
- *   {@link #FRAME_PADDING} past it on every side, so what holds the list is a ring of the game's own
- *   drawing and follows a resource pack that redraws buttons like everything else here does,
+ *   {@link #FRAME_PADDING} past it on every side, with the strip of the two tabs resting on the top of
+ *   it (see {@link #TABS_GAP}), so what holds the list is a ring of the game's own drawing and follows
+ *   a resource pack that redraws buttons like everything else here does,
  * - the two lines framing the list are the mod's own, one drawn centred over the list and one under
  *   it, each at the proportions of the drawing rather than stretched to the width of the list (see
  *   {@link #drawLine}), the one over it being the plate the two tabs stand under and as wide as the
@@ -436,21 +437,35 @@ final class BiomeCollectionScreen extends Screen
 	private static final int UP_LINE_Y = PROGRESS_Y + TEXT_HEIGHT + LINE_GAP;
 
 	/**
-	 * Where the two tabs are drawn: under the plate of the screen, and over the frame of the list. They
+	 * Where the two tabs are drawn: under the plate of the screen, and over the frame of the list, with
+	 * the plate set off from them and the two of them resting on the frame (see {@link #TABS_GAP}). They
 	 * are set between the two on purpose - the plate names the collection, the strip says which of its two
 	 * pages the list holds, and the list is what that page is made of.
 	 */
 	private static final int TABS_Y = UP_LINE_Y + UP_LINE_HEIGHT + LINE_GAP;
 
 	/**
-	 * Where the frame of the list starts under the strip of tabs: the title, the count, the plate, the
-	 * strip and the gaps between them take the top of the block, and the frame stands
-	 * {@link #FRAME_PADDING} further down than the panel it is drawn around. The plate and the strip are
-	 * drawn centred on the list rather than across it, both of them at the same width (see
-	 * {@link #TAB_STRIP_WIDTH}); the room each is given is the room its own height takes, so the list
-	 * starts at the same place under either of them.
+	 * How far the strip of the two tabs stands off the frame of the list it stands over, in gui pixels:
+	 * not at all.
+	 *
+	 * The strip is the bar of the two pages of the collection, and the list under it is what the page the
+	 * lit name belongs to is made of, so the two are drawn as one thing rather than as a row over a list:
+	 * the strip rests on the top edge of the frame and the two edges meet, where the couple of pixels of
+	 * {@link #LINE_GAP} between them would set the pages off from the list they are the pages of. What a
+	 * button needs to be read as a button and pressed is room of its own, and the strip has that in its
+	 * height (see {@link #TAB_HEIGHT}) rather than in the gap under it.
 	 */
-	private static final int LIST_TOP = TABS_Y + TAB_HEIGHT + LINE_GAP + FRAME_PADDING;
+	private static final int TABS_GAP = 0;
+
+	/**
+	 * Where the frame of the list starts under the strip of tabs: the title, the count, the plate, the
+	 * strip and the gaps between them take the top of the block, the strip rests on the frame itself (see
+	 * {@link #TABS_GAP}), and the frame is the game's own button drawn {@link #FRAME_PADDING} past the
+	 * panel it is drawn around. The plate and the strip are drawn centred on the list rather than across
+	 * it, both of them at the same width (see {@link #TAB_STRIP_WIDTH}); the room each is given is the
+	 * room its own height takes, so the list starts at the same place under either of them.
+	 */
+	private static final int LIST_TOP = TABS_Y + TAB_HEIGHT + TABS_GAP + FRAME_PADDING;
 
 	/** Where the line under the list is drawn, from the bottom of the panel the list is drawn on. */
 	private static final int DOWN_LINE_OFFSET = FRAME_PADDING + LINE_GAP;

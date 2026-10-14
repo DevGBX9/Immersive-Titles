@@ -156,10 +156,12 @@ discoveries and the two filters belong to the biomes and step aside while that p
 neither has anything to count or to filter there, and where the list of biomes would be, the page says
 that nothing is collected there rather than standing empty. A tab is as tall as a button of the game
 and half of the strip the two of them make together, the strip is as wide as the line drawn over it -
-the plate of the screen - and it is centred on the list, under that plate: rather than a box fitted
-around each name, the two are the bar under the plate that holds the two pages, and the name of each
-page is written in the middle of its own half of it. The name of the page being read is lit in the
-white of the title while the other one is dim in the grey a filter that is off is
+the plate of the screen - and it is centred on the list, under that plate and resting on the frame of
+the list itself: rather than a box fitted around each name, the two are the bar under the plate that
+holds the two pages, and the name of each page is written in the middle of its own half of it. The bar
+is stuck to the frame rather than set off from it, because it is the top of the list it names: the
+pages are what the list holds, so the two edges meet and read as one line. The name of the page being
+read is lit in the white of the title while the other one is dim in the grey a filter that is off is
 drawn in - the same way those two filters say which of them is on. The title over the whole screen
 names the collection itself rather than one of its two pages, since it is the collection that holds
 both and the tabs are what name the pages.
@@ -214,9 +216,10 @@ place taken off the list rather than handed to one of them. The same is done acr
 list is centred on an even difference - so the room at its left and the room at its right are the same
 on any width. The line over the list is the plate the two tabs stand under, and it is drawn at the
 width the two of them make together - 228 gui pixels, a little over half of the drawing it is cut
-from - so the ornament and the bar of pages below it read as one thing. The line under the list is the
-foot of the block: it is the drawing a player is left looking at once the list has been read, and it is
-drawn at a little under half of its own drawing, 162 x 26 gui pixels. Neither is stretched to a width
+from - so the ornament, the bar of pages under it and the frame the bar rests on read as one thing.
+The line under the list is the foot of the block: it is the drawing a player is left looking at once
+the list has been read, and it is drawn at a little under half of its own drawing, 162 x 26 gui
+pixels. Neither is stretched to a width
 of its own - each is drawn at the proportions of the drawing it is cut from, so a width and a height
 are one number - and the two are drawn at their own sizes because one is the head of the block and the
 other its foot, rather than as the same ornament cut twice. On a
