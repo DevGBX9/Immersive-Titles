@@ -176,27 +176,28 @@ drawn in - the same way those two filters say which of them is on. The title ove
 names the collection itself rather than one of its two pages, since it is the collection that holds
 both and the tabs are what name the pages.
 
-The collection is a dark one, and it is dark because every shape in it is a sprite of the game: the
-block the list is held in is the game's own window - a band around a flat panel, with a shadow under
-it - the rows are the game's own buttons, a biome that was found the lit one and one whose reveal is
-still waiting the flat dim one, the bar counting the collection is the game's own experience bar,
-trough and fill both, so how much of the world has been found is read in the one shape every player
-already reads a share of progress in, and the tabs, the two filters and the scroller are the game's
-buttons and the game's scroller. A resource pack that redraws the game's gui therefore redraws this
-screen with it, and the pack it is read against is Reimagined GUI in its dark reading: with it on, the
-whole of the collection comes out in the dark greys of that pack, down to the frame around the block,
-and with it off the same screen is drawn in the game's own greys. Nothing about it is a theme or a
-setting - there is no theme button and nothing is written to the config folder - so it is dark with
-the pack and the game's own grey without it, and what the mod paints over those sprites is the colours
-of the drawing and nothing else: the shadow under the block, the washes over the two tabs, the gold of
-a dimension, of the tab being read and of the row the mouse is on, the green of a check, and the greys
-the text is read in by brightness - the title, then the count, then a biome that was found, then one
-that is still waiting, then the mod it comes from.
+The collection is a dark one, and it is dark whatever a player runs, because every shape in it is a
+sprite of the resource pack Reimagined GUI (Dark): the block the list is held in is that pack's
+window - a band around a flat panel, with a shadow under it - the rows are the pack's buttons, a biome
+that was found the lit one and one whose reveal is still waiting the flat dim one, the bar counting the
+collection is the pack's experience bar, trough and fill both, so how much of the world has been found
+is read in the one shape every player already reads a share of progress in, and the two tabs, the two
+filters and the small button that forgets a biome wear the same pack's buttons - painted over the
+buttons of the game the screen is actually made of, so that they still hover, click and speak for
+themselves. The six sprites are copies the mod ships, kept with the permission of the pack's author
+and credited beside the files (`assets/immersive_titles/textures/gui/sprites/CREDITS.md`): the pack is
+not leaned on, so the collection reads the same with the pack on and with it off, and the only sprite
+of the screen still taken from the game is the scroller - a pack that redraws no scroller, and a list
+of what the game holds is scrolled with the game's own bar. Nothing about it is a theme or a setting:
+there is no theme button and nothing is written to the config folder. What the mod paints over those
+sprites is the colours of the drawing and nothing else - the shadow under the block, the washes over
+the two tabs, the gold of a dimension, of the tab being read and of the row the mouse is on, the green
+of a check, and the greys the text is read in by brightness: the title, then the count, then a biome
+that was found, then one that is still waiting, then the mod it comes from.
 
-The screen is built out of the game's own pieces, so it matches the menus around it and follows a
-resource pack that redraws them - the window around the list, the buttons the rows and the tabs are,
-the bar under the count and the scroller of the list are all sprites of the game, and one resource pack
-that redraws any of them redraws this screen with it: every biome is drawn as one of the game's buttons, a biome that was
+The screen is built out of sprites and the buttons of the game, in the drawing of the dark pack every
+shape of it is taken from - the window around the list, the buttons the rows and the tabs wear, the bar
+under the count - and the one sprite of the game it still reads is the scroller of the list: every biome is drawn as one of those buttons, a biome that was
 found with a small green check and its name in clear white, a biome whose reveal is still waiting dimmed
 with the sprite the game draws a button it will not let anyone press in and its name the dimmest text on
 the screen - so what has been found is what stands out and what is left to find stays out of the way -
