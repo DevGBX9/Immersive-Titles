@@ -111,8 +111,15 @@ kept in `config/immersive_titles/servers`, one file per address the player joine
 
 The list of everything there is to find is a key of the mod's own, `K` by default and rebindable in
 the controls screen: it opens a screen with every biome the world has, the ones already discovered
-checked and the ones still waiting dimmed, and a line at the top counting them. Opening it pauses the
-game exactly like the escape menu does, and the world behind it is blurred the same way.
+checked and the ones still waiting dimmed, and a line at the top counting them - the same count again
+under that line, as a thin bar, so how much of the collection is found is read at a glance before a
+word of it is read, with the title of the screen set a fifth smaller than the game's own font because
+that count is what the screen is opened for. Opening it pauses the
+game exactly like the escape menu does; what the world behind it is not is blurred - it is seen through
+a veil of the mod's own instead, a little lighter than the one the game's menus use, because the block
+the collection is set in is drawn over it in the mod's own colours and a world left sharp behind it is
+a world the player is still in. A screen opened with no world behind it - the mod list, from the title
+screen - keeps the game's own background, since a panorama is a thing to leave alone.
 
 The same screen is what clicking the mod in [Mod Menu](https://modrinth.com/mod/modmenu) opens: it is
 the only screen the mod has, so it is the one the mod list offers. Mod Menu is not a dependency - a
@@ -166,16 +173,27 @@ drawn in - the same way those two filters say which of them is on. The title ove
 names the collection itself rather than one of its two pages, since it is the collection that holds
 both and the tabs are what name the pages.
 
+The collection can be read in two themes. The one it opens on is the mod's own: charcoal with one
+lighter edge and a light shadow, gold where it accents anything, and its text read by brightness rather
+than by the game's three colours. The other is the game's own, which is the screen as it was before
+there was a theme at all - the frame one of the game's buttons, the panel the black at 44% the game's
+own lists sit on, and none of the gold. What a player chooses is written down in
+`config/immersive_titles.json`, so it is the same the next time the game is started, and the button
+that turns it over is the small one in the top right corner of the screen: it carries the moon of the
+theme being read, says which one that is in its tooltip, and the mod still has one setting.
+
 The screen is built out of the game's own pieces, so it matches the menus around it and follows a
 resource pack that redraws them: every biome is drawn as one of the game's buttons, a biome that was
-found with its name in full white and a check beside it, a biome whose reveal is still waiting dimmed
-with the sprite the game draws a button it will not let anyone press in, the panel behind the list is
-the colour the game's own lists sit on inside a world, the frame around that panel is one of the
-game's buttons drawn behind it a few pixels wider on every side, and the scrollbar is the one the
-game's own lists are scrolled with. The rows are drawn rather than made of buttons that work, because
-there is next to nothing to press on a biome: they cannot be clicked, hovered into a highlight or
-focused. The scrollbar, on the other hand, is a scrollbar: it can be taken with the mouse and
-dragged, and the list follows the hand exactly.
+found with a small green check and its name in clear white, a biome whose reveal is still waiting dimmed
+with the sprite the game draws a button it will not let anyone press in and its name the dimmest text on
+the screen - so what has been found is what stands out and what is left to find stays out of the way -
+and the scrollbar is the one the game's own lists are scrolled with, drawn four gui pixels wide rather
+than the six the game draws it in, since a bar of a list that is read rather than scrolled through is
+not worth the width of a row. The rows are drawn rather than made of buttons that work, because there
+is next to nothing to press on a biome: they cannot be clicked, hovered into a highlight or focused.
+The row the mouse is on is held in a thin gold line in the mod's theme - which is what says which row
+is being read, and with it which biome the button at the end of the row would forget - and the scrollbar
+is a scrollbar: it can be taken with the mouse and dragged, and the list follows the hand exactly.
 
 A biome that was discovered is also the one thing in the list that can be pressed. Hovering its row
 draws a button at the far right end of it, in the place the name of the mod a biome comes from is
@@ -191,13 +209,18 @@ list opens, whether a world is being played or not: a row of that list is a biom
 of the player's worlds it was found in, and the file to take it out of is not this screen's to pick.
 
 What the screen draws itself are the mod's own lines. Two of them frame the list, over it and under
-it: the mod's own drawing - two white ornaments on a flat sheet, cut out of it so that only the lines
-are left, and written into the mod's `textures/gui` large enough to be read at the size they are
-drawn at. The list is drawn between them, and each line is centred over or under it at the proportions
-of the drawing rather than stretched to its width, which is what tells the player they are looking at
-a collection of things rather than at a menu. `templates/collection_frame` holds the drawings
-themselves and the script that cuts them out of the sheet they were made on, so the texture the mod
-ships can be remade from them.
+it, and what they are a drawing of is a needle with a thread through it: the needle stands in the
+middle of the line, the thread leaves its eye and ends in a loop at either end of the line, and three
+small barbs hang off the thread on the way. They are drawn in pixels, at exactly the size the screen
+draws them at - 228 x 22 gui pixels over the list and 140 x 18 under it, one texture pixel to one gui
+pixel - because a drawing of one-pixel threads is a drawing that cannot be scaled: a share of such a
+drawing is a share of a pixel, which is a grey haze and not a thinner thread. That is also what the
+drawings they replace had become: dense line art of the kind that has to be cut down to the size of
+the screen, and reading, at that size, as a white blur that competed with the list it framed. The pair
+carries a twentieth of their box in ink where those carried two fifths of theirs. `templates/collection_frame`
+holds both drawings and the script that draws them, and each line is centred on the list rather than
+stretched to its width, which is what tells the player they are looking at a collection of things
+rather than at a menu.
 
 The third line is the one inside the panel, over each section: the name of the dimension in the gold
 the game writes a heading in, the count of that dimension at the far end of the row, where the name of
@@ -207,22 +230,21 @@ into a texture of the mod's, because what it says is a line of the mod's languag
 dimension - and not a drawing.
 
 The collection is a block of the screen rather than the screen itself. The list is given at most half
-of the screen's height and 300 gui pixels of its width, the rows sit a pixel closer together, and the
-block - the title, the count, the tabs, the two lines and the button - is set in the room the list
-leaves over:
+of the screen's height and 320 gui pixels of its width, the rows are two gui pixels shorter than they
+were with the same room under each of them, so two more of the collection fit on any screen, and the
+block - the title, the count, its bar, the plate, the tabs, the list, the line under it and the button
+- is set in the room the list leaves over:
 half of that room goes over the title and half under the button that closes the screen, so the two
 margins come out the same to the pixel, and a screen of an odd height has the pixel no halving can
 place taken off the list rather than handed to one of them. The same is done across the screen - the
 list is centred on an even difference - so the room at its left and the room at its right are the same
 on any width. The line over the list is the plate the two tabs stand under, and it is drawn at the
-width the two of them make together - 228 gui pixels, a little over half of the drawing it is cut
-from - so the ornament, the bar of pages under it and the frame the bar rests on read as one thing.
-The line under the list is the foot of the block: it is the drawing a player is left looking at once
-the list has been read, and it is drawn at a little under half of its own drawing, 162 x 26 gui
-pixels. Neither is stretched to a width
-of its own - each is drawn at the proportions of the drawing it is cut from, so a width and a height
-are one number - and the two are drawn at their own sizes because one is the head of the block and the
-other its foot, rather than as the same ornament cut twice. On a
+width the two of them make together - 228 gui pixels - so the ornament, the bar of pages under it and
+the frame the bar rests on read as one thing. The line under the list is the foot of the block: it is
+the drawing a player is left looking at once the list has been read, and it is drawn smaller than the
+plate, 140 x 18 gui pixels. Neither is stretched to a width of its own - each is drawn at the size it
+is made at, so a width and a height are one number - and the two are drawn at their own sizes because
+one is the head of the block and the other its foot, rather than as the same ornament cut twice. On a
 screen too small to hold even the smallest of that, the list is given everything between the two
 margins, and eight gui pixels are kept over and under the block.
 

@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Cuts the two lines framing the biome collection out of their sheet.
 
+This is the cut of the drawing the lines used to be, and nothing ships from it any more: the two
+textures in the mod are drawn by `draw_ornaments.py` next to this file, in pixels, at the size the
+screen draws them at, and running this script would put the earlier, larger art back over them. It is
+kept here because the two sheets beside it are the drawings they are, and because what it does with a
+sheet is worth keeping - see the README of this folder for both.
+
 The two drawings - `Up-line.png` and `Down-line.png` in the owner's desktop - are white line art
 on a flat dark sheet, saved as JPEG, so every pixel of them is a blend of the white of the art and
 the grey of the sheet behind it. That blend is what this script turns back into what it means: the

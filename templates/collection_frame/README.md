@@ -1,58 +1,68 @@
 # The lines that frame the biome collection
 
-`Up-line.png` and `Down-line.png` are the two drawings the collection screen is framed with: one is
-drawn over the list - the plate the two tabs of the screen stand under, at the width the two of them
-take together - and one under it. Together with the list between them they read as a collection rather
-than as a menu of things to press. They are the screen's drawings of this kind;
-the line that opens each section of the list is the mod's own as well, but it is written with the
-game's own font in the game's own colours rather than cut out of a sheet, so there is nothing of it in
-here.
+`collection_up_line.png` and `collection_down_line.png` - here in the mod's
+`assets/immersive_titles/textures/gui` - are the two drawings the collection screen is framed with:
+one drawn over the list and one under it, so that the list between them reads as a collection rather
+than as a menu of things to press. The one over the list is the plate the screen's two tabs stand
+under, and it is as wide as the strip the two of them make; the one under it is the foot of the
+block, drawn smaller. They are original work of this project, and what they are a drawing of is a
+needle with a thread through it: the needle is what the line is hung on, standing in the middle of
+it, and the thread is what carries the line out of the middle to the ends of it, ending in a loop.
 
-They are original work of this project, white line art on a flat dark sheet. Both sheets are kept here so
-that the texture the mod ships can always be remade from them:
-
-```
-python templates/collection_frame/cut_frames.py
+``` 
+python templates/collection_frame/draw_ornaments.py
 ```
 
-The script writes
+That script writes both textures and is the whole of where they come from. It draws them in pixels, at
+exactly the size the screen draws them at, and what it writes is what ships: one texture pixel is one
+gui pixel of the screen, with no scaling in the game and no scaling in the script.
 
-- `assets/immersive_titles/textures/gui/collection_up_line.png`, 396x52, and
-- `assets/immersive_titles/textures/gui/collection_down_line.png`, 362x58,
+The sizes are therefore the drawings, and they are the two numbers that decide how much of the screen
+the frame of the list costs:
 
-and the screen draws neither of them at the whole of that: the line over the list is drawn at a little
-over half of it, 228x30 gui pixels, and the one under it at a little under half, 162x26. Neither share
-is a whole number of the drawing's own pixels - 52 of the up line come to 30, 58 of the down line to 26
-- so the game reads both through its area filter rather than one to one, at gui scale 1 (thirty gui
-pixels out of fifty-two pixels of texture) and at gui scale 2 (sixty out of the same fifty-two) alike.
+| file | drawn at | before |
+| --- | --- | --- |
+| `collection_up_line.png` | 228 x 22 | 228 x 30 |
+| `collection_down_line.png` | 140 x 18 | 162 x 26 |
 
-The two are drawn at their own sizes because they are the head and the foot of the block: the drawing
-over the list is the plate the screen's two tabs stand under, and it is drawn at the width the two of
-them take together, while the drawing under the list is what a player is left looking at once the list
-has been read.
+The width of the one over the list is not free: it is the width of the strip of the two tabs the
+screen draws under it (see `TAB_STRIP_WIDTH` in the screen), so the plate and the bar of two pages are
+one thing. The heights are what the drawings cost the block - 27% and 31% shorter than the drawings
+they replace - and the pair is deliberately not the same size twice: one is the head of the block and
+the other its foot.
 
-The size is a decision about the drawing, not about the room it is given. Both lines are drawn
-**centred** over and under the list, at their own proportions, and neither is stretched to reach the
-ends of the list: widening a drawing of a thing to fit a wider list does not make a longer line, it
-makes a squashed one, with every ornament in it flattened by the same amount. If a line looks too
-small or too large for the list, the number to change is the height it is drawn at - here and in the
-screen's `UP_LINE_HEIGHT`/`DOWN_LINE_HEIGHT` - and the width follows from the drawing.
+## Why they are drawn where they are read, and not cut down to it
 
-Those heights are 30 and 26 gui pixels, and the smaller of them is as small as these drawings can be
-read at. These are dense drawings - about two fifths of the rectangle each takes up is ink, and their
-finest strokes are a hundredth of their own height - so the whole of the shape has to be given the room
-to resolve back out of that box. At half of those heights - fifteen gui pixels out of the fifty-two the
-up line is drawn from, thirteen out of the fifty-eight of the down line - the thin parts survive only
-as a few
-percent of coverage, which is a grey haze over a bright sky, and what is left is the boldest third of
-the drawing: a white smear where an ornament should be. The cost is paid by the list, which is a row
-or so shorter.
+They used to be line art of a dense kind, drawn large on a sheet and cut down to the size of the
+screen. That is what a drawing of thick strokes can afford: it is measured off its sheet, scaled with
+an area filter, and what a fifth of a pixel of a thick stroke loses nobody sees. A drawing of
+one-pixel threads cannot be treated that way at all. A thread is a pixel wide, so a share of the
+drawing is a share of a pixel and nothing else - a third of a stroke, which is not a thinner thread
+but a grey haze. That is the whole of what went wrong with the drawings these replace: about two
+fifths of each of them was ink, and at the size the screen draws them at that ink read as a white
+blur that competed with the list it framed rather than as a frame. These two carry about a twentieth
+of their box in ink instead, and every stroke of them is a stroke of the screen.
 
-What it does with a sheet is worth knowing before changing it: the sheet is not simply made
-transparent, it is measured. The art is white on a sheet of one grey, so how much of a pixel is art
-is how far that pixel's brightness sits between the two - the antialiasing of the drawing comes back
-as the alpha of its edges, exactly as much of it as was covered. The sheet's own noise, and the ring
-a JPEG leaves around every strong edge, are both a few percent of that and are dropped before
-anything is scaled, so they cannot be baked into the line. Then the drawing is cut down to the
-rectangle the art itself takes up and scaled, with an area filter, to the size above - and that size
-is at the drawing's own proportions, so nothing is stretched on the way.
+## What the script draws
+
+One motif, twice, from the same function of one size - so the head and the foot of the block are the
+same thing at two sizes rather than two drawings that have to be kept alike:
+
+- the needle: a head of six pixels with a two-pixel eye through the middle of it, a shaft under the
+  head, and a point at the end of it;
+- the thread: out of the eye, one dip and one rise on the way out, and a loop at the end of the line;
+- three barbs along the way, each a short hook turned outwards - what a thread caught on something
+  looks like, and what keeps the line from reading as a ruled curve.
+
+Every shape is drawn from the middle of the drawing outwards, and the left half of it is the right
+half in a mirror: `_inspect/check_ornaments.py` reads the two textures back and holds them to that, to
+their size, and to being thin - no mark wider than the head of the needle anywhere in either of them.
+
+## The drawing they replace
+
+`Up-line.png`, `Down-line.png` and `cut_frames.py` are the earlier drawing and the cut that made it:
+an ornament of dense line art, cut out of its sheet and scaled down to the size of the screen, which
+is the drawing the two above were made to replace. They are kept here because they are the drawings
+they are, and the script still cuts them - but nothing ships from them any more, and running it would
+put the earlier, larger art back over the two textures the mod draws. The sizes it writes were those
+drawings' own: 396 x 52 and 362 x 58, drawn at 58% and 46% of themselves.
