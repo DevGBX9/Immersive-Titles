@@ -1,4 +1,4 @@
-# Where these seven sprites come from
+# Where these six sprites come from
 
 The gui sprites in this folder are the drawing of the resource pack **Reimagined GUI (Dark)** by
 AmongstReality, copied into Immersive Titles with the permission of the pack's author, so that the
@@ -6,10 +6,9 @@ biome collection is read in the pack's dark gui whether or not a player runs the
 
 | sprite | what the collection draws with it |
 | --- | --- |
-| `widget/button` | a row of a biome that was found, and the face of each of the screen's own buttons |
+| `widget/button` | a row of a biome that was found, the face of each of the screen's own buttons, and the small square button at the end of a row of a discovery, which gives it back |
 | `widget/button_disabled` | a row whose reveal is still waiting |
-| `widget/button_highlighted` | the face of one of those buttons under the mouse or the keyboard, which is how the tab of the page being read is told apart from the other one |
-| `container/loom/pattern_selected` | the small square button at the end of a row of a discovery, which gives it back |
+| `widget/button_highlighted` | the face of one of those buttons under the mouse or the keyboard: how the tab of the page being read is told apart from the other one, and how the button that gives a discovery back lights under the hand |
 | `social_interactions/background` | the window the list is held in, frame and panel at once |
 | `hud/experience_bar_background` | the trough of the bar counting the collection |
 | `hud/experience_bar_progress` | the found share of that bar |

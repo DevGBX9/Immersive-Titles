@@ -185,11 +185,11 @@ import java.util.Set;
  * A screen opened with no world behind it at all - the mod list of Mod Menu, from the title screen -
  * keeps the game's own background, since a panorama is a thing to leave alone.
  *
- * The collection is read in one look, and it is a dark one, because the seven sprites every shape in
+ * The collection is read in one look, and it is a dark one, because the six sprites every shape in
  * it is made of are the dark gui of the resource pack Reimagined GUI (Dark): the window the list is
- * held in, the buttons its rows and its two tabs are, the small square button a discovery is given
- * back with, the experience bar under the count and the two small filters beside the list are that
- * pack's drawing, and every one of them is named out of the mod's own namespace - so the pack has been
+ * held in, the buttons - of its rows, of its two tabs, and of the one that gives a discovery back -
+ * the experience bar under the count and the two small filters beside the list are that pack's
+ * drawing, and every one of them is named out of the mod's own namespace - so the pack has been
  * copied into the mod rather than leaned on, and the collection is that drawing whether or not a player
  * runs the pack itself. The copy was made with the permission of the pack's author and is credited beside the files
  * ({@code assets/immersive_titles/textures/gui/sprites/CREDITS.md}), and the one sprite of the screen
@@ -695,9 +695,10 @@ final class BiomeCollectionScreen extends Screen
 	 *
 	 * What the three are used for is every block and button of the screen but the scrollbar: a row of a
 	 * biome that was found, the face of each of the screen's own buttons - the two tabs, the two filters
-	 * and the one that closes the screen (see {@link #drawButtonFace}) - the tab of the page being read,
-	 * which wears the lit one for as long as its page is the page on the screen (see {@link #tabSprite}),
-	 * and, as the sprite the game draws what cannot be pressed with, a row whose reveal is still waiting.
+	 * and the one that closes the screen (see {@link #drawButtonFace}) - the button that gives a
+	 * discovery back, the tab of the page being read, which wears the lit one for as long as its page is
+	 * the page on the screen (see {@link #tabSprite}), and, as the sprite the game draws what cannot be
+	 * pressed with, a row whose reveal is still waiting.
 	 */
 	private static final Identifier BUTTON_SPRITE = guiSprite("widget/button");
 	private static final Identifier LIT_BUTTON_SPRITE = guiSprite("widget/button_highlighted");
@@ -711,42 +712,30 @@ final class BiomeCollectionScreen extends Screen
 	private static final Identifier WAITING_BUTTON_SPRITE = guiSprite("widget/button_disabled");
 
 	/**
-	 * The button a row of a discovery is given while the mouse is on that row: the pack's own drawing of
-	 * a small square button - the one it puts a slot of the loom's patterns in - at the size it is drawn
-	 * at, which is the height of a row exactly (see {@link #FORGET_SIZE}).
-	 *
-	 * It is a square button with nothing drawn inside it, so the cross the screen marks it with is the
-	 * whole of what is read in it (see {@link #FORGET_MARK}), and its own face is a shade darker than
-	 * the row it stands in, with a lighter edge over it and a dark one under - which is what makes it a
-	 * button at the end of a row rather than a seam in it. A button of the pack's wide kind cannot be
-	 * put there: that drawing is two hundred texels wide with twenty texels of an end at either side of
-	 * it, and a square cut from it the size of a row is those two ends meeting in the middle, painted in
-	 * the same two greys as the row itself (see {@link #drawForgetButton}).
+	 * The button a row of a discovery is given while the mouse is on that row: the same face the two
+	 * filters beside the list and the tabs wear, twelve pixels square, and the lit one of those faces
+	 * under the hand - flat while the mouse is only on the row, lit while it is on the button itself,
+	 * which is how every other button of the screen answers the mouse (see {@link #drawButtonFace}).
 	 *
 	 * It stands at the far right end of the row, where the name of the mod an entry comes from is written
-	 * (see {@link #drawItem}), so that a row of a discovery ends in the pack's button the way it opens in
-	 * the game's own check (see {@link #CHECK}).
+	 * (see {@link #drawItem}), so that a row of a discovery ends in it the way it opens in the game's own
+	 * check (see {@link #CHECK}).
 	 */
-	private static final Identifier FORGET_SPRITE = guiSprite("container/loom/pattern_selected");
+	private static final Identifier FORGET_BUTTON_SPRITE = BUTTON_SPRITE;
+	private static final Identifier FORGET_HOVERED_SPRITE = LIT_BUTTON_SPRITE;
 
 	/**
-	 * How large that button is, in gui pixels, on both sides: its own size, which is the height of a row
-	 * - so it is as tall as the row it is in and flush with its top and bottom, and the room it takes
-	 * from the row's own end is one row's height of it.
+	 * How large that button is, in gui pixels, on both sides: twelve, where a row is fourteen (see
+	 * {@link #ROW_HEIGHT}) - so it takes the last twelve of the row's end, with a row's own pixel over
+	 * it and under it, and stands in the row rather than filling it.
 	 */
-	private static final int FORGET_SIZE = 14;
+	private static final int FORGET_SIZE = 12;
 
 	/**
 	 * The glyph the button that forgets a discovery is marked with, from the game's own font: the letter
-	 * the game itself puts on a button that takes something away, drawn in the middle of that button the
-	 * way the marks of the two filters are drawn in theirs (see {@link #drawButtonMark}).
-	 *
-	 * What is drawn is the game's own letter and not the pack's own cross, even though the pack has one:
-	 * that cross is thirteen texels across in a sprite of eighteen, and the room inside this button is
-	 * twelve - so a cross of the pack's would have to be a cross of the pack's cut down, and a share of a
-	 * drawing that is two texels wide is not a thinner drawing of it but a broken one. The red the
-	 * letter is drawn in is the pack's own, and it is taken out of that same cross (see
-	 * {@link #FORGET_COLOR}).
+	 * the game itself would have used, drawn over that button the way the marks of the two filters are
+	 * drawn over theirs (see {@link #drawButtonMark}), with the check the list uses for a biome that was
+	 * found replaced by the cross that gives it back.
 	 */
 	private static final String FORGET_MARK = "X";
 
@@ -847,19 +836,15 @@ final class BiomeCollectionScreen extends Screen
 	private static final int TAB_OFF_COLOR = 0xFF8A8A8A;
 
 	/**
-	 * The two reds the cross of that button is drawn in: the one it is set in while the mouse is only on
-	 * the row, and the one it is lit in while the mouse is on the button itself - a button that gives a
-	 * reveal back says so, and says so louder under the hand that is about to press it.
-	 *
-	 * Both are the pack's own reds, read out of its own drawing of the game's cancel button
-	 * ({@code container/beacon/cancel} of the pack, which is the cross the game puts on a beacon): the
-	 * deep one it draws the edge of its cross in, and the bright one it draws the body of it in. So the
-	 * one press in the collection that takes something away is marked in the pack's red and not in an
-	 * alarm of the screen's own - and the cross itself is the game's own letter, which is the one shape
-	 * of a cross that is drawn at this size and not cut down to it (see {@link #FORGET_MARK}).
+	 * The mark of the button that forgets a discovery, in the two colours it is drawn in: the grey the
+	 * mark is dim in while the mouse is only on the row, and the red it turns while the mouse is on the
+	 * button itself - a button that undoes something says so, and says so louder under the hand that is
+	 * about to press it. The red is the one alarm the screen has, and it is not one of the colours of
+	 * the collection (see {@link #CHECK_COLOR}): what it marks is the one press in the collection that
+	 * takes something away.
 	 */
-	private static final int FORGET_COLOR = 0xFF6C0000;
-	private static final int FORGET_HOVERED_COLOR = 0xFFBC0000;
+	private static final int FORGET_COLOR = 0xFFA0A0A0;
+	private static final int FORGET_HOVERED_COLOR = 0xFFFF5555;
 
 	/**
 	 * The mark of a filter that is turned off, and the colour the other one lights up in. The two are
@@ -1969,15 +1954,16 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws the button that forgets the entry of the row the mouse is on: a small square button of the
-	 * pack's at the far right end of the row, where the name of the mod an entry comes from would be
-	 * drawn - which is the place the button takes while it is there (see {@link #drawItem}).
+	 * Draws the button that forgets the entry of the row the mouse is on: a button of the pack's at the
+	 * far right end of the row, where the name of the mod an entry comes from would be drawn - which is
+	 * the place the button takes while it is there (see {@link #drawItem}).
 	 *
-	 * It is a button of the pack's own, as tall as the row and as wide, with the game's own letter for a
-	 * cross over it in the red the pack draws its own cross in (see {@link #FORGET_MARK}): the mark is
-	 * set back while the mouse is only on the row and lit while it is on the button itself, since what
-	 * the mouse is on decides what a press would do - a press anywhere on the row does nothing, a press
-	 * on the button asks about forgetting the discovery.
+	 * It is the face the two filters beside the list are drawn with, twelve pixels square, with the mark
+	 * of the game's own font over it (see {@link #FORGET_MARK}), so the three buttons of the screen are
+	 * read as the same kind of thing. It is lit while the mouse is on the button itself and flat while it
+	 * is only on the row it belongs to, and its mark turns red there, since what the mouse is on decides
+	 * what a press would do: a press anywhere on the row does nothing, a press on the button asks about
+	 * forgetting the discovery.
 	 */
 	private void drawForgetButton(GuiGraphicsExtractor graphics, CollectionEntry entry, int y,
 			int rowRight, int mouseX, int mouseY)
@@ -1986,7 +1972,9 @@ final class BiomeCollectionScreen extends Screen
 		int x = forgetButtonX(rowRight);
 		int buttonY = forgetButtonY(y);
 
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, FORGET_SPRITE, x, buttonY, FORGET_SIZE, FORGET_SIZE);
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
+				onButton ? FORGET_HOVERED_SPRITE : FORGET_BUTTON_SPRITE,
+				x, buttonY, FORGET_SIZE, FORGET_SIZE);
 
 		drawButtonMark(graphics, FORGET_MARK, x, buttonY, FORGET_SIZE,
 				onButton ? FORGET_HOVERED_COLOR : FORGET_COLOR);
@@ -1998,22 +1986,16 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Where the button that forgets a discovery is drawn inside a row: at its far right end, so that a
-	 * row of a discovery ends in it the way the list itself ends in the two buttons that filter it.
-	 *
-	 * A button as tall as the row is flush with the row's own top and bottom, and what it takes of the
-	 * row is one row's height of its end - so it reads as the end of the row rather than as something
-	 * set down in the middle of it, which is what a smaller button with room over and under it reads as.
+	 * Where the button that forgets a discovery is drawn inside a row: its far right end, so that the
+	 * row of a biome that was found ends in a button of the pack the way the list itself ends in the
+	 * two that filter it.
 	 */
 	private static int forgetButtonX(int rowRight)
 	{
 		return rowRight - FORGET_SIZE;
 	}
 
-	/**
-	 * How far down a row that button is drawn: at the row's own top, since the two are the same height
-	 * (see {@link #FORGET_SIZE}) and there is nothing over or under it to centre it against.
-	 */
+	/** How far down a row the button that forgets a discovery is drawn: centred in the row. */
 	private static int forgetButtonY(int y)
 	{
 		return y + (ROW_HEIGHT - FORGET_SIZE) / 2;
