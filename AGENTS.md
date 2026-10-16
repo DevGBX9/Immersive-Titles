@@ -3,6 +3,13 @@
 These rules come from the owner of this project and apply to every agent session in this
 workspace, on every task, until the owner changes them.
 
+## 0. Always answer in Arabic
+
+Reply to the owner in Arabic — every message, on every task, including short notes about what was
+done, what a check printed and what is blocked. Code, file paths, class names, commit messages and
+the output of commands stay as they are, in their own language; only what is written to the owner
+is Arabic.
+
 ## 1. Never build on the owner's machine
 
 No local builds, no `gradlew build`, no compilation, no daemon, no Gradle task that produces
@@ -26,6 +33,8 @@ sitting on the device when the owner asked for it to be built.
 
 ## Arabic
 
+- **القاعدة صفر**: رد دائمًا على المالك بالعربية، في كل رسالة وفي كل مهمة. الأسماء والمسارات
+  ومخرجات الأوامر ورسائل الـ commit تبقى بلغتها الأصلية.
 - **القاعدة الأولى**: لا تبني على جهاز المالك أبدًا، إطلاقًا، في أي مهمة.
 - **القاعدة الثانية**: لا تنزّل أي شيء يتجاوز حجمه 30 ميجابايت إلا بعد طلب إذن المالك أولًا.
 - **القاعدة الثالثة**: البناء يتم على GitHub فقط، وعند الانتهاء من التعديلات تُرفع إلى GitHub
