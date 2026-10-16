@@ -111,6 +111,15 @@ import java.util.Set;
  * room the game's own HUD takes along the bottom of the screen rather than through it (see
  * {@link #CORNER_HUD_ROOM}).
  *
+ * It is the small title of the two, and it is drawn in the shape of the small area title of Hollow
+ * Knight: Silksong as the picture the owner sent has it: the last word of the name is the name
+ * itself, at the size a title is read at, and every word before it stands over it as one small word,
+ * spaced letter by letter and centred on the name (see {@link #CORNER_KICKER_SCALE} and
+ * {@link #drawCornerWord}). A name of one word has nothing over it and is drawn as it always was.
+ * The share between the two sizes and the two rooms of that shape are measured off the picture rather
+ * than chosen ({@code _inspect/measure_small_title.py}), with the game's own font in the place of
+ * the picture's: the shape is what was asked for, and this font is the one the mod draws it in.
+ *
  * The mod's own key opens the collection (see {@link BiomeCollectionScreen}): the biomes of the world
  * and the structures the game recognizes a player entering, each of the two a page of it, with the
  * ones that already had their reveal checked - so that what the reveals have been remembering per
@@ -264,8 +273,38 @@ public final class TitleOverlay
 	// The corner title
 	// ---------------------------------------------------------------------------------------------
 
-	/** Corner title properties: its size, and the timing of its fade in, hold and fade out. */
-	private static final float CORNER_TEXT_SCALE = 2.5F;
+	/**
+	 * The size of the two lines of the corner title, in gui pixels per pixel of the game font: the
+	 * small word over the name, and the name itself.
+	 *
+	 * The share between the two is the shape of the title, and it comes from the picture the owner
+	 * sent: its own small word measures 18 rows against a name of 43, while the game font at 1 and 2.5
+	 * is a cap height of 7 against 17.5. That is 0.40 of it against 0.42, as close as whole sizes of
+	 * this font get: half a pixel per pixel is not a size the game font is drawn at.
+	 */
+	private static final float CORNER_KICKER_SCALE = 1.0F;
+	private static final float CORNER_NAME_SCALE = 2.5F;
+
+	/**
+	 * The room the letters of the small word keep between them, in gui pixels at that size: the word
+	 * stands over the name as a label rather than as a name, and letters set apart are what makes it
+	 * read as one.
+	 *
+	 * A letter of the game font is five pixels of ink in a cell that advances six, so the letters of
+	 * the font stand one pixel apart by themselves; the picture the owner sent measures letters of
+	 * eleven to fourteen rows with eight between them, which is 0.6 to 0.7 of a letter. Two gui pixels
+	 * of room puts the letters of the game's font three apart, 0.6 of its own five.
+	 */
+	private static final int CORNER_KICKER_SPACING = 2;
+
+	/**
+	 * The room between the two lines of the corner title, in gui pixels: what the picture the owner
+	 * sent measures between the foot of the small word and the top of the name is 15 rows against a
+	 * name of 43, 0.35 of it, which at the 17.5 gui pixels the name is drawn at comes to six.
+	 */
+	private static final int CORNER_LINE_GAP = 6;
+
+	/** The timing of the corner title's fade in, hold and fade out. */
 	private static final long CORNER_FADE_IN_MS = 400L;
 	private static final long CORNER_HOLD_MS = 1600L;
 	private static final long CORNER_FADE_OUT_MS = 900L;
@@ -364,8 +403,19 @@ public final class TitleOverlay
 	/** The name the running reveal writes into the plate. */
 	private static Component revealName = null;
 
-	/** The name the corner title shows. */
+	/**
+	 * The name the corner title shows: the last word of the title it was started with, drawn at
+	 * {@link #CORNER_NAME_SCALE}. The words before it are the small word over it, or nothing while the
+	 * name is a single word (see {@link #CORNER_KICKER_SCALE}).
+	 */
 	private static Component cornerName = null;
+
+	/**
+	 * The small word the corner title shows over its name, or null while the title has only one word
+	 * to show. It keeps the style of the name it was cut out of, so a name a resource pack has
+	 * coloured is still coloured as one word over one word.
+	 */
+	private static Component cornerKicker = null;
 
 	/** The biomes of the current world that already had their reveal, so entering them again only
 	 * gets the corner title. Loaded when the world is joined and written to disk as a biome is
@@ -747,16 +797,37 @@ public final class TitleOverlay
 
 		// the big reveal takes over from the corner title
 		cornerName = null;
+		cornerKicker = null;
 		cornerMs = 0L;
 		cornerPlaying = false;
 
 		playRevealSound();
 	}
 
-	/** Starts the corner title, which fades in, holds and fades out on its own. */
+	/**
+	 * Starts the corner title, which fades in, holds and fades out on its own.
+	 *
+	 * The name is cut into the small word over it and the name itself here, once, rather than on every
+	 * drawn frame: the title is the last word of the name, e.g. the GARDEN of PALE GARDEN, and every
+	 * word before it is the small word that stands over it. A name of one word is a name without a
+	 * word over it, and the small title of a one-word name is the name alone.
+	 */
 	private static void startCornerTitle(Component name)
 	{
-		cornerName = name;
+		String text = name.getString();
+		int lastSpace = text.lastIndexOf(' ');
+
+		if (lastSpace < 0)
+		{
+			cornerKicker = null;
+			cornerName = name;
+		}
+		else
+		{
+			cornerKicker = Component.literal(text.substring(0, lastSpace)).withStyle(name.getStyle());
+			cornerName = Component.literal(text.substring(lastSpace + 1)).withStyle(name.getStyle());
+		}
+
 		cornerMs = 0L;
 		cornerPlaying = true;
 	}
@@ -1009,7 +1080,16 @@ public final class TitleOverlay
 		return 255 * (NAME_FADE_OUT_TO - frame) / (NAME_FADE_OUT_TO - NAME_FADE_OUT_FROM);
 	}
 
-	/** Draws the small corner title of a biome the player has already seen. */
+	/**
+	 * Draws the small corner title of a place the player has already seen: the name, and the small
+	 * word it is read under.
+	 *
+	 * The name is drawn where the single line of this title has always been drawn - over the room the
+	 * game's HUD takes, at {@link #CORNER_MARGIN} from the left edge of the screen - so what the shape
+	 * of the title adds is the line over the name, and nothing about the name itself moves. It is the
+	 * small word that is placed against the name: it is centred on it, and set {@link #CORNER_LINE_GAP}
+	 * over the top of its capitals.
+	 */
 	private static void renderCornerTitle(GuiGraphicsExtractor graphics)
 	{
 		if (!cornerPlaying || cornerName == null)
@@ -1022,6 +1102,7 @@ public final class TitleOverlay
 			cornerPlaying = false;
 			cornerMs = 0L;
 			cornerName = null;
+			cornerKicker = null;
 			return;
 		}
 
@@ -1029,13 +1110,62 @@ public final class TitleOverlay
 		Font font = client.font;
 		int x = CORNER_MARGIN;
 		int y = client.getWindow().getGuiScaledHeight() - CORNER_HUD_ROOM - CORNER_HUD_GAP
-				- (int) (font.lineHeight * CORNER_TEXT_SCALE);
+				- (int) (font.lineHeight * CORNER_NAME_SCALE);
+		int color = (cornerAlpha(cornerMs) << 24) | TITLE_TEXT_RGB;
+
+		drawCornerWord(graphics, font, x, y, color);
 
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
 		pose.translate(x, y);
-		pose.scale(CORNER_TEXT_SCALE, CORNER_TEXT_SCALE);
-		graphics.text(font, cornerName, 0, 0, (cornerAlpha(cornerMs) << 24) | TITLE_TEXT_RGB, true);
+		pose.scale(CORNER_NAME_SCALE, CORNER_NAME_SCALE);
+		graphics.text(font, cornerName, 0, 0, color, true);
+		pose.popMatrix();
+	}
+
+	/**
+	 * Draws the small word of the corner title over the name, centred on it, as long as it has one.
+	 *
+	 * The word is drawn one letter at a time, which is the only way the game font can be made to keep
+	 * room between its letters: what the pen moves by is the advance of the letter plus
+	 * {@link #CORNER_KICKER_SPACING}, which is what the letters are drawn at.
+	 *
+	 * It is centred on the name rather than on the screen (see {@link #CORNER_MARGIN}): the two lines
+	 * are one title, and the picture the owner sent has the small word of its own standing over the
+	 * middle of the name - the middle of its name measures column 208.0 and of its small word 206.0.
+	 * The word is put over the name by the ink of the name's capitals, which is exactly what
+	 * {@link #FONT_CAP_HEIGHT} measures: the game font draws a capital from the row it is drawn at, so
+	 * the top of the name is the row the name is drawn at, whichever word of the two is longer.
+	 */
+	private static void drawCornerWord(GuiGraphicsExtractor graphics, Font font, int x, int y, int color)
+	{
+		if (cornerKicker == null)
+		{
+			return;
+		}
+
+		String word = cornerKicker.getString();
+		float wordWidth = (font.width(cornerKicker) + CORNER_KICKER_SPACING * (word.length() - 1))
+				* CORNER_KICKER_SCALE;
+		float nameWidth = font.width(cornerName) * CORNER_NAME_SCALE;
+		int wordX = x + Math.round((nameWidth - wordWidth) / 2.0F);
+		int wordY = y - CORNER_LINE_GAP - (int) (FONT_CAP_HEIGHT * CORNER_KICKER_SCALE);
+
+		Matrix3x2fStack pose = graphics.pose();
+		pose.pushMatrix();
+		pose.translate(wordX, wordY);
+		pose.scale(CORNER_KICKER_SCALE, CORNER_KICKER_SCALE);
+
+		int pen = 0;
+
+		for (int letter = 0; letter < word.length(); letter++)
+		{
+			Component one = Component.literal(word.substring(letter, letter + 1))
+					.withStyle(cornerKicker.getStyle());
+			graphics.text(font, one, pen, 0, color, true);
+			pen += font.width(one) + CORNER_KICKER_SPACING;
+		}
+
 		pose.popMatrix();
 	}
 
