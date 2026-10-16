@@ -326,11 +326,12 @@ public final class TitleOverlay
 	 * Where the corner title is drawn, in gui pixels: the foot of the name this far over the foot of
 	 * the screen, with the small word over it and the whole of it at {@link #CORNER_MARGIN}.
 	 *
-	 * The place is the one the owner marked on a picture of their own screen: the foot of the name
-	 * measures row 717 of a window whose game area is 736 rows tall at a gui scale of 2, which is 9.5
-	 * gui pixels over the foot of it. Nine gui pixels puts the foot of the name at row 358 of a 368
-	 * pixel gui, i.e. rows 684 to 717 of their window - the row they drew their box round, to the
-	 * pixel.
+	 * It is the room the left of the title is given rather than a measure of its own (see
+	 * {@link #CORNER_MARGIN}): the owner asked for the foot of the name to come as far up off the foot
+	 * of the screen as it already stands off the left of it, so the title stands off the corner it is
+	 * drawn in by one measure and not by two. The place it was in before that was the one their own
+	 * picture of the screen marks, and it is the same corner of the screen either way: what is there is
+	 * the world, not the game's own HUD (see below).
 	 *
 	 * What is at the foot of the screen there is the game's own HUD, but not at that column: the HUD
 	 * is a bar 182 gui pixels wide and centred, so the left of it is empty world - empty of the
@@ -338,7 +339,7 @@ public final class TitleOverlay
 	 * enough for the name to stay left of it. Where it does not stay left of it the title is put back
 	 * over the HUD (see {@link #cornerNameRow}).
 	 */
-	private static final int CORNER_BOTTOM_MARGIN = 9;
+	private static final int CORNER_BOTTOM_MARGIN = CORNER_MARGIN;
 
 	/**
 	 * Half the width of the game's own HUD along the foot of the screen, in gui pixels: the hotbar is
