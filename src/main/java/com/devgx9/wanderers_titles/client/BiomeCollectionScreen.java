@@ -156,11 +156,12 @@ import java.util.Set;
  * everything between them.
  *
  * The rows are drawn rather than made of widgets, because there is next to nothing to press on one
- * of them, and the one thing that can be pressed is drawn where it is shown: a row of a discovery	 * that the mouse is on gives up the place of the name of the mod it comes from to the pack's own
-	 * drawing of the game's cancel button, which is a red cross - and pressing that cross is what asks
-	 * about forgetting the discovery (see {@link #askToForget}). The row the mouse is on is held in a
-	 * thin line of the collection's own gold, which is what says which row is being read - and with it
-	 * which name the cross at the end of the row belongs to - and the row under it stays a row that cannot
+ * of them, and the one thing that can be pressed is drawn where it is shown: a row of a discovery	 * that the mouse is on gives up the place of the name of the mod it comes from to a small square
+	 * button of the pack's own, marked with the game's own letter for a cross in the pack's own red -
+	 * and pressing that button is what asks about forgetting the discovery (see {@link #askToForget}).
+	 * The row the mouse is on is held in a thin line of the collection's own gold, which is what says
+	 * which row is being read - and with it which name the button at the end of the row belongs to - and
+	 * the row under it stays a row that cannot
  * be clicked, hovered into a highlight or focused, which is what keeps a list of what the game
  * holds from reading as a list of things to press. Everything else the player can do is scroll,
  * filter and close.
@@ -183,13 +184,14 @@ import java.util.Set;
  * the world still a world behind it is the point of the block of the screen the collection is set in.
  * A screen opened with no world behind it at all - the mod list of Mod Menu, from the title screen -
  * keeps the game's own background, since a panorama is a thing to leave alone.
- *	 * The collection is read in one look, and it is a dark one, because the seven sprites every shape in
-	 * it is made of are the dark gui of the resource pack Reimagined GUI (Dark): the window the list is
-	 * held in, the buttons its rows and its two tabs are, the cross a discovery is given back with, the
-	 * experience bar under the count and the two small filters beside the list are that pack's drawing,
-	 * and every one of them is named out of the mod's own namespace - so the pack has been copied into
-	 * the mod rather than leaned on, and the collection is that drawing whether or not a player runs the
-	 * pack itself. The copy was made with the permission of the pack's author and is credited beside the files
+ *
+ * The collection is read in one look, and it is a dark one, because the seven sprites every shape in
+ * it is made of are the dark gui of the resource pack Reimagined GUI (Dark): the window the list is
+ * held in, the buttons its rows and its two tabs are, the small square button a discovery is given
+ * back with, the experience bar under the count and the two small filters beside the list are that
+ * pack's drawing, and every one of them is named out of the mod's own namespace - so the pack has been
+ * copied into the mod rather than leaned on, and the collection is that drawing whether or not a player
+ * runs the pack itself. The copy was made with the permission of the pack's author and is credited beside the files
  * ({@code assets/immersive_titles/textures/gui/sprites/CREDITS.md}), and the one sprite of the screen
  * that is still the game's own - the scroller - is left so on purpose: the pack redraws no scroller,
  * and a list of what the game holds is scrolled with the game's own bar. What is not a sprite at all
@@ -709,25 +711,44 @@ final class BiomeCollectionScreen extends Screen
 	private static final Identifier WAITING_BUTTON_SPRITE = guiSprite("widget/button_disabled");
 
 	/**
-	 * The cross a row of a discovery is given while the mouse is on that row: the pack's own drawing of
-	 * the game's cancel button, which is a red cross and nothing else - no face and no frame around it.
+	 * The button a row of a discovery is given while the mouse is on that row: the pack's own drawing of
+	 * a small square button - the one it puts a slot of the loom's patterns in - at the size it is drawn
+	 * at, which is the height of a row exactly (see {@link #FORGET_SIZE}).
 	 *
-	 * It is drawn at the size it is, one texture pixel to one gui pixel, and it is read whole: nothing
-	 * of it is sliced, tiled or scaled, so what a player sees at the end of the row is the pack's cross
-	 * (see {@link #FORGET_SIZE}). A button of the pack's cannot be put there, and that is what was there
-	 * before this: the pack's button is two hundred texels of a drawing whose own two ends are twenty
-	 * texels each, which is not a square that twelve of can be taken - the two ends met in the middle of
-	 * it and what the row ended in was a seam in the row rather than a control on it, painted in the
-	 * same two greys as the row itself (see {@link #drawForgetButton}).
+	 * It is a square button with nothing drawn inside it, so the cross the screen marks it with is the
+	 * whole of what is read in it (see {@link #FORGET_MARK}), and its own face is a shade darker than
+	 * the row it stands in, with a lighter edge over it and a dark one under - which is what makes it a
+	 * button at the end of a row rather than a seam in it. A button of the pack's wide kind cannot be
+	 * put there: that drawing is two hundred texels wide with twenty texels of an end at either side of
+	 * it, and a square cut from it the size of a row is those two ends meeting in the middle, painted in
+	 * the same two greys as the row itself (see {@link #drawForgetButton}).
 	 *
-	 * It stands where the name of the mod an entry comes from is written (see {@link #drawItem}), so
-	 * that a row of a discovery ends in the pack's cross the way it opens in the game's own check (see
-	 * {@link #CHECK}).
+	 * It stands at the far right end of the row, where the name of the mod an entry comes from is written
+	 * (see {@link #drawItem}), so that a row of a discovery ends in the pack's button the way it opens in
+	 * the game's own check (see {@link #CHECK}).
 	 */
-	private static final Identifier FORGET_SPRITE = guiSprite("container/beacon/cancel");
+	private static final Identifier FORGET_SPRITE = guiSprite("container/loom/pattern_selected");
 
-	/** How large that cross is, in gui pixels: the size of its own drawing, which is what it is read at. */
-	private static final int FORGET_SIZE = 18;
+	/**
+	 * How large that button is, in gui pixels, on both sides: its own size, which is the height of a row
+	 * - so it is as tall as the row it is in and flush with its top and bottom, and the room it takes
+	 * from the row's own end is one row's height of it.
+	 */
+	private static final int FORGET_SIZE = 14;
+
+	/**
+	 * The glyph the button that forgets a discovery is marked with, from the game's own font: the letter
+	 * the game itself puts on a button that takes something away, drawn in the middle of that button the
+	 * way the marks of the two filters are drawn in theirs (see {@link #drawButtonMark}).
+	 *
+	 * What is drawn is the game's own letter and not the pack's own cross, even though the pack has one:
+	 * that cross is thirteen texels across in a sprite of eighteen, and the room inside this button is
+	 * twelve - so a cross of the pack's would have to be a cross of the pack's cut down, and a share of a
+	 * drawing that is two texels wide is not a thinner drawing of it but a broken one. The red the
+	 * letter is drawn in is the pack's own, and it is taken out of that same cross (see
+	 * {@link #FORGET_COLOR}).
+	 */
+	private static final String FORGET_MARK = "X";
 
 	/**
 	 * One of the mod's own copies of the pack's gui sprites: the file the game reads a sprite of the gui
@@ -826,19 +847,19 @@ final class BiomeCollectionScreen extends Screen
 	private static final int TAB_OFF_COLOR = 0xFF8A8A8A;
 
 	/**
-	 * What the cross of a row is read through, in the two readings it has: the grey it is dimmed by while
-	 * the mouse is only on the row, and the whole of its colour while the mouse is on the cross itself -
-	 * a cross that gives a reveal back says so, and says so louder under the hand that is about to press
-	 * it.
+	 * The two reds the cross of that button is drawn in: the one it is set in while the mouse is only on
+	 * the row, and the one it is lit in while the mouse is on the button itself - a button that gives a
+	 * reveal back says so, and says so louder under the hand that is about to press it.
 	 *
-	 * Neither of the two is a colour of the collection's: the red is the pack's own red in the pack's own
-	 * drawing, and the grey is the whole of that drawing at a share of itself while it waits (see
-	 * {@link #FORGET_SPRITE}). So there is no colour of the mod's in this button at all - it is the
-	 * pack's cross, dim or whole - and the one press in the collection that takes something away is
-	 * marked by the pack's own drawing of it rather than by an alarm of the screen's own.
+	 * Both are the pack's own reds, read out of its own drawing of the game's cancel button
+	 * ({@code container/beacon/cancel} of the pack, which is the cross the game puts on a beacon): the
+	 * deep one it draws the edge of its cross in, and the bright one it draws the body of it in. So the
+	 * one press in the collection that takes something away is marked in the pack's red and not in an
+	 * alarm of the screen's own - and the cross itself is the game's own letter, which is the one shape
+	 * of a cross that is drawn at this size and not cut down to it (see {@link #FORGET_MARK}).
 	 */
-	private static final int FORGET_DIM = 0xFF808080;
-	private static final int FORGET_LIT = 0xFFFFFFFF;
+	private static final int FORGET_COLOR = 0xFF6C0000;
+	private static final int FORGET_HOVERED_COLOR = 0xFFBC0000;
 
 	/**
 	 * The mark of a filter that is turned off, and the colour the other one lights up in. The two are
@@ -1891,8 +1912,8 @@ final class BiomeCollectionScreen extends Screen
 	 * reads as what has been found, with what is left to find set back from it.
 	 *
 	 * Beside the name sits either the id of the mod the entry comes from or - while the mouse is on a
-	 * row of a discovery - the pack's cross that forgets it, which takes the place of that id so that a
-	 * long list from a modpack stays readable and the cross keeps to the end of its own row.
+	 * row of a discovery - the button that forgets it, which takes the place of that id so that a long
+	 * list from a modpack stays readable and the button keeps to the end of its own row.
 	 */
 	private void drawItem(GuiGraphicsExtractor graphics, CollectionEntry entry, int index, int y,
 			int rowRight, int hovered, int mouseX, int mouseY)
@@ -1948,25 +1969,27 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Draws the cross that forgets the entry of the row the mouse is on: the pack's own drawing of the
-	 * game's cancel button, at the far right end of the row, where the name of the mod an entry comes
-	 * from would be drawn - which is the place the cross takes while it is there (see {@link #drawItem}).
+	 * Draws the button that forgets the entry of the row the mouse is on: a small square button of the
+	 * pack's at the far right end of the row, where the name of the mod an entry comes from would be
+	 * drawn - which is the place the button takes while it is there (see {@link #drawItem}).
 	 *
-	 * It is read whole, at the size of its own drawing: it is not nine sliced and not scaled, since the
-	 * cross is the whole of what the sprite is and a share of a drawing one pixel wide is not a smaller
-	 * drawing of it (see {@link #FORGET_SPRITE}). It is at its whole colour while the mouse is on the
-	 * cross itself and dimmed while it is only on the row it belongs to, since what the mouse is on
-	 * decides what a press would do: a press anywhere on the row does nothing, a press on the cross asks
-	 * about forgetting the discovery.
+	 * It is a button of the pack's own, as tall as the row and as wide, with the game's own letter for a
+	 * cross over it in the red the pack draws its own cross in (see {@link #FORGET_MARK}): the mark is
+	 * set back while the mouse is only on the row and lit while it is on the button itself, since what
+	 * the mouse is on decides what a press would do - a press anywhere on the row does nothing, a press
+	 * on the button asks about forgetting the discovery.
 	 */
 	private void drawForgetButton(GuiGraphicsExtractor graphics, CollectionEntry entry, int y,
 			int rowRight, int mouseX, int mouseY)
 	{
 		boolean onButton = isOverForgetButton(y, rowRight, mouseX, mouseY);
+		int x = forgetButtonX(rowRight);
+		int buttonY = forgetButtonY(y);
 
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, FORGET_SPRITE,
-				forgetButtonX(rowRight), forgetButtonY(y), FORGET_SIZE, FORGET_SIZE,
-				onButton ? FORGET_LIT : FORGET_DIM);
+		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, FORGET_SPRITE, x, buttonY, FORGET_SIZE, FORGET_SIZE);
+
+		drawButtonMark(graphics, FORGET_MARK, x, buttonY, FORGET_SIZE,
+				onButton ? FORGET_HOVERED_COLOR : FORGET_COLOR);
 
 		if (onButton)
 		{
@@ -1975,25 +1998,21 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Where the cross that forgets a discovery is drawn inside a row: at its far right end, one
-	 * {@link #TEXT_MARGIN} off it, which is the room the name of the mod an entry comes from keeps off
-	 * the end of the row as well (see {@link #drawItem}) - so the two of them are written and drawn in
-	 * the same place, and a row of a discovery ends away from its edge by one measure however it is read.
+	 * Where the button that forgets a discovery is drawn inside a row: at its far right end, so that a
+	 * row of a discovery ends in it the way the list itself ends in the two buttons that filter it.
 	 *
-	 * The drawing around the cross is wider than the cross itself: the sprite is a cross in the middle
-	 * of its own square, with a pixel or two of nothing on every side of it (see {@link #FORGET_SIZE}).
-	 * What that square is placed by is its own right edge, so what the eye reads is the cross rather than
-	 * the box it was drawn in.
+	 * A button as tall as the row is flush with the row's own top and bottom, and what it takes of the
+	 * row is one row's height of its end - so it reads as the end of the row rather than as something
+	 * set down in the middle of it, which is what a smaller button with room over and under it reads as.
 	 */
 	private static int forgetButtonX(int rowRight)
 	{
-		return rowRight - TEXT_MARGIN - FORGET_SIZE;
+		return rowRight - FORGET_SIZE;
 	}
 
 	/**
-	 * How far down a row the cross that forgets a discovery is drawn: centred in the row, which is the
-	 * middle of it for a cross a line of the game's font taller than the room around it - and the room
-	 * the drawn cross takes up is inside the row either way (see {@link #FORGET_SIZE}).
+	 * How far down a row that button is drawn: at the row's own top, since the two are the same height
+	 * (see {@link #FORGET_SIZE}) and there is nothing over or under it to centre it against.
 	 */
 	private static int forgetButtonY(int y)
 	{
@@ -2001,13 +2020,9 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * Whether the point is on the cross that forgets a discovery of the row drawn at {@code y}, which is
-	 * the end of the row and not the row itself: what a press does is decided by the cross and not by
+	 * Whether the point is on the button that forgets a discovery of the row drawn at {@code y}, which is
+	 * the end of the row and not the row itself: what a press does is decided by the button and not by
 	 * the row around it.
-	 *
-	 * What the point is measured against is the square the cross was drawn in rather than the cross
-	 * itself (see {@link #FORGET_SIZE}): the drawing around it is nothing, and a button the size of what
-	 * is drawn in it would be a cross a player has to aim at rather than a control at the end of a row.
 	 */
 	private static boolean isOverForgetButton(int y, int rowRight, double mouseX, double mouseY)
 	{
@@ -2178,7 +2193,7 @@ final class BiomeCollectionScreen extends Screen
 	 * that is already holding it, while a press on the groove brings the thumb under the cursor
 	 * first, so that a press anywhere on the scrollbar is followed by the drag the player expects.
 	 *
-	 * The row area answers a press for one thing only, the cross a row of a discovery shows while the
+	 * The row area answers a press for one thing only, the button a row of a discovery shows while the
 	 * mouse is on it (see {@link #forgetTargetAt}); anywhere else it is left to the rest of the screen,
 	 * so a row of the list is still not something that answers a click of its own.
 	 */
@@ -2214,10 +2229,10 @@ final class BiomeCollectionScreen extends Screen
 	}
 
 	/**
-	 * The entry whose cross a press at the point would land on, or null while it lands on none: a row
-	 * shows its cross only while the mouse is on that row and only for a discovery (see
-	 * {@link #drawItem}), and the point has to be on the cross itself, so a press can never reach a
-	 * cross that is not drawn.
+	 * The entry whose button a press at the point would land on, or null while it lands on none: a row
+	 * shows its button only while the mouse is on that row and only for a discovery (see
+	 * {@link #drawItem}), and the point has to be on the button itself, so a press can never reach a
+	 * button that is not drawn.
 	 */
 	private CollectionEntry forgetTargetAt(double mouseX, double mouseY)
 	{
@@ -2257,7 +2272,7 @@ final class BiomeCollectionScreen extends Screen
 	/**
 	 * Asks about forgetting an entry before anything is forgotten: the game's own confirmation screen,
 	 * carrying the name of it and what forgetting it does - the reveal plays again the next time it is
-	 * entered - because a cross at the end of a row is a small thing to press by mistake, and a reveal
+	 * entered - because a button at the end of a row is a small thing to press by mistake, and a reveal
 	 * that has already played is the one thing a collection is made of.
 	 *
 	 * The collection is what both answers come back to, so a press that was a mistake costs a press of

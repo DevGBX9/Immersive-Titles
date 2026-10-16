@@ -9,7 +9,7 @@ biome collection is read in the pack's dark gui whether or not a player runs the
 | `widget/button` | a row of a biome that was found, and the face of each of the screen's own buttons |
 | `widget/button_disabled` | a row whose reveal is still waiting |
 | `widget/button_highlighted` | the face of one of those buttons under the mouse or the keyboard, which is how the tab of the page being read is told apart from the other one |
-| `container/beacon/cancel` | the cross at the end of a row of a discovery, which gives it back |
+| `container/loom/pattern_selected` | the small square button at the end of a row of a discovery, which gives it back |
 | `social_interactions/background` | the window the list is held in, frame and panel at once |
 | `hud/experience_bar_background` | the trough of the bar counting the collection |
 | `hud/experience_bar_progress` | the found share of that bar |
