@@ -89,6 +89,14 @@ import java.util.Set;
  * this cannot reach, because its server is another machine and this mod is not in it, so the titles of
  * such a world name biomes and no structures.
  *
+ * A structure can also be had without walking into it: a crosshair held on a structure the player is
+ * standing outside of, within six blocks of them, for a second and a half, is watched by the same
+ * server reading and read here (see {@link #checkGaze}), because whether a player is looking at a
+ * structure is a question only the side that knows the structures can answer - and a look is a first
+ * visit like any other: it plays the reveal, it is written down as the discovery of that structure, and
+ * it is the reveal alone. A structure that already had one is given nothing by a look, not even the
+ * corner title of a visit after a visit, which is what walking into one is for.
+ *
  * The big reveal draws the clip stored as a numbered PNG sequence at its 1440x720 resolution (see
  * the {@code title} texture folder) minus the two strips of rows {@link #FRAME_CROP} describes,
  * because Minecraft cannot play video. Every frame is a pre
@@ -660,6 +668,13 @@ public final class TitleOverlay
 		if (client.player.position().distanceToSqr(joinPosition) >= MOVED_DISTANCE_SQR)
 		{
 			checkPlace(client);
+
+			// a structure the player stood outside and looked straight at: the looking is what the game
+			// watched for them (see StructurePresence), and it is read here rather than among the places,
+			// since a structure looked at from outside is not a place the player is in. It waits for the
+			// player to move like every other title does, so a structure the camera happened to be on
+			// while the world was still loading is not a title the world hands out
+			checkGaze(client);
 		}
 
 		// a discovery was had its reveal taken back while the player was standing in it: its reveal
@@ -878,6 +893,40 @@ public final class TitleOverlay
 		{
 			startCornerTitle(name);
 		}
+	}
+
+	/**
+	 * Watches what the game says the player is looking at and plays the reveal of a structure they have
+	 * been looking straight at from outside it - the one title of this mod that is not about a place the
+	 * player is in, and the one that is deliberately asked for rather than walked into (see
+	 * {@link StructurePresence#takeLookedAt}, which has watched the look itself: the crosshair held on a
+	 * structure within six blocks of the player for a second and a half, while they are not inside it).
+	 *
+	 * A look is a first visit like any other: the reveal is played and the structure is written down as
+	 * discovered, so the collection marks it found and the walk into it later is a visit after a visit
+	 * with the corner title (see {@link #checkStructure}). That is the whole of what this trigger is for -
+	 * a player who has arrived at a structure, or is passing one, can have its title without entering it.
+	 *
+	 * A structure that already had its reveal is given nothing here, and no corner title either: the look
+	 * is the way to the reveal of a structure and not a way of reading one that was already read, and the
+	 * corner title of a structure is the title of being in it, which is what {@link #checkStructure} is
+	 * for. Nothing else is touched either - in particular {@link #lastStructureId} is left as it is, so
+	 * entering the structure that was just looked at is still a visit of its own.
+	 */
+	private static void checkGaze(Minecraft client)
+	{
+		String structureId = StructurePresence.takeLookedAt(client).orElse(null);
+
+		if (structureId == null || !VISITED_STRUCTURES.add(structureId))
+		{
+			return;
+		}
+
+		DiscoveredStructures.remember(world, structureId);
+		// a structure that was forgotten and is looked at again has had its reveal back, so it is no
+		// longer waiting for one (see #queueRevealAgain and #checkRevealAgain)
+		REVEAL_AGAIN.remove(structureId);
+		startReveal(StructureNames.displayName(structureId));
 	}
 
 	/**

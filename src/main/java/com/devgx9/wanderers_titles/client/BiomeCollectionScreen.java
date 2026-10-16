@@ -178,12 +178,11 @@ import java.util.Set;
  * {@code isPauseScreen}, which is true for a screen in this version of the game, so opening it
  * pauses a single player world exactly like the escape menu does, and a title reveal that is running
  * when it opens holds with it, because a pause screen is exactly what a running reveal waits for.
- * What it does not take from the game is the two things the game draws behind such a screen: the
- * world behind it is neither blurred nor read through the game's own gradient but through a veil of
- * the mod's own, a little lighter (see {@link #extractBackground}), because a collection read with
- * the world still a world behind it is the point of the block of the screen the collection is set in.
- * A screen opened with no world behind it at all - the mod list of Mod Menu, from the title screen -
- * keeps the game's own background, since a panorama is a thing to leave alone.
+ * What the game draws behind a screen is left to the game as well: the screen overrides no part of
+ * it and draws nothing of its own there (see {@link Screen#extractBackground}), so what is behind the
+ * collection is what is behind the escape menu - the world the player is in, blurred by the game's
+ * own menu blur and read through the game's own menu background, and the game's own panorama for the
+ * way in that has no world behind it at all, i.e. the mod list of Mod Menu from the title screen.
  *
  * The collection is read in one look, and it is a dark one, because the six sprites every shape in
  * it is made of are the dark gui of the resource pack Reimagined GUI (Dark): the window the list is
@@ -856,27 +855,6 @@ final class BiomeCollectionScreen extends Screen
 	private static final int REMAINING_COLOR = 0xFFFFFFFF;
 
 	/**
-	 * The dim the world is seen through while the collection is open, from the top of the screen down
-	 * to its bottom, and the whole of what is drawn behind the block.
-	 *
-	 * The game draws two things behind a screen like this one - the world behind it, blurred, and then
-	 * the same dark gradient the game's own menus are drawn with - and the mod draws the two of them
-	 * the way the escape menu does, so that opening the collection reads as opening a menu of the game
-	 * rather than as a list laid over the world: the world behind it is the world the player is in,
-	 * read through the game's own blur (see {@link #extractBackground}), and the veil over it is what
-	 * keeps the block of the screen readable on top of a bright sky or a dark cave alike.
-	 *
-	 * The veil is a shade deeper than the game's own for the same reason the blur is there: the block
-	 * is the whole of what the screen is for, and what is behind it is set back so that the block is
-	 * what the eye lands on. What keeps the block itself readable on top of it is still the block: the
-	 * panel the rows sit on is the panel of the window the mod ships, drawn over the world (see
-	 * {@link #drawFrame}), so the veil has nothing to do beyond setting the block off from what is
-	 * behind it.
-	 */
-	private static final int VEIL_TOP = 0xCC121216;
-	private static final int VEIL_BOTTOM = 0xD9121216;
-
-	/**
 	 * The biomes to list, in the order they are shown in: the page the screen opens on.
 	 */
 	private final List<CollectionEntry> biomes;
@@ -1487,41 +1465,6 @@ final class BiomeCollectionScreen extends Screen
 		drawFilterIcons(graphics);
 		drawDoneLabel(graphics);
 		drawDoneFocus(graphics);
-	}
-
-	/**
-	 * Draws what is behind the block: the world the player is in, blurred the way the escape menu
-	 * blurs it and then under the veil of the mod's own (see {@link #VEIL_TOP}), and the game's own
-	 * background for the way in that has no world behind it.
-	 *
-	 * The blur is the game's own, taken out of the same place the escape menu takes it out of (see
-	 * {@code extractBlurredBackground}), so what the player sees behind the collection is what they see
-	 * behind the menu they press escape for - the world they are in, softened, with the block of the
-	 * list set on top of it. It is drawn before the veil rather than instead of it: the blur is what
-	 * softens the world and the veil is what sets it back, and the two together are what the game's own
-	 * menus are drawn with.
-	 *
-	 * The collection is opened out of a world by the mod's own key, and out of the mod list of Mod Menu
-	 * from wherever the player is - the title screen included, where what the game draws behind a screen
-	 * is its own panorama. So the veil is drawn where there is a world to see through it, and everywhere
-	 * else the game's own background is left alone: a screen opened from the title screen while standing
-	 * in no world is not a screen with a world behind it, and the panorama says that better than a flat
-	 * veil could.
-	 */
-	@Override
-	public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
-	{
-		if (minecraft == null || minecraft.level == null)
-		{
-			super.extractBackground(graphics, mouseX, mouseY, partialTick);
-			return;
-		}
-
-		// the world behind the collection is blurred the way the escape menu blurs it, and then read
-		// through the veil of the mod's own - which is what makes opening the collection read as opening
-		// a menu of the game rather than as a list laid over the world
-		extractBlurredBackground(graphics);
-		graphics.fillGradient(0, 0, width, height, VEIL_TOP, VEIL_BOTTOM);
 	}
 
 	/**
