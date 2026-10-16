@@ -939,6 +939,15 @@ public final class TitleOverlay
 	 * that world registered. Pressing the key while the list is open is what closes it: the key
 	 * mapping is consumed here, on the client tick, and not by the screen, so the press that closes
 	 * the screen cannot be seen a second time and open it again.
+	 *
+	 * What the collection is put up with is the game's own screen change (see the game's own
+	 * {@code Screen#onClose}, which is how the game's screens change screens while a world is behind
+	 * them) and not the game's {@code setScreenAndShow}, which is what this used to be: that one draws
+	 * a frame of its own wherever it is called, and the game extracts that frame without a level in it -
+	 * so what the window is handed is one frame of a screen over a world that has just been cleared,
+	 * which is the black flash that used to cover the screen between one screen of the mod and the next.
+	 * Setting the screen alone leaves the drawing of it to the next frame, which is one frame of the
+	 * world showing the collection rather than one frame of it taken away.
 	 */
 	private static void toggleCollection(Minecraft client)
 	{
@@ -955,8 +964,9 @@ public final class TitleOverlay
 			return;
 		}
 
-		// opened from the game rather than out of another screen, so it closes back into the world
-		client.setScreenAndShow(new BiomeCollectionScreen(client.level, discoveredBiomes(),
+		// opened from the game rather than out of another screen, so it closes back into the world, and
+		// set rather than shown: the screen is drawn by the next frame, with the world in it (see above)
+		client.gui.setScreen(new BiomeCollectionScreen(client.level, discoveredBiomes(),
 				discoveredStructures(), null));
 	}
 

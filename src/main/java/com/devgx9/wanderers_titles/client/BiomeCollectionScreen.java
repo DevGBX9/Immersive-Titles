@@ -184,6 +184,17 @@ import java.util.Set;
  * own menu blur and read through the game's own menu background, and the game's own panorama for the
  * way in that has no world behind it at all, i.e. the mod list of Mod Menu from the title screen.
  *
+ * The one thing the screen does not leave to the game is how it is put up and taken down, because the
+ * game's way of showing a screen at once - {@code Minecraft#setScreenAndShow} - is not the way a screen
+ * is changed while a world is behind it: it draws a frame of its own wherever it is called, and the game
+ * extracts that frame with no level in it, so the window is handed one frame of a screen over a world
+ * that has just been cleared - a black flash covering the whole screen, one frame long, at every
+ * transition of the collection. What the screen changes itself with instead is the game's own screen
+ * change (see {@code Gui#setScreen}, which is how the game's own screens change screens), which sets
+ * the screen and leaves the drawing of it to the next frame - the one frame in which the world is drawn
+ * behind it. The three transitions this screen has are the two of {@link #onClose} and
+ * {@link #askToForget}, and each of them is that one call.
+ *
  * The collection is read in one look, and it is a dark one, because the six sprites every shape in
  * it is made of are the dark gui of the resource pack Reimagined GUI (Dark): the window the list is
  * held in, the buttons - of its rows, of its two tabs, and of the one that gives a discovery back -
@@ -1674,6 +1685,11 @@ final class BiomeCollectionScreen extends Screen
 	/**
 	 * Closes the collection back to where it was opened from: the world, while it was opened in one,
 	 * or the screen it was opened out of, which is the mod list where Mod Menu is the way in.
+	 *
+	 * The screen it goes back to is set here and drawn by the next frame, and not shown at once (see the
+	 * class of this one): showing it is a frame of the world cleared out of the window, which is the one
+	 * thing a player sees of a screen being closed. Closing into the world is the game's own answer and
+	 * is left to it (see {@link Screen#onClose}).
 	 */
 	@Override
 	public void onClose()
@@ -1684,7 +1700,7 @@ final class BiomeCollectionScreen extends Screen
 			return;
 		}
 
-		minecraft.setScreenAndShow(parent);
+		minecraft.gui.setScreen(parent);
 	}
 
 	/**
@@ -2218,10 +2234,14 @@ final class BiomeCollectionScreen extends Screen
 	 * The collection is what both answers come back to, so a press that was a mistake costs a press of
 	 * cancel and nothing else, and closing the confirmation with escape is cancel as well, since the
 	 * game's own confirmation screen answers its own close with no.
+	 *
+	 * The two screens are set and not shown (see the class of this one): the collection under the
+	 * confirmation is the world drawn behind it on the next frame, where showing it would have been a
+	 * frame of the world cleared out from under both of them.
 	 */
 	private void askToForget(CollectionEntry entry)
 	{
-		minecraft.setScreenAndShow(new ConfirmScreen(
+		minecraft.gui.setScreen(new ConfirmScreen(
 				confirmed ->
 				{
 					if (confirmed)
@@ -2229,7 +2249,7 @@ final class BiomeCollectionScreen extends Screen
 						forget(entry);
 					}
 
-					minecraft.setScreenAndShow(this);
+					minecraft.gui.setScreen(this);
 				},
 				Component.translatable(FORGET_TITLE_KEY),
 				Component.translatable(FORGET_MESSAGE_KEY, entry.name()),
