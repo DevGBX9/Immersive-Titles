@@ -272,6 +272,54 @@ public final class TitleOverlay
 	 */
 	private static final double MOVED_DISTANCE_SQR = 1.0D;
 
+	/**
+	 * How far the player has to move after forgetting a discovery before its reveal is played again,
+	 * in blocks squared: a single block, the same room the titles wait for after joining a world.
+	 *
+	 * What this is for is the biome the player is standing in when they forget it from the collection
+	 * screen: the screen is opened over that very biome, so the moment it closes the player is back in
+	 * the place the reveal was just taken back from. Playing the reveal there - at once, on the tick
+	 * that closed the screen - would put the title up while the screen is still going away and while
+	 * the player has not moved at all, which reads as the collection forgetting the biome and the world
+	 * handing it straight back. Instead the reveal waits until the player walks a block, so what comes
+	 * back is a title that was walked into again, the way every other reveal is (see {@link #tick}).
+	 */
+	private static final double REVEAL_AGAIN_DISTANCE_SQR = 1.0D;
+
+	/**
+	 * The biomes and structures whose reveal was taken back while the player was standing in them, to
+	 * be played again once they move a block: the ids the collection screen asked to forget, kept here
+	 * rather than played straight away (see {@link #queueRevealAgain}).
+	 *
+	 * A biome the player forgot while standing in it never leaves this set on its own: what empties it
+	 * is the player moving, at which point the ids in it are read and the reveal of the one they are in
+	 * is played. A structure is kept here for the same reason a biome is, and the two share this set
+	 * because an id of a biome and an id of a structure can never be the same string - they are read
+	 * back out of the two files the world keeps, one per kind (see {@link DiscoveredBiomes} and
+	 * {@link DiscoveredStructures}).
+	 */
+	private static final Set<String> REVEAL_AGAIN = new HashSet<>();
+
+	/** Where the player stood when a reveal was queued, until they move from it. */
+	private static Vec3 revealAgainPosition = null;
+
+	/**
+	 * Notes that {@code id} was just had its reveal taken back while the player may be standing in it,
+	 * so the reveal is played again once they move a block.
+	 *
+	 * This is what makes forgetting the biome the player is in from the collection screen end with the
+	 * title coming back rather than with the biome staying silent: the screen is opened over the very
+	 * biome it is forgetting, so on closing it the player is still in that place, and the check that
+	 * runs on movement finds it out of what this session remembers (see {@link #checkBiome}). The
+	 * reveal is not played here for that reason - it is played where every other one is, on movement,
+	 * and only once the player has actually moved.
+	 */
+	private static void queueRevealAgain(String id)
+	{
+		REVEAL_AGAIN.add(id);
+		revealAgainPosition = null;
+	}
+
 	// ---------------------------------------------------------------------------------------------
 	// The corner title
 	// ---------------------------------------------------------------------------------------------
@@ -558,6 +606,11 @@ public final class TitleOverlay
 		// is not one of this one, so the titles wait for the game to say what the player is in now
 		// instead of reading an answer about another world
 		StructurePresence.clear();
+
+		// and so does a reveal that was waiting for the player to walk on from a place in that world:
+		// the discovery it belongs to was forgotten in that world, and this one writes its own down
+		REVEAL_AGAIN.clear();
+		revealAgainPosition = null;
 		logWorld();
 	}
 
@@ -604,6 +657,86 @@ public final class TitleOverlay
 		if (client.player.position().distanceToSqr(joinPosition) >= MOVED_DISTANCE_SQR)
 		{
 			checkPlace(client);
+		}
+
+		// a discovery was had its reveal taken back while the player was standing in it: its reveal
+		// plays again once they walk a block from where they were when it was taken back, rather than
+		// at once - the screen that took it back was open over that very place, so playing it there and
+		// then would put the title up while the screen is still going away
+		if (!REVEAL_AGAIN.isEmpty())
+		{
+			checkRevealAgain(client);
+		}
+	}
+
+	/**
+	 * Plays the reveal again of a discovery that was had its reveal taken back, once the player has
+	 * moved a block from where they stood when it was taken back.
+	 *
+	 * The set {@link #REVEAL_AGAIN} holds what was forgotten, and the place it was forgotten from is
+	 * held beside it - the same way a world is joined from a spot the titles wait to be moved from
+	 * (see {@link #joinPosition}). Until the player walks a block from that spot nothing is played, so
+	 * the title that comes back is one that was walked into again and not one that was handed straight
+	 * back by the screen that took it away.
+	 *
+	 * What is played is the reveal of the biome or the structure the player is in at that moment,
+	 * rather than of whichever id was forgotten - the two are the same thing when the player has not
+	 * moved since, and when they have, the place they walked into is the one worth titling.
+	 *
+	 * What is discovered there is written down again in the same breath as the title that announces it,
+	 * and here rather than in {@link #checkBiome}: that check writes a discovery down when the place
+	 * the player is in changes, and this is the case where it never changed - the player was standing
+	 * in the biome when the collection screen took the discovery back and is still standing in it now,
+	 * so a biome left to that check would play no title and be written down by nothing (see
+	 * {@link #queueRevealAgain}). The collection reads what is written down, so a biome that comes
+	 * back here comes back as a discovery in the list as well, with the button that takes it back
+	 * away again on its row.
+	 *
+	 * The id that was forgotten is dropped from the set when it is discovered here: it has had its
+	 * reveal back, and what the world wrote down for it was taken out when it was forgotten (see
+	 * {@link #forgetBiome}). An id that is discovered by {@link #checkBiome} instead - a player who
+	 * forgot the biome and then walked out of it and back in - leaves the set there, so that the one
+	 * reveal it played is the only one it plays.
+	 */
+	private static void checkRevealAgain(Minecraft client)
+	{
+		Vec3 position = client.player.position();
+
+		if (revealAgainPosition == null)
+		{
+			revealAgainPosition = position;
+			return;
+		}
+
+		if (position.distanceToSqr(revealAgainPosition) < REVEAL_AGAIN_DISTANCE_SQR)
+		{
+			return;
+		}
+
+		// the player has walked a block: a discovery that was forgotten where they are standing is
+		// discovered again here, and its reveal is the reveal of a first visit - which is what the
+		// collection screen took back, and what it is given back now
+		String biomeId = BiomeNames.place(client).orElse(null);
+		if (biomeId != null && REVEAL_AGAIN.remove(biomeId))
+		{
+			VISITED_BIOMES.add(biomeId);
+			DiscoveredBiomes.remember(world, biomeId);
+			startReveal(BiomeNames.of(client).orElse(FALLBACK_NAME));
+		}
+
+		String structureId = StructurePresence.of(client).orElse(null);
+		if (structureId != null && REVEAL_AGAIN.remove(structureId))
+		{
+			VISITED_STRUCTURES.add(structureId);
+			DiscoveredStructures.remember(world, structureId);
+			startReveal(StructureNames.displayName(structureId));
+		}
+
+		// what was forgotten is not the place the player walked into, so it keeps waiting for them to
+		// walk into it again - the reveal of it plays when they do, out of the set above
+		if (REVEAL_AGAIN.isEmpty())
+		{
+			revealAgainPosition = null;
 		}
 	}
 
@@ -668,6 +801,9 @@ public final class TitleOverlay
 		if (VISITED_BIOMES.add(biomeId))
 		{
 			DiscoveredBiomes.remember(world, biomeId);
+			// a biome that was forgotten and is walked into again has had its reveal back by being
+			// discovered here, so it is no longer waiting for one (see #queueRevealAgain)
+			REVEAL_AGAIN.remove(biomeId);
 			startReveal(name);
 		}
 		else
@@ -704,6 +840,8 @@ public final class TitleOverlay
 		if (VISITED_STRUCTURES.add(structureId))
 		{
 			DiscoveredStructures.remember(world, structureId);
+			// and the same for a structure that was forgotten and entered again (see #queueRevealAgain)
+			REVEAL_AGAIN.remove(structureId);
 			startReveal(name);
 		}
 		else
@@ -781,6 +919,7 @@ public final class TitleOverlay
 		}
 
 		DiscoveredBiomes.forget(world, biomeId);
+		queueRevealAgain(biomeId);
 	}
 
 	/**
@@ -800,6 +939,7 @@ public final class TitleOverlay
 		}
 
 		DiscoveredStructures.forget(world, structureId);
+		queueRevealAgain(structureId);
 	}
 
 	/**
