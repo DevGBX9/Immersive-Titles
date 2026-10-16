@@ -29,9 +29,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
@@ -81,11 +78,11 @@ import java.util.UUID;
  * is in is where the answer came from and two dimensions cannot both be under one player.
  *
  * The same reading answers a second question about a player, which is asked of the server for the same
- * reason and kept apart from the answer above: the structure they are looking straight at while
- * standing outside it (see {@link #lookedAt}). Being inside a structure and standing outside one and
- * looking at it are two different visits of it, and the second of them is a reveal a player can have
- * without ever walking in - so what is watched here is where the crosshair is, for how long it stays
- * there, and where the player is standing while it is (see {@link #gazing}).
+ * reason and kept apart from the answer above: the structure they are looking at while standing outside
+ * it (see {@link #lookedAt}). Being inside a structure and standing outside one and looking at it are
+ * two different visits of it, and the second of them is a reveal a player can have without ever walking
+ * in - so what is watched here is whether the player's line of sight has reached a structure, for how
+ * long it stays on it, and where the player is standing while it does (see {@link #gazing}).
  */
 final class StructurePresence
 {
@@ -102,8 +99,8 @@ final class StructurePresence
 	 * {@link #CHECK_INTERVAL_TICKS} rather than the same interval because of what the two readings are
 	 * for: being inside a structure is a state, while a look is a length of time that has to be
 	 * measured, and a quarter of a second is as coarse as a second and a half (see {@link #GAZE_TICKS})
-	 * can be counted without the title arriving noticeably late. What a reading of a look costs is
-	 * bounded by how far it may reach (see {@link #GAZE_DISTANCE}).
+	 * can be counted without the title arriving noticeably late. What a reading of a look costs is the
+	 * laser it reads and nothing else (see {@link #GAZE_DISTANCE} and {@link #lookedAt}).
 	 */
 	private static final int GAZE_INTERVAL_TICKS = 5;
 
@@ -111,15 +108,15 @@ final class StructurePresence
 	 * How long a player has to keep looking at one structure before it is handed to the client as a
 	 * reveal, in ticks: a second and a half. The count is kept in ticks rather than in readings, so the
 	 * look is the same second and a half whatever {@link #GAZE_INTERVAL_TICKS} is set to, and it is the
-	 * look that has to last: a crosshair that leaves the structure resets it (see {@link #gazing}).
+	 * look that has to last: a laser that leaves the structure resets it (see {@link #gazing}).
 	 */
 	private static final int GAZE_TICKS = 30;
 
 	/**
-	 * How far the block under the crosshair may be from the player's eyes, in blocks: the structure a
-	 * player looks at has to be within six blocks of them, which is what keeps this a look at something
-	 * in front of the player rather than at a structure on the horizon. It is also the whole of the cost
-	 * of one reading, since it is the length of the ray that is cast (see {@link #lookedAt}).
+	 * How far the laser reaches from the player's eyes, in blocks: the structure a player looks at has to
+	 * be within six blocks of them, which is what keeps this a look at something in front of the player
+	 * rather than at a structure on the horizon. It is also the whole of the cost of one reading of a
+	 * look, since it is the length of the line that is read (see {@link #lookedAt}).
 	 */
 	private static final double GAZE_DISTANCE = 6.0D;
 
@@ -128,8 +125,8 @@ final class StructurePresence
 
 	/**
 	 * The structure each player is looking at right now, with how long they have been looking at it:
-	 * emptied of a player the moment their crosshair leaves a structure, since a look is one look and a
-	 * player who looks away and back has started a look of its own (see {@link Gaze}).
+	 * emptied of a player the moment their laser leaves a structure, since a look is one look and a player
+	 * who looks away and back has started a look of its own (see {@link Gaze}).
 	 */
 	private static final Map<UUID, Gaze> LOOKING = new HashMap<>();
 
@@ -146,7 +143,7 @@ final class StructurePresence
 	private static int ticksUntilGaze = 0;
 
 	/**
-	 * One player's look: the structure under their crosshair, how many ticks it has been there, and
+	 * One player's look: the structure the laser of the player is on, how many ticks it has been on it, and
 	 * whether the reveal of it has already been handed over for this look. The last of the three is
 	 * what keeps a player who stands there staring at a structure - which they are told to do - from
 	 * being handed the same reveal again at every reading of it (see {@link #gazing}).
@@ -222,12 +219,13 @@ final class StructurePresence
 	}
 
 	/**
-	 * Counts, for every player of {@code level}, how long the same structure has been under their
-	 * crosshair, and hands over the reveal of it once that look has lasted {@link #GAZE_TICKS} ticks.
+	 * Counts, for every player of {@code level}, how long the laser at {@link #lookedAt} has been on the
+	 * same structure, and hands over the reveal of it once that look has lasted {@link #GAZE_TICKS}
+	 * ticks.
 	 *
-	 * A look is one look (see {@link #LOOKING}): the count is dropped the moment the crosshair leaves the
-	 * structure it was on, whether for the world behind it, for another structure, or for a structure the
-	 * player is standing inside (see {@link #lookedAt}), so letting go and looking back is the start of a
+	 * A look is one look (see {@link #LOOKING}): the count is dropped the moment the laser leaves the
+	 * structure it was on, whether for the world short of it, for another structure, or for a structure
+	 * the player is standing inside (see {@link #lookedAt}), so looking away and back is the start of a
 	 * fresh second and a half rather than the rest of an old one.
 	 *
 	 * The structure is handed over once per look and not on every reading after it: what a player who
@@ -254,7 +252,7 @@ final class StructurePresence
 
 			if (look == null || !look.structure().equals(structure))
 			{
-				// nothing was under the crosshair, or something else was: this look starts here
+				// the laser met nothing, or met something else: this look starts here
 				LOOKING.put(id, new Gaze(structure, 0, false));
 				continue;
 			}
@@ -272,33 +270,27 @@ final class StructurePresence
 	}
 
 	/**
-	 * The structure of {@link StructureCatalog} the player of {@code player} is looking straight at, or
-	 * null while they are looking at none.
+	 * The structure of {@link StructureCatalog} the player of {@code player} is looking at, or null
+	 * while they are looking at none.
 	 *
-	 * What is looked at is the block under the crosshair, read the way the game reads the block a player
-	 * is mining: a ray from the player's eyes along the way they are facing, no longer than
-	 * {@link #GAZE_DISTANCE} blocks (see {@link ClipContext}). What the ray passes through without
-	 * stopping is what a player would be able to see past - air, water, grass and the other blocks with
-	 * no shape to stand on - so a structure behind a flower is still looked at, while the same structure
-	 * behind a wall of its own is not.
+	 * What is read is an invisible laser rather than the block under the crosshair: a line from the
+	 * player's eyes along the way they are facing, no longer than {@link #GAZE_DISTANCE} blocks, asked
+	 * whether it has entered the region of a structure at all (see {@link StructureCatalog#along}, which
+	 * reads the same answer the game's own location criterion is read out of). The line is stopped by
+	 * nothing - not by a wall of the structure, not by the ground, not by a tree standing in front of it
+	 * - so a player looking at a structure is looking at it whichever block of the world their eye
+	 * happens to land on, and the block that is under the crosshair does not have to be one of the
+	 * structure's own for the structure to be read here.
 	 *
-	 * A structure the player is inside does not count, whatever is under their crosshair: it is the
-	 * structure they are standing in, its title is the one they get for being in it, and the look here is
-	 * the other way of arriving at one - standing outside it and reading it from where they are.
+	 * A structure the player is inside does not count, whatever the laser meets first: it is the structure
+	 * they are standing in, its title is the one they get for being in it, and the look here is the other
+	 * way of arriving at one - standing outside it and reading it from where they are.
 	 */
 	private static String lookedAt(ServerLevel level, ServerPlayer player)
 	{
 		Vec3 eye = player.getEyePosition();
 		Vec3 reach = eye.add(player.getViewVector(1.0F).scale(GAZE_DISTANCE));
-		BlockHitResult hit = level.clip(new ClipContext(eye, reach, ClipContext.Block.OUTLINE,
-				ClipContext.Fluid.NONE, player));
-
-		if (hit.getType() != HitResult.Type.BLOCK)
-		{
-			return null;
-		}
-
-		String structure = StructureCatalog.at(level, hit.getBlockPos()).orElse(null);
+		String structure = StructureCatalog.along(level, eye, reach).orElse(null);
 
 		if (structure == null || structure.equals(INSIDE.get(player.getUUID())))
 		{

@@ -37,6 +37,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,6 +105,13 @@ final class StructureCatalog
 	 * same way (see {@link WorldIdentity}).
 	 */
 	private static final String MOD_NAMESPACE = "immersive_titles";
+
+	/**
+	 * How far apart the positions a line is read at are, in blocks: half a block, which is finer than
+	 * any structure is thick, so a structure the line of sight of a player crosses cannot come out
+	 * between two positions of it and be missed (see {@link #along}).
+	 */
+	private static final double LINE_STEP = 0.5D;
 
 	/**
 	 * The structures of the game, in the order the collection lists them: a row per structure, and a
@@ -248,6 +256,58 @@ final class StructureCatalog
 	 */
 	static Optional<String> at(ServerLevel level, BlockPos pos)
 	{
+		return sight(level).flatMap(sight -> sight.at(pos));
+	}
+
+	/**
+	 * The structure of this list the line from {@code from} to {@code to} reaches first, or an empty
+	 * optional while it reaches none of them.
+	 *
+	 * It is {@link #at} asked of a line rather than of one position, and it is what a look at a structure
+	 * is read with: the line is the player's own line of sight over the few blocks they can be looking at
+	 * something in, and what is looked for is whether that line reaches a structure at all rather than
+	 * whether the one block it happens to end in is part of one. So a player who is looking at a
+	 * structure is looking at it whether their eye is on a wall of it, on the ground of it below the
+	 * horizon, or on the leaves of a tree standing in front of it: nothing of the world stops the line,
+	 * and every block it passes over is read for the structure standing there and for nothing else.
+	 *
+	 * The structures of the world are worked out once for the whole line and every position of it is
+	 * asked of them, so a line of a few dozen positions is one list of the game's structures rather than
+	 * one per position (see {@link #sight}).
+	 */
+	static Optional<String> along(ServerLevel level, Vec3 from, Vec3 to)
+	{
+		Optional<Sight> reading = sight(level);
+
+		if (reading.isEmpty())
+		{
+			return Optional.empty();
+		}
+
+		Sight world = reading.get();
+		double length = from.distanceTo(to);
+		int steps = (int) Math.ceil(length / LINE_STEP);
+
+		for (int step = 1; step <= steps; step++)
+		{
+			Vec3 point = from.add(to.subtract(from).scale(step * LINE_STEP / length));
+			Optional<String> reached = world.at(BlockPos.containing(point));
+
+			if (reached.isPresent())
+			{
+				return reached;
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	/**
+	 * The listed structures of {@code level}, ready to be asked where they are: the ones the game has an
+	 * entry for, or an empty optional while this world has none of them (see {@link Sight}).
+	 */
+	private static Optional<Sight> sight(ServerLevel level)
+	{
 		Registry<Structure> structures = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
 		List<Holder<Structure>> listed = new ArrayList<>();
 
@@ -262,15 +322,33 @@ final class StructureCatalog
 			return Optional.empty();
 		}
 
-		StructureStart start = level.structureManager().getStructureWithPieceAt(pos, HolderSet.direct(listed));
+		return Optional.of(new Sight(level, structures, HolderSet.direct(listed)));
+	}
 
-		if (!start.isValid())
+	/**
+	 * The listed structures of one world as a reading to be asked, held with the level and the registry
+	 * they were read out of: what one position in that world is a question asked again for every position
+	 * of a line (see {@link #along}), and this is what keeps the list of the game's structures and the
+	 * registry it came from worked out once between all of them.
+	 */
+	private record Sight(ServerLevel level, Registry<Structure> structures, HolderSet<Structure> listed)
+	{
+		/**
+		 * The row of the structure that has a piece standing where {@code pos} is, if any: the same
+		 * question {@link StructureCatalog#at} asks, asked once per position rather than once per reading.
+		 */
+		Optional<String> at(BlockPos pos)
 		{
-			return Optional.empty();
-		}
+			StructureStart start = level.structureManager().getStructureWithPieceAt(pos, listed);
 
-		return structures.getResourceKey(start.getStructure())
-				.map(key -> LISTED_AS.get(key.identifier().toString()));
+			if (!start.isValid())
+			{
+				return Optional.empty();
+			}
+
+			return structures.getResourceKey(start.getStructure())
+					.map(key -> LISTED_AS.get(key.identifier().toString()));
+		}
 	}
 
 	/**

@@ -89,11 +89,11 @@ import java.util.Set;
  * this cannot reach, because its server is another machine and this mod is not in it, so the titles of
  * such a world name biomes and no structures.
  *
- * A structure can also be had without walking into it: a crosshair held on a structure the player is
- * standing outside of, within six blocks of them, for a second and a half, is watched by the same
- * server reading and read here (see {@link #checkGaze}), because whether a player is looking at a
- * structure is a question only the side that knows the structures can answer - and a look is a first
- * visit like any other: it plays the reveal, it is written down as the discovery of that structure, and
+ * A structure can also be had without walking into it: a line of sight that reaches a structure within
+ * six blocks of the player, held there for a second and a half while they stand outside it, is watched
+ * by the same server reading and read here (see {@link #checkGaze}), because whether a player is
+ * looking at a structure is a question only the side that knows the structures can answer - and a look
+ * is a first visit like any other: it plays the reveal, it is written down as the discovery of that structure, and
  * it is the reveal alone. A structure that already had one is given nothing by a look, not even the
  * corner title of a visit after a visit, which is what walking into one is for.
  *
@@ -896,11 +896,12 @@ public final class TitleOverlay
 	}
 
 	/**
-	 * Watches what the game says the player is looking at and plays the reveal of a structure they have
-	 * been looking straight at from outside it - the one title of this mod that is not about a place the
+	 * Watches what the game says the player is looking at and plays the reveal of a structure that came
+	 * into their line of sight from outside it - the one title of this mod that is not about a place the
 	 * player is in, and the one that is deliberately asked for rather than walked into (see
-	 * {@link StructurePresence#takeLookedAt}, which has watched the look itself: the crosshair held on a
-	 * structure within six blocks of the player for a second and a half, while they are not inside it).
+	 * {@link StructurePresence#takeLookedAt}, which has watched the look itself: the invisible laser of
+	 * the player reaching a structure within six blocks of them for a second and a half, while they are
+	 * not inside it).
 	 *
 	 * A look is a first visit like any other: the reveal is played and the structure is written down as
 	 * discovered, so the collection marks it found and the walk into it later is a visit after a visit
