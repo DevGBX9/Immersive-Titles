@@ -107,8 +107,11 @@ import java.util.Set;
  * (see {@link #nameAlpha}). So the reveal works for any biome name, at any length.
  *
  * The corner title is purely programmatic, i.e. it uses no texture at all: the text is drawn with
- * the game font in bold and it fades in, holds and fades out in the lower left corner, above the
- * room the game's own HUD takes along the bottom of the screen rather than through it (see
+ * the game font in bold and it fades in, holds and fades out in the lower left corner of the screen.
+ * It is a title of that corner rather than one over the game's own HUD, so it is drawn as low as the
+ * corner goes - and where the corner is not clear of the HUD any more, i.e. on a screen narrow enough
+ * for the name to reach the bar the HUD is drawn along the foot of it, it is put back over the HUD as
+ * it used to be drawn rather than through it (see {@link #CORNER_BOTTOM_MARGIN} and
  * {@link #CORNER_HUD_ROOM}).
  *
  * It is the small title of the two, and it is drawn in the shape of the small area title of Hollow
@@ -290,12 +293,14 @@ public final class TitleOverlay
 	 * stands over the name as a label rather than as a name, and letters set apart are what makes it
 	 * read as one.
 	 *
-	 * A letter of the game font is five pixels of ink in a cell that advances six, so the letters of
-	 * the font stand one pixel apart by themselves; the picture the owner sent measures letters of
-	 * eleven to fourteen rows with eight between them, which is 0.6 to 0.7 of a letter. Two gui pixels
-	 * of room puts the letters of the game's font three apart, 0.6 of its own five.
+	 * A letter of the game font is five pixels of ink that the pen moves seven past, and bold draws one
+	 * pixel of ink more, so the letters of the small word stand one apart by themselves; the picture the
+	 * owner sent measures letters of eleven to fourteen rows with eight between them, which is 0.6 to
+	 * 0.7 of a letter. Three gui pixels of room stands the letters of the game's font four apart, 0.67
+	 * of its own six - and it is the room the letters are read at rather than counted at, so the room
+	 * is what is set and the letters are whatever the font draws.
 	 */
-	private static final int CORNER_KICKER_SPACING = 2;
+	private static final int CORNER_KICKER_SPACING = 3;
 
 	/**
 	 * The room between the two lines of the corner title, in gui pixels: what the picture the owner
@@ -304,9 +309,13 @@ public final class TitleOverlay
 	 */
 	private static final int CORNER_LINE_GAP = 6;
 
-	/** The timing of the corner title's fade in, hold and fade out. */
+	/**
+	 * The timing of the corner title's fade in, hold and fade out. The hold is the three seconds the
+	 * owner asked the title to stay for: it stands fully drawn for those three seconds, and the fade
+	 * out after them is the going rather than the stay.
+	 */
 	private static final long CORNER_FADE_IN_MS = 400L;
-	private static final long CORNER_HOLD_MS = 1600L;
+	private static final long CORNER_HOLD_MS = 3000L;
 	private static final long CORNER_FADE_OUT_MS = 900L;
 	private static final long CORNER_ANIMATION_MS = CORNER_FADE_IN_MS + CORNER_HOLD_MS + CORNER_FADE_OUT_MS;
 
@@ -314,15 +323,41 @@ public final class TitleOverlay
 	private static final int CORNER_MARGIN = 20;
 
 	/**
-	 * What a title of the corner keeps over the bottom of the screen, in gui pixels. What is under it
-	 * there is not the edge of the screen but the game's own HUD: the hotbar is 22 pixels tall and is
-	 * drawn from the bottom edge up, and the row of hearts, armor and hunger sits 17 pixels over that
-	 * and is 9 pixels tall, so the bottom 39 pixels of the screen belong to the game.
+	 * Where the corner title is drawn, in gui pixels: the foot of the name this far over the foot of
+	 * the screen, with the small word over it and the whole of it at {@link #CORNER_MARGIN}.
+	 *
+	 * The place is the one the owner marked on a picture of their own screen: the foot of the name
+	 * measures row 717 of a window whose game area is 736 rows tall at a gui scale of 2, which is 9.5
+	 * gui pixels over the foot of it. Nine gui pixels puts the foot of the name at row 358 of a 368
+	 * pixel gui, i.e. rows 684 to 717 of their window - the row they drew their box round, to the
+	 * pixel.
+	 *
+	 * What is at the foot of the screen there is the game's own HUD, but not at that column: the HUD
+	 * is a bar 182 gui pixels wide and centred, so the left of it is empty world - empty of the
+	 * hotbar, of the row of hearts over it and of the bar of experience over that - on any screen wide
+	 * enough for the name to stay left of it. Where it does not stay left of it the title is put back
+	 * over the HUD (see {@link #cornerNameRow}).
+	 */
+	private static final int CORNER_BOTTOM_MARGIN = 9;
+
+	/**
+	 * Half the width of the game's own HUD along the foot of the screen, in gui pixels: the hotbar is
+	 * 182 pixels wide and centred, and the row of hearts, armor and hunger and the bar of experience
+	 * are drawn within those same columns.
+	 */
+	private static final int CORNER_HUD_BAR_HALF = 91;
+
+	/**
+	 * What the corner title keeps over the bottom of the screen where it cannot be drawn in the corner
+	 * of it, in gui pixels. What is under it there is not the edge of the screen but the game's own
+	 * HUD: the hotbar is 22 pixels tall and is drawn from the bottom edge up, and the row of hearts,
+	 * armor and hunger sits 17 pixels over that and is 9 pixels tall, so the bottom 39 pixels of the
+	 * screen belong to the game.
 	 *
 	 * A title drawn across them reads as one more thing of the inventory rather than as a title over
-	 * the world - the hotbar is 182 pixels wide and centred, so a name at this size, up to about 250
-	 * pixels of it, reaches the hotbar sideways as well on any screen - and that is what the title is
-	 * kept clear of. The numbers are the game's own HUD read sprite by sprite, not a guess at it.
+	 * the world - and a name long enough to reach the columns the HUD takes is a name that would be
+	 * drawn through it, so that is the one case the title is kept over the HUD for. The numbers are the
+	 * game's own HUD read sprite by sprite, not a guess at it.
 	 */
 	private static final int CORNER_HUD_ROOM = 39;
 
@@ -1084,11 +1119,9 @@ public final class TitleOverlay
 	 * Draws the small corner title of a place the player has already seen: the name, and the small
 	 * word it is read under.
 	 *
-	 * The name is drawn where the single line of this title has always been drawn - over the room the
-	 * game's HUD takes, at {@link #CORNER_MARGIN} from the left edge of the screen - so what the shape
-	 * of the title adds is the line over the name, and nothing about the name itself moves. It is the
-	 * small word that is placed against the name: it is centred on it, and set {@link #CORNER_LINE_GAP}
-	 * over the top of its capitals.
+	 * The name is drawn at the corner of the screen (see {@link #cornerNameRow}), at
+	 * {@link #CORNER_MARGIN} from the left edge of it, and the small word is placed against the name:
+	 * centred on it, and set {@link #CORNER_LINE_GAP} over the top of its capitals.
 	 */
 	private static void renderCornerTitle(GuiGraphicsExtractor graphics)
 	{
@@ -1109,8 +1142,7 @@ public final class TitleOverlay
 		Minecraft client = Minecraft.getInstance();
 		Font font = client.font;
 		int x = CORNER_MARGIN;
-		int y = client.getWindow().getGuiScaledHeight() - CORNER_HUD_ROOM - CORNER_HUD_GAP
-				- (int) (font.lineHeight * CORNER_NAME_SCALE);
+		int y = cornerNameRow(client, font);
 		int color = (cornerAlpha(cornerMs) << 24) | TITLE_TEXT_RGB;
 
 		drawCornerWord(graphics, font, x, y, color);
@@ -1121,6 +1153,36 @@ public final class TitleOverlay
 		pose.scale(CORNER_NAME_SCALE, CORNER_NAME_SCALE);
 		graphics.text(font, cornerName, 0, 0, color, true);
 		pose.popMatrix();
+	}
+
+	/**
+	 * The row of the screen the name of the corner title is drawn at, which is the row its capitals
+	 * start on: the game font draws a capital from the row it is drawn at.
+	 *
+	 * The title is drawn in the corner of the screen, the foot of its name
+	 * {@link #CORNER_BOTTOM_MARGIN} gui pixels over the foot of the screen, because the left of the
+	 * game's own HUD is empty world: its bar is 182 gui pixels wide and centred, so what is left of
+	 * {@link #CORNER_HUD_BAR_HALF} of the middle of the screen belongs to the world and not to the HUD.
+	 *
+	 * That holds while the name stays left of that bar. A name of a mod's own, or a screen narrow
+	 * enough, can reach it - and a title drawn over the columns of the hotbar is a title drawn through
+	 * the game's own inventory, which is the one thing this title is not allowed to be. So that one
+	 * case is read here and the title is put back over the HUD on it (see {@link #CORNER_HUD_ROOM}),
+	 * which is where the title was drawn before the owner asked for it in the corner.
+	 */
+	private static int cornerNameRow(Minecraft client, Font font)
+	{
+		Window window = client.getWindow();
+		float nameRoom = CORNER_MARGIN + font.width(cornerName) * CORNER_NAME_SCALE;
+
+		if (nameRoom > window.getGuiScaledWidth() / 2.0F - CORNER_HUD_BAR_HALF)
+		{
+			return window.getGuiScaledHeight() - CORNER_HUD_ROOM - CORNER_HUD_GAP
+					- (int) (font.lineHeight * CORNER_NAME_SCALE);
+		}
+
+		return window.getGuiScaledHeight() - CORNER_BOTTOM_MARGIN
+				- (int) (FONT_CAP_HEIGHT * CORNER_NAME_SCALE);
 	}
 
 	/**
