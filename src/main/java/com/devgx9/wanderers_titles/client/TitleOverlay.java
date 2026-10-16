@@ -525,7 +525,10 @@ public final class TitleOverlay
 	 * The structure the player was inside when they were last checked, to notice entering one: it is
 	 * read where the game keeps it (see {@link StructurePresence}), and it is null while they are inside
 	 * none - so leaving a structure and coming back to it is a visit and a visit after it, which is what
-	 * decides between the reveal and the corner title.
+	 * decides between the reveal and the corner title. The null is written here, every time the player
+	 * is inside none, rather than being left at the last structure they stood in: a player who leaves a
+	 * structure without leaving the biome it is in is out of it, and walking back in is a second visit
+	 * (see {@link #checkStructure}).
 	 */
 	private static String lastStructureId = null;
 
@@ -679,9 +682,18 @@ public final class TitleOverlay
 	 * the title that comes back is one that was walked into again and not one that was handed straight
 	 * back by the screen that took it away.
 	 *
-	 * What is played is the reveal of the biome or the structure the player is in at that moment,
-	 * rather than of whichever id was forgotten - the two are the same thing when the player has not
-	 * moved since, and when they have, the place they walked into is the one worth titling.
+	 * What is given back is the place it was taken back from, and the whole of what this has to tell
+	 * apart is that place from the ones the player walked into instead: a place they walked into is a
+	 * change of place, and the reveal of it is played by the check that runs on a change (see
+	 * {@link #checkBiome} and {@link #checkStructure}), which writes the discovery down as well. So
+	 * only a place the titles are already on is read here - the one that never changed, since the
+	 * check that runs on a change can never see it - and a visit that is played here is a reveal and
+	 * no corner title after it, which is what the player asked for: one big title on coming back, and
+	 * the corner title on every visit after that.
+	 *
+	 * A wait that the player walks out from is dropped rather than kept: what they walk into next is
+	 * a place of its own, titled where it is entered, so nothing is left here to be read on every
+	 * tick from then on.
 	 *
 	 * What is discovered there is written down again in the same breath as the title that announces it,
 	 * and here rather than in {@link #checkBiome}: that check writes a discovery down when the place
@@ -713,29 +725,34 @@ public final class TitleOverlay
 			return;
 		}
 
-		// the player has walked a block: a discovery that was forgotten where they are standing is
-		// discovered again here, and its reveal is the reveal of a first visit - which is what the
-		// collection screen took back, and what it is given back now
 		String biomeId = BiomeNames.place(client).orElse(null);
-		if (biomeId != null && REVEAL_AGAIN.remove(biomeId))
+		String structureId = StructurePresence.of(client).orElse(null);
+
+		// the place the titles are already on is the one that was never left, and it is the only one
+		// given back here: the reveal of a place the player walked into is played by the check that
+		// runs on a change, and playing it here as well would put that reveal and the corner title of
+		// the one visit up together
+		if (biomeId != null && biomeId.equals(lastBiomeId) && REVEAL_AGAIN.remove(biomeId))
 		{
 			VISITED_BIOMES.add(biomeId);
 			DiscoveredBiomes.remember(world, biomeId);
 			startReveal(BiomeNames.of(client).orElse(FALLBACK_NAME));
 		}
 
-		String structureId = StructurePresence.of(client).orElse(null);
-		if (structureId != null && REVEAL_AGAIN.remove(structureId))
+		if (structureId != null && structureId.equals(lastStructureId)
+				&& REVEAL_AGAIN.remove(structureId))
 		{
 			VISITED_STRUCTURES.add(structureId);
 			DiscoveredStructures.remember(world, structureId);
 			startReveal(StructureNames.displayName(structureId));
 		}
 
-		// what was forgotten is not the place the player walked into, so it keeps waiting for them to
-		// walk into it again - the reveal of it plays when they do, out of the set above
-		if (REVEAL_AGAIN.isEmpty())
+		// the player has walked out of the place they were waiting in, so the wait is over: what they
+		// walk into next is a place of its own, and it is titled where it is entered (see #checkBiome)
+		if (!REVEAL_AGAIN.isEmpty() && !REVEAL_AGAIN.contains(biomeId)
+				&& !REVEAL_AGAIN.contains(structureId))
 		{
+			REVEAL_AGAIN.clear();
 			revealAgainPosition = null;
 		}
 	}
@@ -829,7 +846,20 @@ public final class TitleOverlay
 	private static void checkStructure(Minecraft client)
 	{
 		String structureId = StructurePresence.of(client).orElse(null);
-		if (structureId == null || structureId.equals(lastStructureId))
+
+		if (structureId == null)
+		{
+			// inside none: the game drops a player from the structure they walk out of as soon as their
+			// own block is out of it (see {@link StructurePresence}), and the titles drop it with them -
+			// which is what makes walking back into the same one a visit after a visit rather than one
+			// visit going on. It is the whole of what a structure has and a biome does not: a player who
+			// stays in the same biome, or walks straight out of one structure into another, changes
+			// nothing about the place they are in as far as the biome is concerned
+			lastStructureId = null;
+			return;
+		}
+
+		if (structureId.equals(lastStructureId))
 		{
 			return;
 		}
