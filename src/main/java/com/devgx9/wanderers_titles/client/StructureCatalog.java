@@ -264,12 +264,17 @@ final class StructureCatalog
 	 * optional while it reaches none of them.
 	 *
 	 * It is {@link #at} asked of a line rather than of one position, and it is what a look at a structure
-	 * is read with: the line is the player's own line of sight over the few blocks they can be looking at
-	 * something in, and what is looked for is whether that line reaches a structure at all rather than
-	 * whether the one block it happens to end in is part of one. So a player who is looking at a
-	 * structure is looking at it whether their eye is on a wall of it, on the ground of it below the
-	 * horizon, or on the leaves of a tree standing in front of it: nothing of the world stops the line,
-	 * and every block it passes over is read for the structure standing there and for nothing else.
+	 * is read with: what is looked for is whether that line reaches a structure at all rather than whether
+	 * the one block it happens to end in is part of one, so a player who is looking at a structure is
+	 * looking at it whether their eye is on a wall of it, on the ground of it below the horizon, or on a
+	 * block of it the crosshair landed beside - every block the line passes over is read for the structure
+	 * standing there and for nothing else.
+	 *
+	 * How far the world lets that line get is not decided here: what is read is the line the caller hands
+	 * over, and the one thing that asks for a line is a look at a structure, which hands over the line the
+	 * player's own sight reaches over the world (see {@link StructurePresence}, which clips it against the
+	 * blocks with a body to them first). So a structure behind a wall is not reached by this, and not by
+	 * anything this does: it is not on the line that was handed over.
 	 *
 	 * The structures of the world are worked out once for the whole line and every position of it is
 	 * asked of them, so a line of a few dozen positions is one list of the game's structures rather than

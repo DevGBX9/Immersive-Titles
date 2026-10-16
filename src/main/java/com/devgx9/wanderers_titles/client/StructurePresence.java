@@ -29,6 +29,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
@@ -82,7 +85,10 @@ import java.util.UUID;
  * it (see {@link #lookedAt}). Being inside a structure and standing outside one and looking at it are
  * two different visits of it, and the second of them is a reveal a player can have without ever walking
  * in - so what is watched here is whether the player's line of sight has reached a structure, for how
- * long it stays on it, and where the player is standing while it does (see {@link #gazing}).
+ * long it stays on it, and where the player is standing while it does (see {@link #gazing}). The line
+ * is the player's own and the world is what stops it: a structure is looked at over what is between
+ * the two of them, and never through a wall, whether that wall is a hill, a tree or the wall of a
+ * structure of its own (see {@link #lookedAt}).
  */
 final class StructurePresence
 {
@@ -116,7 +122,8 @@ final class StructurePresence
 	 * How far the laser reaches from the player's eyes, in blocks: the structure a player looks at has to
 	 * be within six blocks of them, which is what keeps this a look at something in front of the player
 	 * rather than at a structure on the horizon. It is also the whole of the cost of one reading of a
-	 * look, since it is the length of the line that is read (see {@link #lookedAt}).
+	 * look, since it is the length of the line that is read and, with it, of the one clip the world is
+	 * asked of that line - a ray over six blocks at the most, five times a second (see {@link #lookedAt}).
 	 */
 	private static final double GAZE_DISTANCE = 6.0D;
 
@@ -276,11 +283,21 @@ final class StructurePresence
 	 * What is read is an invisible laser rather than the block under the crosshair: a line from the
 	 * player's eyes along the way they are facing, no longer than {@link #GAZE_DISTANCE} blocks, asked
 	 * whether it has entered the region of a structure at all (see {@link StructureCatalog#along}, which
-	 * reads the same answer the game's own location criterion is read out of). The line is stopped by
-	 * nothing - not by a wall of the structure, not by the ground, not by a tree standing in front of it
-	 * - so a player looking at a structure is looking at it whichever block of the world their eye
-	 * happens to land on, and the block that is under the crosshair does not have to be one of the
-	 * structure's own for the structure to be read here.
+	 * reads the same answer the game's own location criterion is read out of).
+	 *
+	 * The line is the player's own line of sight, so the world is what stops it: the line is clipped
+	 * through the world first (see the clip below), and what is read is the line only as far as it gets -
+	 * the blocks a player cannot walk through are the blocks a look does not pass, which is what makes a
+	 * structure behind a hill, behind a tree or behind the wall of another structure a structure the
+	 * player is not looking at. Nothing else stops it: the clip is asked for the blocks with a body to
+	 * them and for no fluid at all, so looking at an ocean monument through the sea is looking at it, and
+	 * grass, flowers and the water of a river are not walls between the two of them.
+	 *
+	 * What is handed back is the first structure the line reaches, and the block the line stopped on
+	 * counts as part of what it reached: a player looking at the outside of one of the houses of a
+	 * village is looking at the village, whether the eye lands on a block of the house, on the ground of
+	 * the village under it or on the leaves of a tree standing in front of it (see the two readings
+	 * below, which are the line itself and the block it ended in).
 	 *
 	 * A structure the player is inside does not count, whatever the laser meets first: it is the structure
 	 * they are standing in, its title is the one they get for being in it, and the look here is the other
@@ -290,7 +307,19 @@ final class StructurePresence
 	{
 		Vec3 eye = player.getEyePosition();
 		Vec3 reach = eye.add(player.getViewVector(1.0F).scale(GAZE_DISTANCE));
-		String structure = StructureCatalog.along(level, eye, reach).orElse(null);
+		BlockHitResult stop = level.clip(new ClipContext(eye, reach, ClipContext.Block.COLLIDER,
+				ClipContext.Fluid.NONE, player));
+		boolean stopped = stop.getType() != HitResult.Type.MISS;
+		Vec3 end = stopped ? stop.getLocation() : reach;
+		String structure = StructureCatalog.along(level, eye, end).orElse(null);
+
+		if (structure == null && stopped)
+		{
+			// the wall the laser stopped on is the last thing it reached, and a wall of a structure is a
+			// block of it: this is what makes a look at the outside of a house of a village the village,
+			// and not the one block of the house the crosshair happened to land in
+			structure = StructureCatalog.at(level, stop.getBlockPos()).orElse(null);
+		}
 
 		if (structure == null || structure.equals(INSIDE.get(player.getUUID())))
 		{
