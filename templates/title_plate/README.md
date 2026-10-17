@@ -9,8 +9,8 @@ be erased out of an existing render, and stays only for comparison.
 |---|---|
 | frames | `frames/frame_0001.png` .. `frame_0187.png` (187) |
 | size | 1440 x 720, 30 fps, 6.23 s |
-| format | RGBA PNG, RGB = pure white, alpha = the plate's luminance |
-| on disk | 7.7 MB, 42.3 KB per frame |
+| format | pure white and alpha - alpha carries the plate's luminance; the shipped files are palette PNGs (see The shipped size) |
+| on disk | 5.2 MB, 28.5 KB per frame (7.7 MB as generated, see The shipped size) |
 | source | `theanimation.mp4` (201 frames, 30 fps); frame N here is source frame N+8 |
 
 The render itself lives outside the repo, so the paths below are where it sat when the
@@ -89,6 +89,21 @@ Beyond that:
 dark green and over a checkerboard, `proof.png` shows key frames over white, where a
 leftover black plate would be impossible to miss, plus a 1:1 crop of a plate edge and
 the same crop as pure alpha.
+
+## The shipped size
+
+The set as generated is 7.7 MB of RGBA PNG. The frames the mod ships are the same
+pictures recompressed losslessly with zopfli: the colour type drops to a palette with
+one entry per alpha value (alpha in tRNS) and the deflate stream is rebuilt, which
+brings the set to 5.2 MB, 28.5 KB a frame. No pixel changes - every file is decoded
+again and compared with the frame it replaces before it is written.
+
+```
+python shrink_frames.py --apply     # recompresses the frames under src/
+```
+
+It needs `zopfli` and `Pillow`. zopfli is slow - about ten seconds a frame on one core -
+so the frames are done in parallel. Run it without `--apply` for the numbers alone.
 
 ## Where a name goes
 
