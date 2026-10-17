@@ -864,12 +864,13 @@ public final class TitleOverlay
 
 		if (structureId == null)
 		{
-			// inside none: the game drops a player from the structure they walk out of as soon as their
-			// own block is out of it (see {@link StructurePresence}), and the titles drop it with them -
-			// which is what makes walking back into the same one a visit after a visit rather than one
-			// visit going on. It is the whole of what a structure has and a biome does not: a player who
-			// stays in the same biome, or walks straight out of one structure into another, changes
-			// nothing about the place they are in as far as the biome is concerned
+			// inside none: the structure the player walked out of is dropped the moment they leave the
+			// region of it - the box the game worked out for the whole of the structure (see
+			// {@link StructurePresence}) - and the titles drop it with them, which is what makes walking
+			// back into the same one a visit after a visit rather than one visit going on. It is the
+			// whole of what a structure has and a biome does not: a player who stays in the same biome,
+			// or walks straight out of one structure into another, changes nothing about the place they
+			// are in as far as the biome is concerned
 			lastStructureId = null;
 			return;
 		}

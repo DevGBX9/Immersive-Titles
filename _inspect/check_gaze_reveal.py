@@ -286,7 +286,7 @@ def main():
             print("BROKEN the block the laser stopped on is read whether the line reached anything or "
                   "not, so what is in sight is not read first")
             failures += 1
-        if not re.search(r"structure == null \|\| structure\.equals\(INSIDE\.get\(player\.getUUID\(\)\)\)",
+        if not re.search(r"structure == null \|\| structure\.equals\(insideStructure\(player\.getUUID\(\)\)\)",
                          laser):
             print("BROKEN a structure the player is inside counts as one looked at, so standing in a "
                   "structure and looking at it would play its reveal")

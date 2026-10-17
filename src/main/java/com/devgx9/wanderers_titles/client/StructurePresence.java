@@ -51,9 +51,10 @@ import java.util.UUID;
  * (see {@link StructureCatalog}). So this is where the mod asks for the same answer,
  * and this is the one thing about the titles that is read on the other side of a world.
  *
- * What is read is the game's own reading and not a copy of it: {@link StructureCatalog#at} is handed
- * a level and a position, and what it does is what the game's own advancement criterion does with
- * them. What this class adds is when to ask and where to keep the answer.
+ * What is read is the game's own reading and not a copy of it: {@link StructureCatalog#region} is
+ * handed a level and a position, and what it asks of the game there is what the game's own
+ * advancement criterion asks of them - a structure the position is inside and the box the game
+ * worked out for the whole of it. What this class adds is when to ask and where to keep the answer.
  *
  * The answer is kept here, in the memory of the game that asked, and that is the whole of how the two
  * sides are put together:
@@ -74,11 +75,15 @@ import java.util.UUID;
  * game, which is what makes the client-only mod able to name a structure at all: a title is still
  * drawn by the client, and the one fact it needs is asked of the only side that has it.
  *
- * The structure of a player is dropped as soon as they are not inside it any more, so leaving one and
- * coming back is seen as the two entries they are - a first visit and a visit after it, which is what
- * decides between the big reveal and the corner title (see {@link TitleOverlay}). What is kept is the
- * id of the structure, not the structure: a dimension is not stored either, since the level a player
- * is in is where the answer came from and two dimensions cannot both be under one player.
+ * The structure of a player is dropped as soon as they are not inside it any more, and what is read
+ * for being inside it is the region the game worked out for the whole of the structure rather than
+ * one of its pieces - so the ground between the houses of a village is walked as the village, and the
+ * visit ends where the box of that region ends (see {@link StructureCatalog#region}). Leaving one and
+ * coming back is still seen as the two entries they are - a first visit and a visit after it, which is
+ * what decides between the big reveal and the corner title (see {@link TitleOverlay}). What is kept
+ * is the region of the structure, not the structure: a dimension is not stored either, since the
+ * level a player is in is where the answer came from and two dimensions cannot both be under one
+ * player.
  *
  * The same reading answers a second question about a player, which is asked of the server for the same
  * reason and kept apart from the answer above: the structure they are looking at while standing outside
@@ -127,8 +132,11 @@ final class StructurePresence
 	 */
 	private static final double GAZE_DISTANCE = 6.0D;
 
-	/** The structure each player in a hosted world is inside, by the id of the player. */
-	private static final Map<UUID, String> INSIDE = new HashMap<>();
+	/**
+	 * The structure each player in a hosted world is inside, with the region of it the visit goes on
+	 * for as long as they stay within, by the id of the player (see {@link StructureCatalog#region}).
+	 */
+	private static final Map<UUID, StructureCatalog.Region> INSIDE = new HashMap<>();
 
 	/**
 	 * The structure each player is looking at right now, with how long they have been looking at it:
@@ -205,13 +213,30 @@ final class StructurePresence
 		}
 	}
 
-	/** Reads the structure the own block of every player of {@code level} is inside, if any. */
+	/**
+	 * Reads the structure the own block of every player of {@code level} is inside, if any, and holds
+	 * every one of them by the region of the structure read for them last: a player still within that
+	 * region is left as they are - on a piece of the structure or on the ground between its pieces,
+	 * which is what keeps a walk through a village one visit - and one the region no longer holds is
+	 * read again where they stand: the structure they are inside there, or none (see
+	 * {@link StructureCatalog#region}).
+	 */
 	private static void inside(ServerLevel level)
 	{
 		for (ServerPlayer player : level.players())
 		{
 			UUID id = player.getUUID();
-			Optional<String> structure = StructureCatalog.at(level, player.blockPosition());
+			StructureCatalog.Region region = INSIDE.get(id);
+
+			// still within the region of the structure they were last read inside: the visit goes on,
+			// whether they stand on a piece of it or on the ground between its pieces
+			if (region != null && region.box().isInside(player.blockPosition()))
+			{
+				continue;
+			}
+
+			Optional<StructureCatalog.Region> structure =
+					StructureCatalog.region(level, player.blockPosition());
 
 			if (structure.isPresent())
 			{
@@ -223,6 +248,17 @@ final class StructurePresence
 				INSIDE.remove(id);
 			}
 		}
+	}
+
+	/**
+	 * The row of the structure the player of {@code id} was last read inside, or null while they are
+	 * inside none: the name the titles are handed, rather than the region the visit is held by.
+	 */
+	private static String insideStructure(UUID id)
+	{
+		StructureCatalog.Region region = INSIDE.get(id);
+
+		return region == null ? null : region.structure();
 	}
 
 	/**
@@ -321,7 +357,7 @@ final class StructurePresence
 			structure = StructureCatalog.at(level, stop.getBlockPos()).orElse(null);
 		}
 
-		if (structure == null || structure.equals(INSIDE.get(player.getUUID())))
+		if (structure == null || structure.equals(insideStructure(player.getUUID())))
 		{
 			return null;
 		}
@@ -341,7 +377,7 @@ final class StructurePresence
 			return Optional.empty();
 		}
 
-		return Optional.ofNullable(INSIDE.get(client.player.getUUID()));
+		return Optional.ofNullable(insideStructure(client.player.getUUID()));
 	}
 
 	/**

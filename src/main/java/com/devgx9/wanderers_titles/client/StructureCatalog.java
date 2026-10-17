@@ -35,6 +35,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.Vec3;
@@ -54,9 +55,11 @@ import java.util.Optional;
  * the game checks when it wants to know that is what this class asks it - {@link
  * StructureManager#getStructureWithPieceAt(BlockPos, HolderSet)} against the blocks the player stands
  * in, which is the same question the game's own {@code minecraft:location} criterion asks for the
- * advancements that name a structure. So the listed structures are known to the game, the game's own
- * reading of them is used rather than a guess at which blocks belong to which structure, and a
- * structure no world generates is not in the list.
+ * advancements that name a structure. A visit of a structure is held by the region the game worked
+ * out for the whole of it rather than by one of its pieces, and that reading is the game's own as
+ * well - it is the box of a structure start (see {@link #region}). So the listed structures are
+ * known to the game, the game's own reading of them is used rather than a guess at which blocks
+ * belong to which structure, and a structure no world generates is not in the list.
  *
  * A first version of this list was the five structures the game itself writes down as one a player has
  * entered - the trial chambers, the stronghold, the fortress, the bastion remnant and the end city,
@@ -260,6 +263,23 @@ final class StructureCatalog
 	}
 
 	/**
+	 * The structure of this list that {@code pos} is inside, with the region of it: the row {@link
+	 * #at} answers with, and the box the game worked out for the whole of that structure - every piece
+	 * of it within the box, and the ground between the pieces with them (see {@link Region}).
+	 *
+	 * It is what a visit of a structure is held by rather than by a piece of it (see
+	 * {@link StructurePresence}): a village is a family of pieces standing apart with ground between
+	 * them, so a player who walks from one house of it to the next crosses ground no piece of the
+	 * village stands on, and the game's own answer of what they are inside drops them for the length
+	 * of that crossing. Where a visit begins is still a piece - the touch of one is what this answers
+	 * - and the box is what that visit is then held by until it is left.
+	 */
+	static Optional<Region> region(ServerLevel level, BlockPos pos)
+	{
+		return sight(level).flatMap(sight -> sight.region(pos));
+	}
+
+	/**
 	 * The structure of this list the line from {@code from} to {@code to} reaches first, or an empty
 	 * optional while it reaches none of them.
 	 *
@@ -344,16 +364,52 @@ final class StructureCatalog
 		 */
 		Optional<String> at(BlockPos pos)
 		{
+			return startAt(pos).flatMap(this::rowOf);
+		}
+
+		/**
+		 * That row, with the region of the structure it names kept with it: the box the game worked
+		 * out for the whole of it (see {@link StructureCatalog#region}).
+		 */
+		Optional<Region> region(BlockPos pos)
+		{
+			return startAt(pos).flatMap(start -> rowOf(start)
+					.map(row -> new Region(row, start.getBoundingBox())));
+		}
+
+		/**
+		 * The start the structure that has a piece standing where {@code pos} is belongs to, if any:
+		 * the question the two readings above are both worked out of.
+		 */
+		private Optional<StructureStart> startAt(BlockPos pos)
+		{
 			StructureStart start = level.structureManager().getStructureWithPieceAt(pos, listed);
 
-			if (!start.isValid())
-			{
-				return Optional.empty();
-			}
+			return start.isValid() ? Optional.of(start) : Optional.empty();
+		}
 
+		/**
+		 * The row the structure of {@code start} is listed as, or an empty optional while the game's
+		 * structure of it is not one of the listed.
+		 */
+		private Optional<String> rowOf(StructureStart start)
+		{
 			return structures.getResourceKey(start.getStructure())
 					.map(key -> LISTED_AS.get(key.identifier().toString()));
 		}
+	}
+
+	/**
+	 * One structure of this list a position is inside, with the region of it: the row the structure is
+	 * listed as and the box the game worked out for the whole of it - every piece of the structure
+	 * within the box, and the ground between the pieces with them.
+	 *
+	 * It is what a visit of a structure is held by rather than a piece of it (see
+	 * {@link StructurePresence}), which keeps one of these per player and gives it up when the player
+	 * leaves it (see {@link StructureCatalog#region}, which reads it).
+	 */
+	record Region(String structure, BoundingBox box)
+	{
 	}
 
 	/**
