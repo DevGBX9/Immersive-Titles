@@ -44,3 +44,9 @@ __pycache__/
 templates/*/frames/
 templates/*/sheet.png
 templates/*/proof.png
+
+# the pages the check and preview tools write are working files, not part of the set
+_inspect/preview_title.html
+_inspect/preview_collection.html
+_inspect/mock/frames.html
+_inspect/mock/layout.html
