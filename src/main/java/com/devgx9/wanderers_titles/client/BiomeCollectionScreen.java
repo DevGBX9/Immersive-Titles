@@ -1581,7 +1581,10 @@ final class BiomeCollectionScreen extends Screen
 	 *
 	 * The two tabs are painted here like the rest, and the tab of the page being read is called out by
 	 * the sprite it is painted with rather than by anything over it: the face of that tab is decided by
-	 * which page the screen is showing (see {@link #tabSprite}).
+	 * which page the screen is showing (see {@link #tabSprite}). The two filters are painted the same
+	 * way: the one the list is being read by wears the lit sprite and the other the plain one (see
+	 * {@link #filterSprite}), so a filter that has just been turned off is plain again at once,
+	 * whether or not the mouse is still on it and whether or not the keyboard is.
 	 */
 	private void drawButtonFaces(GuiGraphicsExtractor graphics)
 	{
@@ -1590,8 +1593,8 @@ final class BiomeCollectionScreen extends Screen
 			drawButtonFace(graphics, tabs.get(tab), tabSprite(tab));
 		}
 
-		drawButtonFace(graphics, discoveredFilter);
-		drawButtonFace(graphics, remainingFilter);
+		drawButtonFace(graphics, discoveredFilter, filterSprite(Filter.DISCOVERED));
+		drawButtonFace(graphics, remainingFilter, filterSprite(Filter.REMAINING));
 		drawButtonFace(graphics, doneButton);
 	}
 
@@ -1615,6 +1618,21 @@ final class BiomeCollectionScreen extends Screen
 	private Identifier tabSprite(Page tab)
 	{
 		return tab == page ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
+	}
+
+	/**
+	 * The sprite one of the two filters is painted with: the lit sprite of the pack - the green one -
+	 * for the filter the list is being read by, and the plain one for the other, which is the way the
+	 * two tabs are painted with the page being read (see {@link #tabSprite}).
+	 *
+	 * The face of a filter answers "which of the two is the list being read by", so it is decided by
+	 * the filter and not by where the mouse or the keyboard is: a face lit by the game's own hover
+	 * would keep the green of the button a press has just turned off, since a pressed button keeps the
+	 * keyboard after the click and the keyboard lights the same sprite (see {@link #drawButtonFace}).
+	 */
+	private Identifier filterSprite(Filter filter)
+	{
+		return this.filter == filter ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
 	}
 
 	/**
@@ -2033,7 +2051,10 @@ final class BiomeCollectionScreen extends Screen
 	 *
 	 * A mark is dim while its filter is off and lights up while it is on - the check in the green of
 	 * the checks in the list, the question mark in white - which is what tells the player which of
-	 * the two the list is being read by, and whether it is being read by either of them at all.
+	 * the two the list is being read by, and whether it is being read by either of them at all. The
+	 * face it sits in says the same thing, lit for that filter and plain for the other (see
+	 * {@link #filterSprite}), so the mark and the button can never read one way while the list is
+	 * read the other.
 	 */
 	private void drawFilterIcons(GuiGraphicsExtractor graphics)
 	{
