@@ -1468,10 +1468,11 @@ final class BiomeCollectionScreen extends Screen
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
 		// and what the screen draws over them, once the buttons themselves are on the screen: the face of
-		// each of them in the pack's own button, the bar of the two pages with the names of both in it,
-		// the marks of the two filters, the name of the button that closes the screen and the border of
-		// it the keyboard is on
+		// each of them in the pack's own button, the gold line around a tab or a filter under the mouse,
+		// the bar of the two pages with the names of both in it, the marks of the two filters, the name
+		// of the button that closes the screen and the border of it the keyboard is on
 		drawButtonFaces(graphics);
+		drawButtonHovers(graphics);
 		drawTabs(graphics);
 		drawFilterIcons(graphics);
 		drawDoneLabel(graphics);
@@ -1610,10 +1611,10 @@ final class BiomeCollectionScreen extends Screen
 	 * game has already drawn each of them as the same plain button - which is what the face painted
 	 * over them is for (see {@link #drawButtonFaces}).
 	 *
-	 * The mouse is still read on top of that: while it is on the tab that is not the page being read,
-	 * that tab wears the lit sprite too, since a button of the game under the mouse is drawn as that one
-	 * (see {@link #drawButtonFace}) - so for as long as the mouse is on the other tab the two of them
-	 * are green at once, and what tells them apart then is the two names.
+	 * The mouse is read on top of that as the gold line the row under it is framed in, and not as the
+	 * lit sprite (see {@link #drawButtonHover}): a tab lit under the mouse would say that its page is
+	 * the page being read, which is the one thing the face of a tab is for. So while the mouse is on a
+	 * tab, the two names are still what tells the two pages apart.
 	 */
 	private Identifier tabSprite(Page tab)
 	{
@@ -1662,6 +1663,48 @@ final class BiomeCollectionScreen extends Screen
 	{
 		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite,
 				button.getX(), button.getY(), button.getWidth(), button.getHeight());
+	}
+
+	/**
+	 * Draws a thin line around each of the buttons whose face says a state - the two tabs and the two
+	 * filters - while the mouse is on it, in the gold the row under the mouse is framed in (see
+	 * {@link #HOVER_COLOR}).
+	 *
+	 * Those four faces are the state of the screen: the lit sprite on a tab says which page is being
+	 * read (see {@link #tabSprite}) and the lit sprite on a filter says which end of the list is being
+	 * kept (see {@link #filterSprite}), so lighting one of them under the mouse would say the page or
+	 * the filter it stands for rather than that the mouse has come to it. The line says the mouse and
+	 * nothing else, and it is the line a row of the list answers the mouse with.
+	 *
+	 * The buttons whose face is a press rather than a state - the one that closes the screen and the
+	 * one a row offers - keep the lit face of the game's own button (see {@link #drawButtonFace} and
+	 * {@link #drawForgetButton}).
+	 */
+	private void drawButtonHovers(GuiGraphicsExtractor graphics)
+	{
+		for (Page tab : Page.values())
+		{
+			drawButtonHover(graphics, tabs.get(tab));
+		}
+
+		drawButtonHover(graphics, discoveredFilter);
+		drawButtonHover(graphics, remainingFilter);
+	}
+
+	/**
+	 * Draws that line around one of them, one pixel outside its edges - clear of the face, so the state
+	 * the face is is left as it is - and nothing while the mouse is not on the button.
+	 */
+	private void drawButtonHover(GuiGraphicsExtractor graphics, Button button)
+	{
+		if (!button.isHovered())
+		{
+			return;
+		}
+
+		drawBorder(graphics, button.getX() - 1, button.getY() - 1,
+				button.getX() + button.getWidth() + 1, button.getY() + button.getHeight() + 1,
+				HOVER_COLOR);
 	}
 
 	/**
