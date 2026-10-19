@@ -1468,11 +1468,10 @@ final class BiomeCollectionScreen extends Screen
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
 		// and what the screen draws over them, once the buttons themselves are on the screen: the face of
-		// each of them in the pack's own button, the gold line around a tab or a filter under the mouse,
-		// the bar of the two pages with the names of both in it, the marks of the two filters, the name
-		// of the button that closes the screen and the border of it the keyboard is on
+		// each of them in the pack's own button, the bar of the two pages with the names of both in it,
+		// the marks of the two filters, the name of the button that closes the screen and the border of
+		// it the keyboard is on
 		drawButtonFaces(graphics);
-		drawButtonHovers(graphics);
 		drawTabs(graphics);
 		drawFilterIcons(graphics);
 		drawDoneLabel(graphics);
@@ -1583,9 +1582,9 @@ final class BiomeCollectionScreen extends Screen
 	 * The two tabs are painted here like the rest, and the tab of the page being read is called out by
 	 * the sprite it is painted with rather than by anything over it: the face of that tab is decided by
 	 * which page the screen is showing (see {@link #tabSprite}). The two filters are painted the same
-	 * way: the one the list is being read by wears the lit sprite and the other the plain one (see
-	 * {@link #filterSprite}), so a filter that has just been turned off is plain again at once,
-	 * whether or not the mouse is still on it and whether or not the keyboard is.
+	 * way for the state, and the one under the mouse wears the lit sprite of its filter as well (see
+	 * {@link #filterSprite}), so a filter that has been turned off is lit while the mouse is on it and
+	 * plain again as soon as it leaves - and the keyboard the press leaves on it does not keep it lit.
 	 */
 	private void drawButtonFaces(GuiGraphicsExtractor graphics)
 	{
@@ -1594,8 +1593,8 @@ final class BiomeCollectionScreen extends Screen
 			drawButtonFace(graphics, tabs.get(tab), tabSprite(tab));
 		}
 
-		drawButtonFace(graphics, discoveredFilter, filterSprite(Filter.DISCOVERED));
-		drawButtonFace(graphics, remainingFilter, filterSprite(Filter.REMAINING));
+		drawButtonFace(graphics, discoveredFilter, filterSprite(Filter.DISCOVERED, discoveredFilter));
+		drawButtonFace(graphics, remainingFilter, filterSprite(Filter.REMAINING, remainingFilter));
 		drawButtonFace(graphics, doneButton);
 	}
 
@@ -1610,11 +1609,6 @@ final class BiomeCollectionScreen extends Screen
 	 * game wrote no such button of its own for a tab - the two of them are buttons of the game and the
 	 * game has already drawn each of them as the same plain button - which is what the face painted
 	 * over them is for (see {@link #drawButtonFaces}).
-	 *
-	 * The mouse is read on top of that as the gold line the row under it is framed in, and not as the
-	 * lit sprite (see {@link #drawButtonHover}): a tab lit under the mouse would say that its page is
-	 * the page being read, which is the one thing the face of a tab is for. So while the mouse is on a
-	 * tab, the two names are still what tells the two pages apart.
 	 */
 	private Identifier tabSprite(Page tab)
 	{
@@ -1623,17 +1617,17 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * The sprite one of the two filters is painted with: the lit sprite of the pack - the green one -
-	 * for the filter the list is being read by, and the plain one for the other, which is the way the
-	 * two tabs are painted with the page being read (see {@link #tabSprite}).
+	 * while the list is being read by that filter or while the mouse is on its button, and the plain
+	 * one otherwise. The face of a filter therefore says two things with one sprite: the state of the
+	 * list, and that the hand has come to the button.
 	 *
-	 * The face of a filter answers "which of the two is the list being read by", so it is decided by
-	 * the filter and not by where the mouse or the keyboard is: a face lit by the game's own hover
-	 * would keep the green of the button a press has just turned off, since a pressed button keeps the
-	 * keyboard after the click and the keyboard lights the same sprite (see {@link #drawButtonFace}).
+	 * The keyboard is not read there, since a pressed button keeps the keyboard after the click, and a
+	 * face lit by it would go on saying "on" after the press that turned the filter off. The tabs are
+	 * painted by the page alone (see {@link #tabSprite}).
 	 */
-	private Identifier filterSprite(Filter filter)
+	private Identifier filterSprite(Filter filter, Button button)
 	{
-		return this.filter == filter ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
+		return this.filter == filter || button.isHovered() ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
 	}
 
 	/**
@@ -1663,48 +1657,6 @@ final class BiomeCollectionScreen extends Screen
 	{
 		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite,
 				button.getX(), button.getY(), button.getWidth(), button.getHeight());
-	}
-
-	/**
-	 * Draws a thin line around each of the buttons whose face says a state - the two tabs and the two
-	 * filters - while the mouse is on it, in the gold the row under the mouse is framed in (see
-	 * {@link #HOVER_COLOR}).
-	 *
-	 * Those four faces are the state of the screen: the lit sprite on a tab says which page is being
-	 * read (see {@link #tabSprite}) and the lit sprite on a filter says which end of the list is being
-	 * kept (see {@link #filterSprite}), so lighting one of them under the mouse would say the page or
-	 * the filter it stands for rather than that the mouse has come to it. The line says the mouse and
-	 * nothing else, and it is the line a row of the list answers the mouse with.
-	 *
-	 * The buttons whose face is a press rather than a state - the one that closes the screen and the
-	 * one a row offers - keep the lit face of the game's own button (see {@link #drawButtonFace} and
-	 * {@link #drawForgetButton}).
-	 */
-	private void drawButtonHovers(GuiGraphicsExtractor graphics)
-	{
-		for (Page tab : Page.values())
-		{
-			drawButtonHover(graphics, tabs.get(tab));
-		}
-
-		drawButtonHover(graphics, discoveredFilter);
-		drawButtonHover(graphics, remainingFilter);
-	}
-
-	/**
-	 * Draws that line around one of them, one pixel outside its edges - clear of the face, so the state
-	 * the face is is left as it is - and nothing while the mouse is not on the button.
-	 */
-	private void drawButtonHover(GuiGraphicsExtractor graphics, Button button)
-	{
-		if (!button.isHovered())
-		{
-			return;
-		}
-
-		drawBorder(graphics, button.getX() - 1, button.getY() - 1,
-				button.getX() + button.getWidth() + 1, button.getY() + button.getHeight() + 1,
-				HOVER_COLOR);
 	}
 
 	/**
@@ -2095,9 +2047,9 @@ final class BiomeCollectionScreen extends Screen
 	 * A mark is dim while its filter is off and lights up while it is on - the check in the green of
 	 * the checks in the list, the question mark in white - which is what tells the player which of
 	 * the two the list is being read by, and whether it is being read by either of them at all. The
-	 * face it sits in says the same thing, lit for that filter and plain for the other (see
-	 * {@link #filterSprite}), so the mark and the button can never read one way while the list is
-	 * read the other.
+	 * face it sits in is lit for that filter and plain for the other (see {@link #filterSprite}), and
+	 * it is lit under the mouse as well, so a filter that is off is answered by the hand while the
+	 * mark in it still says the list is read by neither of them.
 	 */
 	private void drawFilterIcons(GuiGraphicsExtractor graphics)
 	{
