@@ -35,11 +35,11 @@ import net.fabricmc.api.ClientModInitializer;
  * server, and the game never loads this class there.
  *
  * The title reveals need Fabric API - its HUD, key mapping and client lifecycle events - plus the
- * client rendering classes of the core Minecraft version (26.3), so their implementation lives
- * right next to this class in {@code TitleOverlay} and is wired up below. Fabric API is declared
- * as a dependency in fabric.mod.json, i.e. it is a mod of its own next to this one. Those APIs
- * changed a lot over time, so an older version would need a port of the overlay before it can be
- * re-enabled in the build matrix.
+ * client rendering classes of the 26.x Minecraft versions (26.2 and 26.3), so their implementation
+ * lives right next to this class in {@code TitleOverlay} and is wired up below. Fabric API is
+ * declared as a dependency in fabric.mod.json, i.e. it is a mod of its own next to this one. Those
+ * APIs are shared by 26.2 and 26.3; an older version would need a port of the overlay before it
+ * can be re-enabled in the build matrix.
  */
 public class WandererTitlesClient implements ClientModInitializer
 {
@@ -48,7 +48,7 @@ public class WandererTitlesClient implements ClientModInitializer
 	{
 		WandererTitles.readMetadata();
 
-		//#if MC >= 26.3
+		//#if MC >= 26.2
 		TitleOverlay.initialize();
 		//#endif
 

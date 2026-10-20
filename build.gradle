@@ -25,14 +25,18 @@ preprocess {
 	//
 	// Currently ENABLED:
 	//   26.3 = core project and active development target for the Immersive Titles feature ->
-	//          src/ is written for 26.3, and it is the only version that is built right now
+	//          src/ is written for 26.3
+	//   26.2 = older enabled child of 26.3; it compiles the same shared src/ and the same features
 	//
 	// Everything else is DISABLED for now, see the commented block below.
 	// 26.x is not obfuscated, so its node needs `null` mappings instead of the empty template value
 	def mc2603 = createNode('26.3', 26_03_00, null)
+	def mc2602 = createNode('26.2', 26_02_00, null)
 
-	// 26.3 is the only enabled node, so it is the root of the version chain and has no parent.
-	// A disabled version is re-enabled by hanging it off an enabled node, see the block below.
+	// 26.3 is the core project and the root of the enabled chain. 26.2 hangs off it and inherits
+	// the shared sources. A disabled version is re-enabled by hanging it off an enabled node, see
+	// the block below.
+	mc2603.link(mc2602, null)
 
 	// ---------------------------------------------------------------------------------------------
 	// DISABLED for now - kept so that they can be re-enabled later without rewriting anything
@@ -44,8 +48,8 @@ preprocess {
 	//      line. The preprocessor inherits the sources of an enabled project to its child nodes, so a
 	//      re-enabled version can never hang off a disabled one.
 	//   4. check versions/<version>/gradle.properties and set versions/mainProject if the core changes
-	//   5. guard or port the 26.3 client feature code in src/: the core sources are compiled as they
-	//      are, so an older child needs //#if guards around it to keep compiling
+	//   5. shared client code: the 26.x code is shared by 26.2 and 26.3; an older child needs a port
+	//      and //#if guards around it to keep compiling
 	/*
 	def mc1201 = createNode('1.20.1', 1_20_01, '')
 	def mc114  = createNode('1.14.4', 1_14_04, '')
@@ -65,7 +69,7 @@ preprocess {
 	def mc12110 = createNode('1.21.10', 1_21_10, '')
 	def mc12111 = createNode('1.21.11', 1_21_11, '')
 	def mc2601 = createNode('26.1.2', 26_01_02, null)
-	def mc2602 = createNode('26.2', 26_02_00, null)
+	// 26.2 is enabled above, next to 26.3, and is not repeated here.
 
 	mc2603.link(mc1201, null)   // 1.20.1 is disabled too, so it hangs off the core project now
 	mc1201.link(mc114 , null)   // older than 1.20.1
@@ -85,8 +89,8 @@ preprocess {
 	mc1218.link(mc12110, null)
 	mc12110.link(mc12111, null)
 	mc12111.link(mc2601, null)
-	mc2601.link(mc2602, null)
-	// 26.3 is the core project, so it is the root of the chain and no longer a child of 26.2
+	// 26.2 is enabled above as a child of 26.3, so 26.1.2 would hang off it when re-enabled.
+	// 26.3 is the core project, so it is the root of the enabled chain.
 	*/
 
 	// See https://github.com/Fallen-Breath/fabric-mod-template/blob/1d72d77a1c5ce0bf060c2501270298a12adab679/build.gradle#L55-L63

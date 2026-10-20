@@ -433,9 +433,20 @@ public final class TitleOverlay
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
 
+	/**
+	 * The keyboard kind of input, under the name the running Minecraft gives it: 26.3 renamed the
+	 * enum constant {@code KEYSYM} to {@code KEYBOARD}, and both name the same keyboard device.
+	 */
+	private static final InputConstants.Type KEYBOARD =
+			//#if MC >= 26.3
+			InputConstants.Type.KEYBOARD;
+			//#else
+			//$$ InputConstants.Type.KEYSYM;
+			//#endif
+
 	private static final KeyMapping PLAY_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.play_title",
-			InputConstants.Type.KEYBOARD,
+			KEYBOARD,
 			InputConstants.KEY_T,
 			CATEGORY));
 
@@ -445,7 +456,7 @@ public final class TitleOverlay
 	 */
 	private static final KeyMapping OPEN_COLLECTION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.open_collection",
-			InputConstants.Type.KEYBOARD,
+			KEYBOARD,
 			InputConstants.KEY_K,
 			CATEGORY));
 
@@ -455,7 +466,7 @@ public final class TitleOverlay
 	 */
 	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.show_corner_title",
-			InputConstants.Type.KEYBOARD,
+			KEYBOARD,
 			InputConstants.KEY_J,
 			CATEGORY));
 

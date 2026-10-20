@@ -79,10 +79,10 @@ dependencies {
 //	}
 
 	// Immersive Titles client features: the cinematic title reveal and the programmatic corner
-	// title, each with its own key mapping. The implementation only exists for the 26.x client APIs
+	// title, each with its own key mapping. The implementation is shared by the 26.x client APIs
 	// (see src/main/java/com/devgx9/wanderers_titles/client/TitleOverlay.java), so Fabric API is
-	// only pulled in for the versions that actually carry it. Enabling an older version means
-	// porting the overlay there first and then lowering this bound.
+	// pulled in for 26.2 and 26.3. Enabling an older version means porting the overlay there first
+	// and then lowering this bound.
 	//
 	// Fabric API is a dependency of the mod, not a part of it: fabric.mod.json asks the loader for
 	// "fabric-api" and the player installs it next to the mod, like with any other Fabric API mod.
@@ -92,7 +92,7 @@ dependencies {
 	// mod fabric.mod.json demands. Bundling them into the jar with include(...) is no way out
 	// either - every mod that does it ships one more frozen copy of Fabric API, and the loader is
 	// left to sort out two mods carrying the same module.
-	if (mcVersion >= 260300) {
+	if (mcVersion >= 260200) {
 		autoImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
 	}
 
@@ -100,9 +100,9 @@ dependencies {
 	// from without a world being open: clicking this mod in that list opens it (see
 	// ModMenuIntegration, and the modmenu entrypoint of fabric.mod.json). Mod Menu is not a
 	// dependency of the mod, though - a player without it simply has the mod's own key - so it is
-	// compiled against and not required at runtime, and the dependency is only resolved for the
-	// versions that have a build of it.
-	if (mcVersion >= 260300) {
+	// compiled against and not required at runtime, and the dependency is resolved for 26.2 and
+	// 26.3, which both have a build of it.
+	if (mcVersion >= 260200) {
 		autoCompileOnly("com.terraformersmc:modmenu:${project.modmenu_version}")
 	}
 }
