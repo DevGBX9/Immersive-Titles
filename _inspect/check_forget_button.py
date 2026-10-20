@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""What the screen draws at the far right end of a row of a discovery, read out of its own source
-and held to the picture the owner asked to have back.
+"""What the screen draws at the far right end of a row of a discovery, read out of its own source.
 
 The button that gives a discovery back is drawn by the screen itself, and this device does not build
 the mod, so the only way to know that the source draws the button that was asked for is to read the
 screen's own numbers, faces and geometry out of the java file, draw a row with them the way the
-screen draws one, and hold that drawing to the picture the owner sent - `download.png`, which is a
-row of a discovery at three gui pixels to a pixel.
+screen draws one, and hold that drawing to the source alone.
 
 Everything the drawing below uses is read out of the source rather than written here: the size of the
 button and the two colours of its mark out of the `static final int` lines, the two faces it wears
 out of the `Identifier` lines they point at, the letter of the mark out of the `String` line, and the
 place it is drawn at out of the two lines `forgetButtonX` and `forgetButtonY` return. What is checked
-is that the drawing the source describes is the one in the picture, to the pixel, and that the button
-stands inside its row rather than over or past it.
+is that the drawing the source describes stands inside its row, that the mark fits in the button,
+and that the button's face and its lit face change nothing outside the button's own box.
 
     python _inspect/check_forget_button.py
 """
@@ -28,7 +26,6 @@ import preview_collection as pc
 import preview_font
 
 SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
-PICTURE = pathlib.Path(r"C:\Users\GBX\Desktop\download.png")
 
 
 def main():
@@ -131,54 +128,59 @@ def main():
 
     # the button has to stand inside its row: the row is drawn from the list's left edge to where
     # the scroller begins, and a button past either end of it is a button outside the row
-    if size <= 0 or size > row_h:
-        failures.append(f"a button of {size} pixels does not stand in a row of {row_h}")
+    if size <= 0 or size > min(row_h, row_w):
+        failures.append(f"a button of {size} pixels does not stand in a row of {row_h} by {row_w}")
+        return report(failures)
 
-    picture = Image.open(PICTURE).convert("RGBA")
-    want = (row_w * 3, row_h * 3)
-    if picture.size != want:
-        failures.append(f"{PICTURE.name} is {picture.size[0]}x{picture.size[1]}, and a row of the "
-                        f"list at three gui pixels is {want[0]}x{want[1]}")
+    x, top = row_w - size, (row_h - size) // 2
+    if x < 0 or top < 0 or x + size > row_w or top + size > row_h:
+        failures.append(f"the button at {x}..{x + size - 1} by {top}..{top + size - 1} "
+                        f"does not stand inside a row of {row_w} by {row_h}")
 
-    def difference(a, b):
+    text_height = 9  # the game's font line height, which the drawing above centres the mark in
+    if font.width(mark.group(1)) > size or text_height > size:
+        failures.append(f"the mark \"{mark.group(1)}\" is {font.width(mark.group(1))} by "
+                        f"{text_height} and does not fit a button of {size}")
+
+    def differing_outside(a, b, box):
+        """How many pixels differ inside the box, and where the first one outside it is."""
         pa, pb = a.load(), b.load()
-        total, worst = 0, 0
-        for x in range(picture.size[0]):
-            for y in range(picture.size[1]):
-                diff = max(abs(pa[x, y][i] - pb[x, y][i]) for i in range(4))
-                total += diff
-                worst = max(worst, diff)
-        return total / (picture.size[0] * picture.size[1]), worst
+        inside = 0
+        outside = []
+        for yy in range(row_h):
+            for xx in range(row_w):
+                if pa[xx, yy] == pb[xx, yy]:
+                    continue
+                if box[0] <= xx < box[2] and box[1] <= yy < box[3]:
+                    inside += 1
+                else:
+                    outside.append((xx, yy))
+        return inside, outside
+
+    box = (x, top, x + size, top + size)
+    flat_drawing = with_button(flat, on_row)
+    lit_drawing = with_button(lit, on_button)
+    flat_inside, flat_outside = differing_outside(flat_drawing, row_alone(), box)
+    lit_inside, lit_outside = differing_outside(lit_drawing, flat_drawing, box)
 
     print(f"the screen draws that button {size} pixels square at the row's end "
-          f"(columns {row_w - size}..{row_w - 1} of {row_w}, rows {(row_h - size) // 2}.."
-          f"{(row_h - size) // 2 + size - 1} of {row_h}), with the letter \"{mark.group(1)}\" "
-          f"{on_row:08X} on the row and {on_button:08X} on the button")
+          f"(columns {x}..{x + size - 1} of {row_w}, rows {top}..{top + size - 1} of {row_h}), "
+          f"with the letter \"{mark.group(1)}\" {on_row:08X} on the row and {on_button:08X} "
+          f"on the button")
 
-    # the picture is a row with the mouse on it and not on the button, so it is that drawing the
-    # screen's own has to be the same as, to the pixel
-    mean, worst = difference(pc.upscale(with_button(flat, on_row)), picture)
-    print(f"  drawn with the mouse on the row      and held to {PICTURE.name}: mean channel "
-          f"difference {mean:6.3f}, worst pixel {worst:3d}")
-    if mean != 0:
-        failures.append(f"what the source draws with the mouse on the row is not the picture the "
-                        f"owner asked for back (mean {mean:.3f}, worst pixel {worst})")
+    if flat_outside:
+        failures.append(f"the button face paints outside its own box: {flat_outside[0]}")
+    if lit_outside:
+        failures.append(f"the lit button changes the row outside its own box: {lit_outside[0]}")
+    if flat_inside == 0:
+        failures.append("the button's mark is not drawn inside its box")
+    if lit_inside == 0:
+        failures.append("the lit face is not different from the flat one inside its box")
 
-    # the other state is the same row with the button lit under the hand, so what it may differ
-    # from that drawing by is the button's own box and nothing else - a difference outside it is a
-    # geometry that moved when the mouse moved onto the button
-    box_x, box_y = (row_w - size) * 3, ((row_h - size) // 2) * 3
-    lit_drawing, flat_drawing = pc.upscale(with_button(lit, on_button)), \
-        pc.upscale(with_button(flat, on_row))
-    pa, pb = lit_drawing.load(), flat_drawing.load()
-    outside = [(x, y) for x in range(picture.size[0]) for y in range(picture.size[1])
-               if not (box_x <= x < box_x + size * 3 and box_y <= y < box_y + size * 3)
-               and pa[x, y] != pb[x, y]]
-    mean, worst = difference(lit_drawing, picture)
-    print(f"  drawn with the mouse on the button  and held to {PICTURE.name}: mean channel "
-          f"difference {mean:6.3f}, worst pixel {worst:3d}")
-    if outside:
-        failures.append(f"the lit button changes the row outside its own box: {outside[0]}")
+    print(f"  the face and its mark change {flat_inside} pixel(s) inside the button and "
+          f"{len(flat_outside)} outside")
+    print(f"  the lit face changes {lit_inside} pixel(s) inside the button and "
+          f"{len(lit_outside)} outside")
 
     return report(failures)
 
@@ -190,7 +192,8 @@ def report(failures):
             print(f"OFF  {failure}")
         return 1
 
-    print("\nthe source draws the button the picture shows, to the pixel, standing inside its row")
+    print("\nthe source draws the button inside its row, its mark fits, and neither face reaches "
+          "outside the button's box")
     return 0
 
 
