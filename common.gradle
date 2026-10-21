@@ -165,10 +165,10 @@ if (System.getenv("BUILD_RELEASE") != "true") {
 	artifactVersionSuffix = '-SNAPSHOT'  // A non-release artifact is always a SNAPSHOT artifact
 }
 
-// The mod carries the plain version of gradle.properties and the jar it is built into is named
-// after that same version, so what a player reads in the mod list is the version of the mod
-// instead of the number of the build that produced their copy of it. Which Minecraft version a jar
-// is for is the build matrix's business, not the player's, see the run summary of the build.
+// The mod carries the plain version of gradle.properties and the jar it is built into carries
+// both that version and the Minecraft version it is for. The Minecraft part of the name is what
+// keeps the jars of the enabled versions apart when they are collected into one folder: two
+// builds of the same mod version must never share a file name.
 String fullModVersion = project.mod_version
 String fullProjectVersion, fullArtifactVersion
 
@@ -176,8 +176,9 @@ String fullProjectVersion, fullArtifactVersion
 //   project.mod_version     1.0.3                      (the base mod version)
 //   artifactVersionSuffix   -SNAPSHOT
 //   fullModVersion          1.0.3                      (the version the mod reports)
-//   fullProjectVersion      v1.0.3                     (in build output jar name)
-//   fullArtifactVersion     1.0.3-mc1.15.2-SNAPSHOT    (maven artifact version)
+//   base.archivesName       immersive_titles-mc1.21.1  (the jar's own name)
+//   fullProjectVersion      v1.0.3                     (the version part of the jar name)
+//   fullArtifactVersion     1.0.3-mc1.21.1-SNAPSHOT    (maven artifact version)
 
 group = project.maven_group
 if (System.getenv("JITPACK") == "true") {
@@ -186,7 +187,7 @@ if (System.getenv("JITPACK") == "true") {
 	fullProjectVersion = 'v' + project.mod_version
 	fullArtifactVersion = artifactVersion + artifactVersionSuffix
 } else {
-	base.archivesName = project.archives_base_name
+	base.archivesName = project.archives_base_name + '-mc' + project.minecraft_version
 	fullProjectVersion = 'v' + project.mod_version
 	fullArtifactVersion = artifactVersion + '-mc' + project.minecraft_version + artifactVersionSuffix
 }
