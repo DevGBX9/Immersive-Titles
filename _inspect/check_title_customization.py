@@ -37,6 +37,65 @@ def method(text, signature):
     match = re.search(pattern + r"\s*\{(.*?)\n\t\}", text, re.S)
     return match.group(1) if match else ""
 
+def geometry_checks():
+    print("the shared title geometry:")
+    text = body(GEOMETRY)
+    check("TitleGeometry.java exists", bool(text))
+    for record in (
+        "record Plate(int x, int y, int width, int height, float scale)",
+        "record Box(float left, float top, float right, float bottom)",
+        "record Name(float centerX, float centerY, float scale, Box box, "
+        "float roomCenterX, float roomCenterY, float roomWidth, float roomHeight)",
+        "record Corner(int x, int baseline, int kickerX, int kickerY, float nameScale, "
+        "float kickerScale, int kickerSpacing, int lineGap, Box box)",
+        "record Parts(Component kicker, Component name)",
+    ):
+        has(GEOMETRY, record, record.split("(")[0].replace("record ", "the ") + " record exists")
+    for signature in (
+        "static Plate plate(int screenWidth, int screenHeight, TitleCustomization values)",
+        "static Name name(Plate plate, Font font, Component text, TitleCustomization values)",
+        "static Parts split(Component title)",
+        "static Corner corner(int screenWidth, int screenHeight, Font font, Component kicker, "
+        "Component name, TitleCustomization values)",
+        "static Corner cornerRaw(int screenWidth, int screenHeight, Font font, Component kicker, "
+        "Component name, TitleCustomization values)",
+    ):
+        has(GEOMETRY, signature, signature.split("(")[0] + " is declared")
+    has(GEOMETRY, "Corner raw = cornerRaw(", "the drawn corner is the raw corner plus its clamp")
+    # the default path keeps today's exact expressions and order
+    has(GEOMETRY, "Math.min(screenWidth / (float) CONTENT_WIDTH, screenHeight / (float) CONTENT_HEIGHT)",
+        "the plate fits the screen with the old expression")
+    has(GEOMETRY, "(screenWidth - width) / 2 + Math.round(values.plateOffsetX() * screenWidth)",
+        "the plate is centred with integer halving before the offset")
+    has(GEOMETRY, "NAME_ROOM_HEIGHT * scale * NAME_MAX_HEIGHT / FONT_CAP_HEIGHT",
+        "the name height fit keeps its old order")
+    has(GEOMETRY, "int textWidth = Math.max(1, font.width(text))",
+        "the name width is the font's, at least one pixel")
+    has(GEOMETRY, "NAME_ROOM_WIDTH * scale * NAME_MAX_WIDTH / textWidth",
+        "the name width fit keeps its old order")
+    has(GEOMETRY, "(NAME_CENTER_Y - FRAME_CROP) * scale", "the name centre subtracts the frame crop")
+    has(GEOMETRY, "auto * values.nameScale()", "the name multiplier is applied to the automatic fit")
+    has(GEOMETRY, "roomWidth / textWidth", "the name is hard-capped to the room width")
+    has(GEOMETRY, "roomHeight / FONT_CAP_HEIGHT", "the name is hard-capped to the room height")
+    has(GEOMETRY, "CORNER_MARGIN + Math.round(values.cornerOffsetX() * screenWidth)",
+        "the corner starts at the old margin plus its offset")
+    has(GEOMETRY, "screenHeight - CORNER_BOTTOM_MARGIN - (int) (FONT_CAP_HEIGHT * nameScale)",
+        "the corner baseline keeps the old expression")
+    has(GEOMETRY, "Math.round(values.cornerOffsetY() * screenHeight)", "the corner baseline takes its offset")
+    has(GEOMETRY, "font.lineHeight * nameScale", "the hotbar fallback still uses the line height")
+    has(GEOMETRY, "values.cornerOffsetX() == 0.0F", "the exact-default corner path is guarded")
+    has(GEOMETRY, "CORNER_SCREEN_MARGIN = 4", "the corner screen margin is 4 px")
+    has(GEOMETRY, "(screenWidth - 8)", "the corner fit cap keeps the 4 px margins")
+    overlay = body(OVERLAY)
+    for name in ("FRAME_CROP", "CONTENT_WIDTH", "CONTENT_HEIGHT", "NAME_CENTER_X", "NAME_CENTER_Y",
+                 "NAME_ROOM_WIDTH", "NAME_ROOM_HEIGHT", "NAME_MAX_WIDTH", "NAME_MAX_HEIGHT",
+                 "FONT_CAP_HEIGHT", "CORNER_MARGIN", "CORNER_BOTTOM_MARGIN", "CORNER_NAME_SCALE",
+                 "CORNER_KICKER_SCALE", "CORNER_KICKER_SPACING", "CORNER_LINE_GAP", "CORNER_HUD_ROOM",
+                 "CORNER_HUD_GAP", "CORNER_HUD_BAR_HALF"):
+        check(f"{name} is package-private",
+              re.search(rf"static final (?:int|float) {name}\b", overlay) is not None
+              and re.search(rf"private static final (?:int|float) {name}\b", overlay) is None)
+
 def config_checks():
     print("the global customization model:")
     text = body(CUSTOMIZATION)
@@ -64,6 +123,7 @@ def config_checks():
     check("the loader never saves", loader != "" and "save()" not in loader)
 
 def main():
+    geometry_checks()
     config_checks()
     if failures:
         print(f"\n{len(failures)} title customization check(s) failed")

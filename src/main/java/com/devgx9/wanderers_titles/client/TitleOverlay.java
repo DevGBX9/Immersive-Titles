@@ -183,8 +183,8 @@ public final class TitleOverlay
 	 * row 258, drew every name 7.5 pixels right of the middle of the plate and 11.5 pixels above the
 	 * middle of the room it sits in.
 	 */
-	private static final float NAME_CENTER_X = 720.0F;
-	private static final float NAME_CENTER_Y = 269.5F;
+	static final float NAME_CENTER_X = 720.0F;
+	static final float NAME_CENTER_Y = 269.5F;
 
 	/**
 	 * The room the name may fill, in frame pixels: what the name is sized against, and not where it is
@@ -194,15 +194,15 @@ public final class TitleOverlay
 	 * are the shares of it a name may take, so the largest name keeps clear of the ornaments over and
 	 * under it instead of touching them.
 	 */
-	private static final int NAME_ROOM_WIDTH = 807;
-	private static final int NAME_ROOM_HEIGHT = 120;
+	static final int NAME_ROOM_WIDTH = 807;
+	static final int NAME_ROOM_HEIGHT = 120;
 
 	/** How much of the room the name may fill, so a long biome name still fits inside the plate. */
-	private static final float NAME_MAX_HEIGHT = 0.70F;
-	private static final float NAME_MAX_WIDTH = 0.94F;
+	static final float NAME_MAX_HEIGHT = 0.70F;
+	static final float NAME_MAX_WIDTH = 0.94F;
 
 	/** Cap height of the game font at scale 1, used to size and centre the name. */
-	private static final float FONT_CAP_HEIGHT = 7.0F;
+	static final float FONT_CAP_HEIGHT = 7.0F;
 
 	/**
 	 * The name is invisible while the opening flash is still covering the plate, and appears exactly
@@ -236,9 +236,9 @@ public final class TitleOverlay
 	 * Away from the rind the glow is smooth, so nothing of the picture is lost by this, and the
 	 * transparent margins the clip keeps at its top and its bottom go with it.
 	 */
-	private static final int FRAME_CROP = 9;
-	private static final int CONTENT_WIDTH = FRAME_WIDTH;
-	private static final int CONTENT_HEIGHT = FRAME_HEIGHT - 2 * FRAME_CROP;
+	static final int FRAME_CROP = 9;
+	static final int CONTENT_WIDTH = FRAME_WIDTH;
+	static final int CONTENT_HEIGHT = FRAME_HEIGHT - 2 * FRAME_CROP;
 
 	// ---------------------------------------------------------------------------------------------
 	// The sound of the reveal
@@ -341,8 +341,8 @@ public final class TitleOverlay
 	 * is a cap height of 7 against 17.5. That is 0.40 of it against 0.42, as close as whole sizes of
 	 * this font get: half a pixel per pixel is not a size the game font is drawn at.
 	 */
-	private static final float CORNER_KICKER_SCALE = 1.0F;
-	private static final float CORNER_NAME_SCALE = 2.5F;
+	static final float CORNER_KICKER_SCALE = 1.0F;
+	static final float CORNER_NAME_SCALE = 2.5F;
 
 	/**
 	 * The room the letters of the small word keep between them, in gui pixels at that size: the word
@@ -356,14 +356,14 @@ public final class TitleOverlay
 	 * of its own six - and it is the room the letters are read at rather than counted at, so the room
 	 * is what is set and the letters are whatever the font draws.
 	 */
-	private static final int CORNER_KICKER_SPACING = 3;
+	static final int CORNER_KICKER_SPACING = 3;
 
 	/**
 	 * The room between the two lines of the corner title, in gui pixels: what the picture the owner
 	 * sent measures between the foot of the small word and the top of the name is 15 rows against a
 	 * name of 43, 0.35 of it, which at the 17.5 gui pixels the name is drawn at comes to six.
 	 */
-	private static final int CORNER_LINE_GAP = 6;
+	static final int CORNER_LINE_GAP = 6;
 
 	/**
 	 * The timing of the corner title's fade in, hold and fade out. The hold is the three seconds the
@@ -376,7 +376,7 @@ public final class TitleOverlay
 	private static final long CORNER_ANIMATION_MS = CORNER_FADE_IN_MS + CORNER_HOLD_MS + CORNER_FADE_OUT_MS;
 
 	/** Distance between the corner title and the left edge of the screen, in gui pixels. */
-	private static final int CORNER_MARGIN = 20;
+	static final int CORNER_MARGIN = 20;
 
 	/**
 	 * Where the corner title is drawn, in gui pixels: the foot of the name this far over the foot of
@@ -395,14 +395,14 @@ public final class TitleOverlay
 	 * enough for the name to stay left of it. Where it does not stay left of it the title is put back
 	 * over the HUD (see {@link #cornerNameRow}).
 	 */
-	private static final int CORNER_BOTTOM_MARGIN = CORNER_MARGIN;
+	static final int CORNER_BOTTOM_MARGIN = CORNER_MARGIN;
 
 	/**
 	 * Half the width of the game's own HUD along the foot of the screen, in gui pixels: the hotbar is
 	 * 182 pixels wide and centred, and the row of hearts, armor and hunger and the bar of experience
 	 * are drawn within those same columns.
 	 */
-	private static final int CORNER_HUD_BAR_HALF = 91;
+	static final int CORNER_HUD_BAR_HALF = 91;
 
 	/**
 	 * What the corner title keeps over the bottom of the screen where it cannot be drawn in the corner
@@ -416,13 +416,13 @@ public final class TitleOverlay
 	 * drawn through it, so that is the one case the title is kept over the HUD for. The numbers are the
 	 * game's own HUD read sprite by sprite, not a guess at it.
 	 */
-	private static final int CORNER_HUD_ROOM = 39;
+	static final int CORNER_HUD_ROOM = 39;
 
 	/**
 	 * The room the corner title keeps over that, so that it still reads as a title of the corner:
 	 * what is above the HUD is the world, and the title sits just over it.
 	 */
-	private static final int CORNER_HUD_GAP = 4;
+	static final int CORNER_HUD_GAP = 4;
 
 	/** The color of the titles: pure white, only its alpha is animated by the fades. */
 	private static final int TITLE_TEXT_RGB = 0xFFFFFF;
