@@ -49,6 +49,7 @@ public class WandererTitlesClient implements ClientModInitializer
 		WandererTitles.readMetadata();
 
 		//#if MC >= 26.2
+		TitleCustomization.load();
 		TitleOverlay.initialize();
 		//#endif
 

@@ -126,7 +126,7 @@ import java.util.Set;
  * Knight: Silksong as the picture the owner sent has it: the last word of the name is the name
  * itself, at the size a title is read at, and every word before it stands over it as one small word,
  * spaced letter by letter and centred on the name (see {@link #CORNER_KICKER_SCALE} and
- * {@link #drawCornerWord}). A name of one word has nothing over it and is drawn as it always was.
+ * {@link #drawCorner}). A name of one word has nothing over it and is drawn as it always was.
  * The share between the two sizes and the two rooms of that shape are measured off the picture rather
  * than chosen ({@code _inspect/measure_small_title.py}), with the game's own font in the place of
  * the picture's: the shape is what was asked for, and this font is the one the mod draws it in.
@@ -393,7 +393,7 @@ public final class TitleOverlay
 	 * is a bar 182 gui pixels wide and centred, so the left of it is empty world - empty of the
 	 * hotbar, of the row of hearts over it and of the bar of experience over that - on any screen wide
 	 * enough for the name to stay left of it. Where it does not stay left of it the title is put back
-	 * over the HUD (see {@link #cornerNameRow}).
+	 * over the HUD (see {@link TitleGeometry#cornerRaw}).
 	 */
 	static final int CORNER_BOTTOM_MARGIN = CORNER_MARGIN;
 
@@ -507,6 +507,12 @@ public final class TitleOverlay
 	private static Component revealName = null;
 
 	/**
+	 * The customization the running reveal started with. A Save while a title is playing therefore
+	 * changes the next title and not the one on the screen, which is the design's edge case 10.
+	 */
+	private static TitleCustomization revealCustomization = TitleCustomization.defaults();
+
+	/**
 	 * The name the corner title shows: the last word of the title it was started with, drawn at
 	 * {@link #CORNER_NAME_SCALE}. The words before it are the small word over it, or nothing while the
 	 * name is a single word (see {@link #CORNER_KICKER_SCALE}).
@@ -519,6 +525,9 @@ public final class TitleOverlay
 	 * coloured is still coloured as one word over one word.
 	 */
 	private static Component cornerKicker = null;
+
+	/** The customization the running corner title started with, read like {@link #revealCustomization}. */
+	private static TitleCustomization cornerCustomization = TitleCustomization.defaults();
 
 	/** The biomes of the current world that already had their reveal, so entering them again only
 	 * gets the corner title. Loaded when the world is joined and written to disk as a biome is
@@ -1070,6 +1079,7 @@ public final class TitleOverlay
 	private static void startReveal(Component name)
 	{
 		revealName = name;
+		revealCustomization = TitleCustomization.live().copy();
 		revealMs = 0L;
 		revealPlaying = true;
 
@@ -1092,19 +1102,11 @@ public final class TitleOverlay
 	 */
 	private static void startCornerTitle(Component name)
 	{
-		String text = name.getString();
-		int lastSpace = text.lastIndexOf(' ');
+		cornerCustomization = TitleCustomization.live().copy();
 
-		if (lastSpace < 0)
-		{
-			cornerKicker = null;
-			cornerName = name;
-		}
-		else
-		{
-			cornerKicker = Component.literal(text.substring(0, lastSpace)).withStyle(name.getStyle());
-			cornerName = Component.literal(text.substring(lastSpace + 1)).withStyle(name.getStyle());
-		}
+		TitleGeometry.Parts parts = TitleGeometry.split(name);
+		cornerKicker = parts.kicker();
+		cornerName = parts.name();
 
 		cornerMs = 0L;
 		cornerPlaying = true;
@@ -1206,26 +1208,30 @@ public final class TitleOverlay
 		Window window = Minecraft.getInstance().getWindow();
 		int screenWidth = window.getGuiScaledWidth();
 		int screenHeight = window.getGuiScaledHeight();
+		TitleGeometry.Plate plate = TitleGeometry.plate(screenWidth, screenHeight, revealCustomization);
 
-		// the clip is 2:1 and a screen is not, so fit it into the screen instead of stretching it to
-		// the screen shape
-		float scale = Math.min(screenWidth / (float) CONTENT_WIDTH, screenHeight / (float) CONTENT_HEIGHT);
-		int width = Math.max(1, Math.round(CONTENT_WIDTH * scale));
-		int height = Math.max(1, Math.round(CONTENT_HEIGHT * scale));
-		int x = (screenWidth - width) / 2;
-		int y = (screenHeight - height) / 2;
+		renderClipSeam(graphics, texture, plate.x(), plate.y(), plate.width(), plate.height(),
+				screenWidth, screenHeight);
 
-		renderClipSeam(graphics, texture, x, y, width, height, screenWidth, screenHeight);
+		drawPlate(graphics, texture, plate);
 
+		renderName(graphics, plate, frame);
+	}
+
+	/**
+	 * Draws the settled plate of the large title into the rectangle the geometry gives it. This is the
+	 * one blit the game draws a frame with, and the customization screen calls it for its preview, so
+	 * the preview and the reveal cannot disagree about the plate.
+	 */
+	static void drawPlate(GuiGraphicsExtractor graphics, Identifier texture, TitleGeometry.Plate plate)
+	{
 		graphics.blit(
 				RenderPipelines.GUI_TEXTURED,
 				texture,
-				x, y, 0, FRAME_CROP,
-				width, height,
+				plate.x(), plate.y(), 0, FRAME_CROP,
+				plate.width(), plate.height(),
 				CONTENT_WIDTH, CONTENT_HEIGHT,
 				FRAME_WIDTH, FRAME_HEIGHT);
-
-		renderName(graphics, x, y, scale, frame);
 	}
 
 	/**
@@ -1294,7 +1300,7 @@ public final class TitleOverlay
 	 * drawn in so the two stay in step at any screen size and gui scale, and centred on the middle of
 	 * that box as the frames measure it (see {@link #NAME_CENTER_X}).
 	 */
-	private static void renderName(GuiGraphicsExtractor graphics, int plateX, int plateY, float scale, int frame)
+	private static void renderName(GuiGraphicsExtractor graphics, TitleGeometry.Plate plate, int frame)
 	{
 		int alpha = nameAlpha(frame);
 		if (alpha <= 0 || revealName == null)
@@ -1303,26 +1309,23 @@ public final class TitleOverlay
 		}
 
 		Font font = Minecraft.getInstance().font;
-		float textScale = Math.min(
-				NAME_ROOM_HEIGHT * scale * NAME_MAX_HEIGHT / FONT_CAP_HEIGHT,
-				NAME_ROOM_WIDTH * scale * NAME_MAX_WIDTH / Math.max(1, font.width(revealName)));
-		float textWidth = font.width(revealName) * textScale;
-		float textHeight = FONT_CAP_HEIGHT * textScale;
+		TitleGeometry.Name geometry = TitleGeometry.name(plate, font, revealName, revealCustomization);
+		drawName(graphics, font, revealName, geometry, alpha);
+	}
 
-		// the middle of the plate, put where the plate itself is on this screen: down is measured from
-		// the row of the picture the plate is drawn from, since the rows above it are cropped away
-		float centerX = plateX + NAME_CENTER_X * scale;
-		float centerY = plateY + (NAME_CENTER_Y - FRAME_CROP) * scale;
-
-		// what is centred is the cap height of the name and not its whole line: the game draws the
-		// capitals a title is set in from the top of the cell down this far, so that band is the line
-		// as a reader sees it, and the empty room the line keeps under its descenders is not part of
-		// the block that has to sit in the middle
+	/**
+	 * Draws a name at the box the geometry gives it, scaled by its text scale. The game font draws a
+	 * capital from the row it is drawn at, so translating to the box's top-left and scaling the font is
+	 * what puts the cap band exactly inside the box. The editor calls this with the sample name.
+	 */
+	static void drawName(GuiGraphicsExtractor graphics, Font font, Component name,
+			TitleGeometry.Name geometry, int alpha)
+	{
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
-		pose.translate(centerX - textWidth / 2.0F, centerY - textHeight / 2.0F);
-		pose.scale(textScale, textScale);
-		graphics.text(font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
+		pose.translate(geometry.box().left(), geometry.box().top());
+		pose.scale(geometry.scale(), geometry.scale());
+		graphics.text(font, name, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		pose.popMatrix();
 	}
 
@@ -1362,7 +1365,7 @@ public final class TitleOverlay
 	 * Draws the small corner title of a place the player has already seen: the name, and the small
 	 * word it is read under.
 	 *
-	 * The name is drawn at the corner of the screen (see {@link #cornerNameRow}), at
+	 * The name is drawn at the corner of the screen (see {@link TitleGeometry#cornerRaw}), at
 	 * {@link #CORNER_MARGIN} from the left edge of it, and the small word is placed against the name:
 	 * centred on it, and set {@link #CORNER_LINE_GAP} over the top of its capitals.
 	 */
@@ -1384,93 +1387,50 @@ public final class TitleOverlay
 
 		Minecraft client = Minecraft.getInstance();
 		Font font = client.font;
-		int x = CORNER_MARGIN;
-		int y = cornerNameRow(client, font);
+		Window window = client.getWindow();
+		int screenWidth = window.getGuiScaledWidth();
+		int screenHeight = window.getGuiScaledHeight();
+		TitleGeometry.Corner geometry = TitleGeometry.corner(screenWidth, screenHeight, font,
+				cornerKicker, cornerName, cornerCustomization);
 		int color = (cornerAlpha(cornerMs) << 24) | TITLE_TEXT_RGB;
 
-		drawCornerWord(graphics, font, x, y, color);
-
-		Matrix3x2fStack pose = graphics.pose();
-		pose.pushMatrix();
-		pose.translate(x, y);
-		pose.scale(CORNER_NAME_SCALE, CORNER_NAME_SCALE);
-		graphics.text(font, cornerName, 0, 0, color, true);
-		pose.popMatrix();
+		drawCorner(graphics, font, cornerKicker, cornerName, geometry, color);
 	}
 
 	/**
-	 * The row of the screen the name of the corner title is drawn at, which is the row its capitals
-	 * start on: the game font draws a capital from the row it is drawn at.
-	 *
-	 * The title is drawn in the corner of the screen, the foot of its name
-	 * {@link #CORNER_BOTTOM_MARGIN} gui pixels over the foot of the screen, because the left of the
-	 * game's own HUD is empty world: its bar is 182 gui pixels wide and centred, so what is left of
-	 * {@link #CORNER_HUD_BAR_HALF} of the middle of the screen belongs to the world and not to the HUD.
-	 *
-	 * That holds while the name stays left of that bar. A name of a mod's own, or a screen narrow
-	 * enough, can reach it - and a title drawn over the columns of the hotbar is a title drawn through
-	 * the game's own inventory, which is the one thing this title is not allowed to be. So that one
-	 * case is read here and the title is put back over the HUD on it (see {@link #CORNER_HUD_ROOM}),
-	 * which is where the title was drawn before the owner asked for it in the corner.
+	 * Draws the corner title at the block the geometry gives it: the small word one letter at a time,
+	 * centred over the name, and the name itself at the block's origin. The editor calls this for its
+	 * preview, so the two ways of drawing the corner title are the same drawing.
 	 */
-	private static int cornerNameRow(Minecraft client, Font font)
+	static void drawCorner(GuiGraphicsExtractor graphics, Font font, Component kicker,
+			Component name, TitleGeometry.Corner geometry, int color)
 	{
-		Window window = client.getWindow();
-		float nameRoom = CORNER_MARGIN + font.width(cornerName) * CORNER_NAME_SCALE;
-
-		if (nameRoom > window.getGuiScaledWidth() / 2.0F - CORNER_HUD_BAR_HALF)
+		if (kicker != null)
 		{
-			return window.getGuiScaledHeight() - CORNER_HUD_ROOM - CORNER_HUD_GAP
-					- (int) (font.lineHeight * CORNER_NAME_SCALE);
+			String word = kicker.getString();
+			Matrix3x2fStack pose = graphics.pose();
+			pose.pushMatrix();
+			pose.translate(geometry.kickerX(), geometry.kickerY());
+			pose.scale(geometry.kickerScale(), geometry.kickerScale());
+
+			int pen = 0;
+
+			for (int letter = 0; letter < word.length(); letter++)
+			{
+				Component one = Component.literal(word.substring(letter, letter + 1))
+						.withStyle(kicker.getStyle());
+				graphics.text(font, one, pen, 0, color, true);
+				pen += font.width(one) + geometry.kickerSpacing();
+			}
+
+			pose.popMatrix();
 		}
-
-		return window.getGuiScaledHeight() - CORNER_BOTTOM_MARGIN
-				- (int) (FONT_CAP_HEIGHT * CORNER_NAME_SCALE);
-	}
-
-	/**
-	 * Draws the small word of the corner title over the name, centred on it, as long as it has one.
-	 *
-	 * The word is drawn one letter at a time, which is the only way the game font can be made to keep
-	 * room between its letters: what the pen moves by is the advance of the letter plus
-	 * {@link #CORNER_KICKER_SPACING}, which is what the letters are drawn at.
-	 *
-	 * It is centred on the name rather than on the screen (see {@link #CORNER_MARGIN}): the two lines
-	 * are one title, and the picture the owner sent has the small word of its own standing over the
-	 * middle of the name - the middle of its name measures column 208.0 and of its small word 206.0.
-	 * The word is put over the name by the ink of the name's capitals, which is exactly what
-	 * {@link #FONT_CAP_HEIGHT} measures: the game font draws a capital from the row it is drawn at, so
-	 * the top of the name is the row the name is drawn at, whichever word of the two is longer.
-	 */
-	private static void drawCornerWord(GuiGraphicsExtractor graphics, Font font, int x, int y, int color)
-	{
-		if (cornerKicker == null)
-		{
-			return;
-		}
-
-		String word = cornerKicker.getString();
-		float wordWidth = (font.width(cornerKicker) + CORNER_KICKER_SPACING * (word.length() - 1))
-				* CORNER_KICKER_SCALE;
-		float nameWidth = font.width(cornerName) * CORNER_NAME_SCALE;
-		int wordX = x + Math.round((nameWidth - wordWidth) / 2.0F);
-		int wordY = y - CORNER_LINE_GAP - (int) (FONT_CAP_HEIGHT * CORNER_KICKER_SCALE);
 
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
-		pose.translate(wordX, wordY);
-		pose.scale(CORNER_KICKER_SCALE, CORNER_KICKER_SCALE);
-
-		int pen = 0;
-
-		for (int letter = 0; letter < word.length(); letter++)
-		{
-			Component one = Component.literal(word.substring(letter, letter + 1))
-					.withStyle(cornerKicker.getStyle());
-			graphics.text(font, one, pen, 0, color, true);
-			pen += font.width(one) + CORNER_KICKER_SPACING;
-		}
-
+		pose.translate(geometry.x(), geometry.baseline());
+		pose.scale(geometry.nameScale(), geometry.nameScale());
+		graphics.text(font, name, 0, 0, color, true);
 		pose.popMatrix();
 	}
 

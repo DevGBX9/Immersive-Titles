@@ -96,6 +96,44 @@ def geometry_checks():
               re.search(rf"static final (?:int|float) {name}\b", overlay) is not None
               and re.search(rf"private static final (?:int|float) {name}\b", overlay) is None)
 
+def overlay_checks():
+    print("the overlay through the shared geometry:")
+    text = body(OVERLAY)
+    has(OVERLAY, "private static TitleCustomization revealCustomization", "the reveal keeps a snapshot")
+    has(OVERLAY, "private static TitleCustomization cornerCustomization", "the corner keeps a snapshot")
+    has(OVERLAY, "revealCustomization = TitleCustomization.live().copy();",
+        "the reveal snapshots the live values when it starts")
+    has(OVERLAY, "cornerCustomization = TitleCustomization.live().copy();",
+        "the corner snapshots the live values when it starts")
+    has(OVERLAY, "TitleGeometry.plate(screenWidth, screenHeight, revealCustomization)",
+        "the plate rectangle comes from the geometry")
+    has(OVERLAY, "TitleGeometry.name(plate, font, revealName, revealCustomization)",
+        "the name box comes from the geometry")
+    has(OVERLAY, "TitleGeometry.corner(", "the corner comes from the geometry")
+    has(OVERLAY, "TitleGeometry.split(", "the corner split comes from the geometry")
+    check("the old corner row helper is gone",
+          "private static int cornerNameRow" not in text)
+    for signature in (
+        "static void drawPlate(GuiGraphicsExtractor graphics, Identifier texture, "
+        "TitleGeometry.Plate plate)",
+        "static void drawName(GuiGraphicsExtractor graphics, Font font, Component name, "
+        "TitleGeometry.Name geometry, int alpha)",
+        "static void drawCorner(GuiGraphicsExtractor graphics, Font font, Component kicker, "
+        "Component name, TitleGeometry.Corner geometry, int color)",
+    ):
+        has(OVERLAY, signature, signature.split("(")[0] + " is shared with the editor")
+    has(OVERLAY, "drawPlate(graphics, texture, plate)", "the reveal draws the plate through the helper")
+    has(OVERLAY, "drawName(graphics, font, revealName, geometry, alpha)",
+        "the reveal draws the name through the helper")
+    has(OVERLAY, "drawCorner(graphics, font, cornerKicker, cornerName, geometry, color)",
+        "the corner draws through the helper")
+    has(pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/WandererTitlesClient.java"),
+        "TitleCustomization.load();", "the client loads the global file")
+    check("the config loads before the overlay is initialized",
+          re.search(r"TitleCustomization\.load\(\);\s*TitleOverlay\.initialize\(\);",
+                    body(pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/"
+                                      "WandererTitlesClient.java"))) is not None)
+
 def config_checks():
     print("the global customization model:")
     text = body(CUSTOMIZATION)
@@ -125,6 +163,7 @@ def config_checks():
 def main():
     geometry_checks()
     config_checks()
+    overlay_checks()
     if failures:
         print(f"\n{len(failures)} title customization check(s) failed")
         return 1
