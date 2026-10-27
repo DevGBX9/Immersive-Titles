@@ -26,10 +26,12 @@
 package com.devgx9.wanderers_titles.client;
 
 import com.devgx9.wanderers_titles.WandererTitles;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -67,6 +69,22 @@ public final class TitleCustomizationScreen extends Screen
 	private static final Component SAMPLE = Component.translatable(
 			"screen.immersive_titles.customize.sample").withStyle(ChatFormatting.BOLD);
 
+	/** The three things the player can select: the plate, the name on it, and the corner title. */
+	private enum Element
+	{
+		PLATE,
+		NAME,
+		CORNER
+	}
+
+	/** What a held mouse is doing: nothing, moving the selection, or resizing it. */
+	private enum Drag
+	{
+		NONE,
+		MOVE,
+		RESIZE
+	}
+
 	private final Screen parent;
 	private final TitleCustomization working;
 	private final TitleGeometry.Parts parts;
@@ -78,6 +96,13 @@ public final class TitleCustomizationScreen extends Screen
 	private long messageUntilMs;
 	private int stageLeft, stageTop, stageWidth, stageHeight;
 	private float stageScale, virtualLeft, virtualTop;
+	private Element selected = Element.PLATE;
+	private Drag drag = Drag.NONE;
+	private float dragStartOffsetX, dragStartOffsetY;
+	private float dragDenominatorX, dragDenominatorY;
+	private double dragMouseX, dragMouseY;
+	private float resizeStartScale, resizeStartDistance;
+	private float anchorX, anchorY;
 
 	public TitleCustomizationScreen(Screen parent)
 	{
@@ -103,6 +128,7 @@ public final class TitleCustomizationScreen extends Screen
 		stageScale = Math.min(stageWidth / (float) width, stageHeight / (float) height);
 		virtualLeft = stageLeft + (stageWidth - width * stageScale) / 2.0F;
 		virtualTop = stageTop + (stageHeight - height * stageScale) / 2.0F;
+		drag = Drag.NONE;
 
 		int gap = 6;
 		int buttonWidth = Math.max(1, Math.min(100, (width - 2 * 8 - 2 * gap) / 3));
@@ -159,7 +185,9 @@ public final class TitleCustomizationScreen extends Screen
 		TitleOverlay.drawName(graphics, font, parts.name(), name, 255);
 		TitleOverlay.drawCorner(graphics, font, parts.kicker(), parts.name(), corner, 0xFFFFFFFF);
 		pose.popMatrix();
+		drawSelection(graphics);
 		graphics.disableScissor();
+		drawHandles(graphics);
 
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
@@ -183,6 +211,459 @@ public final class TitleCustomizationScreen extends Screen
 	private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color)
 	{
 		graphics.text(font, text, (width - font.width(text)) / 2, y, color, true);
+	}
+
+	/**
+	 * The rectangle of one element, in the virtual screen space the preview is drawn in. It is read
+	 * from the working copy every time, so an edit is on the screen as soon as it is made.
+	 */
+	private TitleGeometry.Box boxOf(Element element)
+	{
+		TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
+
+		return switch (element)
+		{
+			case PLATE -> new TitleGeometry.Box(plate.x(), plate.y(),
+					plate.x() + plate.width(), plate.y() + plate.height());
+			case NAME -> TitleGeometry.name(plate, font, parts.name(), working).box();
+			case CORNER -> TitleGeometry.corner(width, height, font, parts.kicker(), parts.name(),
+					working).box();
+		};
+	}
+
+	/** The four corner points of a box in screen pixels, kept inside the stage so they stay grabbable. */
+	private float[][] handlePoints(TitleGeometry.Box box)
+	{
+		float left = clampHandleX(virtualLeft + box.left() * stageScale);
+		float right = clampHandleX(virtualLeft + box.right() * stageScale);
+		float top = clampHandleY(virtualTop + box.top() * stageScale);
+		float bottom = clampHandleY(virtualTop + box.bottom() * stageScale);
+		return new float[][] {{left, top}, {right, top}, {left, bottom}, {right, bottom}};
+	}
+
+	private float clampHandleX(float x)
+	{
+		return (float) Math.max(stageLeft + HANDLE_SIZE / 2.0,
+				Math.min(stageLeft + stageWidth - HANDLE_SIZE / 2.0, x));
+	}
+
+	private float clampHandleY(float y)
+	{
+		return (float) Math.max(stageTop + HANDLE_SIZE / 2.0,
+				Math.min(stageTop + stageHeight - HANDLE_SIZE / 2.0, y));
+	}
+
+	/** Whether the pointer is on one of the selected element's four handles. */
+	private boolean isOverHandle(Element element, double mouseX, double mouseY)
+	{
+		for (float[] point : handlePoints(boxOf(element)))
+		{
+			if (Math.abs(mouseX - point[0]) <= HANDLE_HIT_RADIUS
+					&& Math.abs(mouseY - point[1]) <= HANDLE_HIT_RADIUS)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/** The clamped handle point nearest the pointer, which is where a resize starts measuring from. */
+	private float[] nearestHandle(Element element, double mouseX, double mouseY)
+	{
+		float[][] points = handlePoints(boxOf(element));
+		float[] nearest = points[0];
+		double best = Double.MAX_VALUE;
+
+		for (float[] point : points)
+		{
+			double distance = Math.hypot(point[0] - mouseX, point[1] - mouseY);
+
+			if (distance < best)
+			{
+				best = distance;
+				nearest = point;
+			}
+		}
+
+		return nearest;
+	}
+
+	/**
+	 * The first element under a point of the virtual screen, in the order a name over the plate and a
+	 * corner title over both are read: the smallest thing wins, and the plate is the fallback.
+	 */
+	private Element hitElement(double virtualX, double virtualY)
+	{
+		double screenX = virtualLeft + virtualX * stageScale;
+		double screenY = virtualTop + virtualY * stageScale;
+
+		for (Element element : new Element[] {Element.NAME, Element.CORNER, Element.PLATE})
+		{
+			TitleGeometry.Box box = boxOf(element);
+
+			if (screenX >= virtualLeft + box.left() * stageScale
+					&& screenX <= virtualLeft + box.right() * stageScale
+					&& screenY >= virtualTop + box.top() * stageScale
+					&& screenY <= virtualTop + box.bottom() * stageScale)
+			{
+				return element;
+			}
+		}
+
+		return null;
+	}
+
+	private boolean isOverStage(double mouseX, double mouseY)
+	{
+		return mouseX >= stageLeft && mouseX < stageLeft + stageWidth
+				&& mouseY >= stageTop && mouseY < stageTop + stageHeight;
+	}
+
+	private double toVirtualX(double screenX)
+	{
+		return (screenX - virtualLeft) / stageScale;
+	}
+
+	private double toVirtualY(double screenY)
+	{
+		return (screenY - virtualTop) / stageScale;
+	}
+
+	private float offsetX(Element element)
+	{
+		return switch (element)
+		{
+			case PLATE -> working.plateOffsetX();
+			case NAME -> working.nameOffsetX();
+			case CORNER -> working.cornerOffsetX();
+		};
+	}
+
+	private float offsetY(Element element)
+	{
+		return switch (element)
+		{
+			case PLATE -> working.plateOffsetY();
+			case NAME -> working.nameOffsetY();
+			case CORNER -> working.cornerOffsetY();
+		};
+	}
+
+	private void setOffsets(Element element, float x, float y)
+	{
+		switch (element)
+		{
+			case PLATE ->
+			{
+				working.setPlateOffsetX(x);
+				working.setPlateOffsetY(y);
+			}
+			case NAME ->
+			{
+				working.setNameOffsetX(x);
+				working.setNameOffsetY(y);
+			}
+			case CORNER ->
+			{
+				working.setCornerOffsetX(x);
+				working.setCornerOffsetY(y);
+			}
+		}
+	}
+
+	/** What one unit of a move is measured against: the screen, or the room the name sits in. */
+	private float denominatorX(Element element)
+	{
+		if (element != Element.NAME)
+		{
+			return width;
+		}
+
+		TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
+		return TitleGeometry.name(plate, font, parts.name(), working).roomWidth();
+	}
+
+	private float denominatorY(Element element)
+	{
+		if (element != Element.NAME)
+		{
+			return height;
+		}
+
+		TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
+		return TitleGeometry.name(plate, font, parts.name(), working).roomHeight();
+	}
+
+	/** The customization multiplier of an element, not the plate's combined drawn scale. */
+	private float scaleOf(Element element)
+	{
+		return switch (element)
+		{
+			case PLATE -> working.plateScale();
+			case NAME -> working.nameScale();
+			case CORNER -> working.cornerScale();
+		};
+	}
+
+	/** Starts a resize at a handle: the anchor is the element's centre, and stays fixed for the drag. */
+	private void beginResize(Element element, double mouseX, double mouseY)
+	{
+		TitleGeometry.Box box = boxOf(element);
+		selected = element;
+		drag = Drag.RESIZE;
+		anchorX = (box.left() + box.right()) / 2.0F;
+		anchorY = (box.top() + box.bottom()) / 2.0F;
+		resizeStartScale = scaleOf(element);
+
+		float[] handle = nearestHandle(element, mouseX, mouseY);
+		resizeStartDistance = (float) Math.hypot(
+				(handle[0] - virtualLeft) / stageScale - anchorX,
+				(handle[1] - virtualTop) / stageScale - anchorY);
+		dragMouseX = toVirtualX(mouseX);
+		dragMouseY = toVirtualY(mouseY);
+	}
+
+	/**
+	 * Handles a press: the buttons first, then a handle of the selection, then the first element under
+	 * the pointer, which is selected and starts moving at once. An empty part of the stage clears the
+	 * selection and is still the editor's click rather than the screen's.
+	 */
+	@Override
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+	{
+		if (super.mouseClicked(event, doubleClick))
+		{
+			return true;
+		}
+
+		if (event.button() != InputConstants.MOUSE_BUTTON_LEFT || !isOverStage(event.x(), event.y()))
+		{
+			return false;
+		}
+
+		if (selected != null && isOverHandle(selected, event.x(), event.y()))
+		{
+			beginResize(selected, event.x(), event.y());
+			return true;
+		}
+
+		double virtualX = toVirtualX(event.x());
+		double virtualY = toVirtualY(event.y());
+		selected = hitElement(virtualX, virtualY);
+
+		if (selected == null)
+		{
+			return true;
+		}
+
+		drag = Drag.MOVE;
+		dragStartOffsetX = offsetX(selected);
+		dragStartOffsetY = offsetY(selected);
+		dragDenominatorX = denominatorX(selected);
+		dragDenominatorY = denominatorY(selected);
+		dragMouseX = virtualX;
+		dragMouseY = virtualY;
+		return true;
+	}
+
+	/**
+	 * Moves the selection, or resizes it from the anchor, adding the pointer's travel since the press
+	 * to the offsets the drag started with. The stored offsets are clamped after every step, so the
+	 * value the next drag starts from is the one the screen shows.
+	 */
+	@Override
+	public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY)
+	{
+		if (drag == Drag.NONE || selected == null)
+		{
+			return super.mouseDragged(event, dragX, dragY);
+		}
+
+		double virtualX = toVirtualX(event.x());
+		double virtualY = toVirtualY(event.y());
+
+		if (drag == Drag.MOVE)
+		{
+			float offsetX = (float) (dragStartOffsetX
+					+ (virtualX - dragMouseX) / dragDenominatorX);
+			float offsetY = (float) (dragStartOffsetY
+					+ (virtualY - dragMouseY) / dragDenominatorY);
+			setOffsets(selected, offsetX, offsetY);
+			clampStoredOffsets();
+			edited();
+			return true;
+		}
+		else if (drag == Drag.RESIZE)
+		{
+			float distance = (float) Math.hypot(virtualX - anchorX, virtualY - anchorY);
+			float ratio = Math.max(1.0F, distance) / Math.max(1.0F, resizeStartDistance);
+			applyScale(resizeStartScale * ratio);
+			edited();
+			return true;
+		}
+
+		return true;
+	}
+
+	/** Ends a drag where it is and keeps the selection so the handles stay on the element. */
+	@Override
+	public boolean mouseReleased(MouseButtonEvent event)
+	{
+		if (drag != Drag.NONE)
+		{
+			drag = Drag.NONE;
+			return true;
+		}
+
+		return super.mouseReleased(event);
+	}
+
+	/**
+	 * Resizes the selection in place with the wheel, one step per notch. The anchor is the element's
+	 * current centre, so the wheel grows it from the middle the way a handle drag does.
+	 */
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical)
+	{
+		if (!isOverStage(mouseX, mouseY) || selected == null || vertical == 0.0D)
+		{
+			return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
+		}
+
+		TitleGeometry.Box box = boxOf(selected);
+		anchorX = (box.left() + box.right()) / 2.0F;
+		anchorY = (box.top() + box.bottom()) / 2.0F;
+
+		int notches = Math.max(1, (int) Math.abs(vertical));
+		float factor = vertical > 0 ? WHEEL_STEP : 1.0F / WHEEL_STEP;
+
+		for (int notch = 0; notch < notches; notch++)
+		{
+			applyScale(scaleOf(selected) * factor);
+		}
+
+		clampStoredOffsets();
+		edited();
+		return true;
+	}
+
+	/**
+	 * Applies a scale to the selection. The plate and the name are centred where their room already
+	 * centres them; the corner keeps the centre the resize started from, and the stored offsets are
+	 * moved by the difference, so a resize does not jump the block across the screen.
+	 */
+	private void applyScale(float value)
+	{
+		if (selected == null)
+		{
+			return;
+		}
+
+		if (selected == Element.CORNER)
+		{
+			working.setCornerScale(value);
+			TitleGeometry.Box box = boxOf(Element.CORNER);
+			float dx = anchorX - (box.left() + box.right()) / 2.0F;
+			float dy = anchorY - (box.top() + box.bottom()) / 2.0F;
+			working.setCornerOffsetX(working.cornerOffsetX() + (float) (dx / width));
+			working.setCornerOffsetY(working.cornerOffsetY() + (float) (dy / height));
+		}
+		else if (selected == Element.PLATE)
+		{
+			working.setPlateScale(value);
+		}
+		else
+		{
+			working.setNameScale(value);
+		}
+
+		clampStoredOffsets();
+	}
+
+	/**
+	 * Writes the limit the drawing enforces into the stored offsets themselves: the name's box is
+	 * centred on its room, so the largest offset that keeps it in the room is half the spare room, and
+	 * the corner's block is measured before its four-pixel screen clamp and moved by the shift that
+	 * brings it inside. The plate's setter already stops at its own limit.
+	 */
+	private void clampStoredOffsets()
+	{
+		if (selected == Element.NAME)
+		{
+			TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
+			TitleGeometry.Name name = TitleGeometry.name(plate, font, parts.name(), working);
+			float boxWidth = name.box().right() - name.box().left();
+			float boxHeight = name.box().bottom() - name.box().top();
+			float maxX = Math.max(0.0F, (name.roomWidth() - boxWidth)
+					/ (2.0F * name.roomWidth()));
+			float maxY = Math.max(0.0F, (name.roomHeight() - boxHeight)
+					/ (2.0F * name.roomHeight()));
+			working.setNameOffsetX(Math.max(-maxX, Math.min(maxX, working.nameOffsetX())));
+			working.setNameOffsetY(Math.max(-maxY, Math.min(maxY, working.nameOffsetY())));
+		}
+		else if (selected == Element.CORNER
+				&& (working.cornerOffsetX() != 0.0F || working.cornerOffsetY() != 0.0F
+						|| working.cornerScale() != 1.0F))
+		{
+			TitleGeometry.Corner raw = TitleGeometry.cornerRaw(width, height, font,
+					parts.kicker(), parts.name(), working);
+			float shiftX = Math.max(TitleGeometry.CORNER_SCREEN_MARGIN - raw.box().left(),
+					Math.min(width - TitleGeometry.CORNER_SCREEN_MARGIN - raw.box().right(), 0.0F));
+			float shiftY = Math.max(TitleGeometry.CORNER_SCREEN_MARGIN - raw.box().top(),
+					Math.min(height - TitleGeometry.CORNER_SCREEN_MARGIN - raw.box().bottom(), 0.0F));
+			working.setCornerOffsetX(working.cornerOffsetX() + shiftX / width);
+			working.setCornerOffsetY(working.cornerOffsetY() + shiftY / height);
+		}
+	}
+
+	/** An edit puts the saved message away, since what is on the screen is no longer what was saved. */
+	private void edited()
+	{
+		message = null;
+		messageUntilMs = 0L;
+	}
+
+	/** The selected box's outline: a black shadow just outside it and a red line just inside it. */
+	private void drawSelection(GuiGraphicsExtractor graphics)
+	{
+		if (selected == null)
+		{
+			return;
+		}
+
+		TitleGeometry.Box box = boxOf(selected);
+		int left = Math.round(virtualLeft + box.left() * stageScale);
+		int top = Math.round(virtualTop + box.top() * stageScale);
+		int right = Math.round(virtualLeft + box.right() * stageScale);
+		int bottom = Math.round(virtualTop + box.bottom() * stageScale);
+
+		graphics.fill(left - 1, top - 1, right + 1, top, 0xFF000000);
+		graphics.fill(left - 1, bottom, right + 1, bottom + 1, 0xFF000000);
+		graphics.fill(left - 1, top, left, bottom, 0xFF000000);
+		graphics.fill(right, top, right + 1, bottom, 0xFF000000);
+
+		graphics.fill(left, top, right, top + 1, SELECTION_RED);
+		graphics.fill(left, bottom - 1, right, bottom, SELECTION_RED);
+		graphics.fill(left, top + 1, left + 1, bottom - 1, SELECTION_RED);
+		graphics.fill(right - 1, top + 1, right, bottom - 1, SELECTION_RED);
+	}
+
+	/** The four handles, in screen space and outside the stage clip, kept inside the stage by clamping. */
+	private void drawHandles(GuiGraphicsExtractor graphics)
+	{
+		if (selected == null)
+		{
+			return;
+		}
+
+		for (float[] point : handlePoints(boxOf(selected)))
+		{
+			int x = Math.round(point[0]);
+			int y = Math.round(point[1]);
+			graphics.fill(x - 3, y - 3, x + 4, y + 4, 0xFF000000);
+			graphics.fill(x - 2, y - 2, x + 3, y + 3, SELECTION_RED);
+		}
 	}
 
 	/**

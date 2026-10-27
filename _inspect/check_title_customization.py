@@ -211,6 +211,50 @@ def lang_checks():
         palette = {(27, 27, 32, 255), (42, 42, 50, 255), (201, 205, 212, 255), (237, 239, 242, 255)}
         check("the gear uses the four planned colours", {p for p in pixels if p[3] != 0} == palette)
 
+def interaction_checks():
+    print("the editor interactions:")
+    text = body(SCREEN)
+    has(SCREEN, "HANDLE_SIZE = 5", "a handle is 5 px")
+    has(SCREEN, "HANDLE_HIT_RADIUS = 7", "a handle is grabbed within 7 screen px")
+    has(SCREEN, "WHEEL_STEP = 1.05F", "one wheel notch is 1.05")
+    has(SCREEN, "0xFF3B30", "selection is red")
+    has(SCREEN, "private enum Element", "the three elements are an enum")
+    has(SCREEN, "private enum Drag", "the drag kinds are an enum")
+    has(SCREEN, "public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)",
+        "the editor reads clicks")
+    has(SCREEN, "public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY)",
+        "the editor reads drags")
+    has(SCREEN, "public boolean mouseReleased(MouseButtonEvent event)", "the editor reads releases")
+    has(SCREEN, "public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical)",
+        "the editor reads the wheel")
+    has(SCREEN, "super.mouseClicked(event, doubleClick)", "the buttons receive their clicks first")
+    has(SCREEN, "stageLeft + HANDLE_SIZE / 2.0", "handles are kept inside the stage's left edge")
+    has(SCREEN, "stageLeft + stageWidth - HANDLE_SIZE / 2.0",
+        "handles are kept inside the stage's right edge")
+    has(SCREEN, "drag == Drag.MOVE", "a move drag is handled")
+    has(SCREEN, "drag == Drag.RESIZE", "a resize drag is handled")
+    has(SCREEN, "dragStartOffsetX", "a move remembers its starting offset")
+    has(SCREEN, "dragDenominatorX", "a move converts screen pixels back to its own units")
+    has(SCREEN, "Math.hypot", "a resize measures the pointer's distance from the anchor")
+    has(SCREEN, "resizeStartScale * ratio", "a resize scales from the scale it started at")
+    has(SCREEN, "working.setCornerOffsetX(working.cornerOffsetX() +",
+        "a corner resize keeps the block on its centre")
+    has(SCREEN, "vertical > 0 ? WHEEL_STEP : 1.0F / WHEEL_STEP",
+        "the wheel grows up and shrinks down")
+    has(SCREEN, "private void clampStoredOffsets()",
+        "the stored offsets are clamped to the drawn limits")
+    has(SCREEN, "TitleGeometry.cornerRaw(", "the corner is measured before it is clamped")
+    has(SCREEN, "clampStoredOffsets();", "edits clamp the stored offsets")
+    edited = method(text, "private void edited()")
+    check("an edit clears the save message", edited != "" and "message = null" in edited)
+    hit = method(text, "private Element hitElement(double virtualX, double virtualY)")
+    check("the click order is name, corner, plate",
+          "Element.NAME" in hit and "Element.CORNER" in hit and "Element.PLATE" in hit
+          and hit.index("Element.NAME") < hit.index("Element.CORNER") < hit.index("Element.PLATE"))
+    released = method(text, "public boolean mouseReleased(MouseButtonEvent event)")
+    check("releasing ends the drag and keeps the selection",
+          "drag = Drag.NONE" in released and "selected = null" not in released)
+
 def config_checks():
     print("the global customization model:")
     text = body(CUSTOMIZATION)
@@ -242,6 +286,7 @@ def main():
     config_checks()
     overlay_checks()
     screen_checks()
+    interaction_checks()
     lang_checks()
     if failures:
         print(f"\n{len(failures)} title customization check(s) failed")
