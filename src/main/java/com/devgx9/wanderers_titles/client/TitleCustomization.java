@@ -172,15 +172,13 @@ public final class TitleCustomization
 
 		JsonElement version = root.get("version");
 
-		if (version == null || !version.isJsonPrimitive() || !version.getAsJsonPrimitive().isNumber()
-				|| version.getAsDouble() != 1.0D)
+		// a missing version is a missing field and is read as version 1, the only one this build
+		// knows; a version that is present must be exactly 1, or the whole file is unsupported
+		if (version != null && (!version.isJsonPrimitive() || !version.getAsJsonPrimitive().isNumber()
+				|| version.getAsDouble() != 1.0D))
 		{
-			if (version != null)
-			{
-				WandererTitles.LOGGER.warn("Unsupported title customization version {}; using defaults",
-						version);
-			}
-
+			WandererTitles.LOGGER.warn("Unsupported title customization version {}; using defaults",
+					version);
 			return defaults();
 		}
 

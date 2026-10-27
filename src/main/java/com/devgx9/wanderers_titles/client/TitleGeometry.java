@@ -197,8 +197,8 @@ final class TitleGeometry
 				: (font.width(kicker) + CORNER_KICKER_SPACING
 						* Math.max(0, kicker.getString().length() - 1)) * kickerScale;
 		float blockWidth = Math.max(nameRoom, kickerRoom);
-		float blockHeight = FONT_CAP_HEIGHT * nameScale
-				+ CORNER_LINE_GAP * m + FONT_CAP_HEIGHT * kickerScale;
+		float blockHeight = FONT_CAP_HEIGHT * nameScale + (kicker == null ? 0.0F
+				: CORNER_LINE_GAP * m + FONT_CAP_HEIGHT * kickerScale);
 
 		if (!exact && blockWidth > 0.0F && blockHeight > 0.0F)
 		{
@@ -214,8 +214,8 @@ final class TitleGeometry
 					: (font.width(kicker) + CORNER_KICKER_SPACING
 							* Math.max(0, kicker.getString().length() - 1)) * kickerScale;
 			blockWidth = Math.max(nameRoom, kickerRoom);
-			blockHeight = FONT_CAP_HEIGHT * nameScale
-					+ CORNER_LINE_GAP * m + FONT_CAP_HEIGHT * kickerScale;
+			blockHeight = FONT_CAP_HEIGHT * nameScale + (kicker == null ? 0.0F
+					: CORNER_LINE_GAP * m + FONT_CAP_HEIGHT * kickerScale);
 		}
 
 		int x = CORNER_MARGIN

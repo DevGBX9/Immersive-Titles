@@ -151,6 +151,12 @@ def screen_checks():
     has(SCREEN, "TitleOverlay.drawPlate(", "the preview draws the real plate")
     has(SCREEN, "TitleOverlay.drawName(", "the preview draws the real name")
     has(SCREEN, "TitleOverlay.drawCorner(", "the preview draws the real corner title")
+    has(SCREEN, "TitleGeometry.name(plate, font, SAMPLE, working)",
+        "the large name is fitted from the whole sample")
+    has(SCREEN, "TitleOverlay.drawName(graphics, font, SAMPLE, name, 255)",
+        "the large name draws the whole sample")
+    has(SCREEN, "TitleOverlay.drawCorner(graphics, font, parts.kicker(), parts.name(), corner",
+        "the corner title draws the split sample")
     has(SCREEN, "screen.immersive_titles.customize.sample", "the preview uses the sample key")
     has(SCREEN, "ChatFormatting.BOLD", "the sample is bold")
     has(SCREEN, "screen.immersive_titles.customize.hint.move", "the move hint is drawn")
@@ -280,6 +286,9 @@ def config_checks():
     has(CUSTOMIZATION, "AtomicMoveNotSupportedException", "a filesystem without atomic move still saves")
     loader = method(text, "public static void load()")
     check("the loader never saves", loader != "" and "save()" not in loader)
+    check("a missing version is repaired field by field",
+          "if (version != null && (!version.isJsonPrimitive()" in text
+          and "version == null ||" not in text)
 
 def main():
     geometry_checks()

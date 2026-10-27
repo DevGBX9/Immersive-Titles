@@ -172,7 +172,7 @@ public final class TitleCustomizationScreen extends Screen
 				0xFF0E0E12);
 
 		TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
-		TitleGeometry.Name name = TitleGeometry.name(plate, font, parts.name(), working);
+		TitleGeometry.Name name = TitleGeometry.name(plate, font, SAMPLE, working);
 		TitleGeometry.Corner corner = TitleGeometry.corner(width, height, font, parts.kicker(),
 				parts.name(), working);
 
@@ -182,7 +182,7 @@ public final class TitleCustomizationScreen extends Screen
 		pose.translate(virtualLeft, virtualTop);
 		pose.scale(stageScale, stageScale);
 		TitleOverlay.drawPlate(graphics, FRAME, plate);
-		TitleOverlay.drawName(graphics, font, parts.name(), name, 255);
+		TitleOverlay.drawName(graphics, font, SAMPLE, name, 255);
 		TitleOverlay.drawCorner(graphics, font, parts.kicker(), parts.name(), corner, 0xFFFFFFFF);
 		pose.popMatrix();
 		drawSelection(graphics);
@@ -225,7 +225,7 @@ public final class TitleCustomizationScreen extends Screen
 		{
 			case PLATE -> new TitleGeometry.Box(plate.x(), plate.y(),
 					plate.x() + plate.width(), plate.y() + plate.height());
-			case NAME -> TitleGeometry.name(plate, font, parts.name(), working).box();
+			case NAME -> TitleGeometry.name(plate, font, SAMPLE, working).box();
 			case CORNER -> TitleGeometry.corner(width, height, font, parts.kicker(), parts.name(),
 					working).box();
 		};
@@ -381,7 +381,7 @@ public final class TitleCustomizationScreen extends Screen
 		}
 
 		TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
-		return TitleGeometry.name(plate, font, parts.name(), working).roomWidth();
+		return TitleGeometry.name(plate, font, SAMPLE, working).roomWidth();
 	}
 
 	private float denominatorY(Element element)
@@ -392,7 +392,7 @@ public final class TitleCustomizationScreen extends Screen
 		}
 
 		TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
-		return TitleGeometry.name(plate, font, parts.name(), working).roomHeight();
+		return TitleGeometry.name(plate, font, SAMPLE, working).roomHeight();
 	}
 
 	/** The customization multiplier of an element, not the plate's combined drawn scale. */
@@ -592,7 +592,7 @@ public final class TitleCustomizationScreen extends Screen
 		if (selected == Element.NAME)
 		{
 			TitleGeometry.Plate plate = TitleGeometry.plate(width, height, working);
-			TitleGeometry.Name name = TitleGeometry.name(plate, font, parts.name(), working);
+			TitleGeometry.Name name = TitleGeometry.name(plate, font, SAMPLE, working);
 			float boxWidth = name.box().right() - name.box().left();
 			float boxHeight = name.box().bottom() - name.box().top();
 			float maxX = Math.max(0.0F, (name.roomWidth() - boxWidth)
