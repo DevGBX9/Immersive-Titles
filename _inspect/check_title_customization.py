@@ -134,6 +134,83 @@ def overlay_checks():
                     body(pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/"
                                       "WandererTitlesClient.java"))) is not None)
 
+def screen_checks():
+    print("the customization screen:")
+    text = body(SCREEN)
+    check("TitleCustomizationScreen.java exists", bool(text))
+    has(SCREEN, "public final class TitleCustomizationScreen extends Screen",
+        "the editor is a normal screen")
+    has(SCREEN, "private final Screen parent", "the editor holds the collection it came from")
+    has(SCREEN, "TitleCustomization.live().copy()", "the editor works on a copy")
+    has(SCREEN, "height >= 210", "the hints are dropped below 210 px")
+    has(SCREEN, "Math.min(availableWidth / (float) width, availableHeight / (float) height)",
+        "the stage keeps the screen's aspect")
+    has(SCREEN, "0xFF0E0E12", "the stage has its near-black backdrop")
+    has(SCREEN, "enableScissor(stageLeft, stageTop", "the preview is clipped to the stage")
+    has(SCREEN, "frame_0100.png", "the preview uses the real settled frame")
+    has(SCREEN, "TitleOverlay.drawPlate(", "the preview draws the real plate")
+    has(SCREEN, "TitleOverlay.drawName(", "the preview draws the real name")
+    has(SCREEN, "TitleOverlay.drawCorner(", "the preview draws the real corner title")
+    has(SCREEN, "screen.immersive_titles.customize.sample", "the preview uses the sample key")
+    has(SCREEN, "ChatFormatting.BOLD", "the sample is bold")
+    has(SCREEN, "screen.immersive_titles.customize.hint.move", "the move hint is drawn")
+    has(SCREEN, "screen.immersive_titles.customize.hint.save", "the save hint is drawn")
+    has(SCREEN, "working.save()", "Save writes the working copy")
+    has(SCREEN, "TitleCustomization.replace(working)", "a successful Save replaces the live values")
+    has(SCREEN, "SAVED_MESSAGE_MS = 2000L", "the saved message lasts 2000 ms")
+    has(SCREEN, "working.reset()", "Reset returns the working copy to defaults")
+    has(SCREEN, "minecraft.gui.setScreen(parent)", "Done and Escape return to the collection")
+    save_body = method(text, "private void save()")
+    reset_body = method(text, "private void reset()")
+    close_body = method(text, "public void onClose()")
+    check("Save keeps the screen open", save_body != "" and "setScreen" not in save_body)
+    check("Reset does not save", reset_body != "" and "save()" not in reset_body)
+    check("closing does not save", close_body != "" and "save()" not in close_body)
+    check("the editor draws no background of its own",
+          not any(part in text for part in ("extractBackground", "renderBackground", "fillGradient")))
+    collection = body(COLLECTION)
+    has(COLLECTION, "new TitleCustomizationScreen(this)", "the collection opens the editor with itself as parent")
+    has(COLLECTION, "GEAR_SIZE = 16", "the gear is 16 px wide")
+    has(COLLECTION, "GEAR_GAP = 8", "the gear sits 8 px right of Done")
+    has(COLLECTION, "doneButton.getX() + doneButton.getWidth() + GEAR_GAP",
+        "the gear is placed immediately right of Done with the gap")
+    has(COLLECTION, "screen.immersive_titles.collection.customize", "the gear has its tooltip/narration key")
+    has(COLLECTION, "drawGearIcon(graphics, customizeButton)", "the gear icon is painted over its face")
+    has(COLLECTION, '"textures/gui/gear.png"', "the gear is a direct texture path")
+    check("the gear is not a gui sprite", 'guiSprite("gui/gear")' not in collection)
+    check("only the collection opens the editor",
+          collection.count("new TitleCustomizationScreen(") == 1
+          and "new TitleCustomizationScreen(" not in body(OVERLAY))
+
+def lang_checks():
+    print("the editor's language and gear:")
+    lang = json.loads(LANG.read_text(encoding="utf-8"))
+    expected = {
+        "screen.immersive_titles.collection.customize": "Customize titles",
+        "screen.immersive_titles.customize.title": "Customize Titles",
+        "screen.immersive_titles.customize.hint.move":
+            "Drag to move - drag a corner or scroll to resize",
+        "screen.immersive_titles.customize.hint.save":
+            "Save keeps changes - closing without Save discards them",
+        "screen.immersive_titles.customize.save": "Save",
+        "screen.immersive_titles.customize.reset": "Reset",
+        "screen.immersive_titles.customize.saved": "Saved",
+        "screen.immersive_titles.customize.save_failed": "Could not save",
+        "screen.immersive_titles.customize.sample": "PALE GARDEN",
+    }
+    for key, value in expected.items():
+        check(f"{key} is {value!r}", lang.get(key) == value)
+    from PIL import Image
+    check("gear.png exists", GEAR.is_file())
+    if GEAR.is_file():
+        image = Image.open(GEAR).convert("RGBA")
+        check("the gear is 16x16", image.size == (16, 16))
+        pixels = list(image.getdata())
+        check("the gear keeps its transparent corners", sum(1 for p in pixels if p[3] == 0) == 80)
+        check("the gear has 176 opaque pixels", sum(1 for p in pixels if p[3] == 255) == 176)
+        palette = {(27, 27, 32, 255), (42, 42, 50, 255), (201, 205, 212, 255), (237, 239, 242, 255)}
+        check("the gear uses the four planned colours", {p for p in pixels if p[3] != 0} == palette)
+
 def config_checks():
     print("the global customization model:")
     text = body(CUSTOMIZATION)
@@ -164,6 +241,8 @@ def main():
     geometry_checks()
     config_checks()
     overlay_checks()
+    screen_checks()
+    lang_checks()
     if failures:
         print(f"\n{len(failures)} title customization check(s) failed")
         return 1
