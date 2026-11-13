@@ -437,13 +437,16 @@ public final class TitleOverlay
 	private static final int SAVING_MARGIN = 4;
 
 	/**
-	 * How long the line is read for, counted in frames of the clip from the one the name appears on:
-	 * three tenths of a second, of which the last tenth is the fade out. The notice is a moment of the
-	 * reveal and not a label of it - the game's own save notice is gone just as quickly - while the
-	 * plate and its name hold for the rest of the clip.
+	 * How long the line is read for, in milliseconds from the first frame of the reveal it belongs
+	 * to: half a second, which is the whole of the notice - the fade in, the moment it stands and
+	 * the fade out - and not the length of the title it is read under. The plate holds for six
+	 * seconds behind it, so the line is gone long before the title it announced is.
 	 */
-	private static final int SAVING_WORLD_FRAMES = 3 * FRAME_FPS / 10;
-	private static final int SAVING_WORLD_FADE_FRAMES = FRAME_FPS / 10;
+	private static final long SAVING_WORLD_MS = 500L;
+
+	/** How much of that half second the line takes to come in, and how much of it it takes to go. */
+	private static final long SAVING_WORLD_FADE_IN_MS = 150L;
+	private static final long SAVING_WORLD_FADE_OUT_MS = 200L;
 
 	/** Used when there is no biome to name, e.g. while a title is triggered from the main menu. */
 	private static final Component FALLBACK_NAME = Component.literal("PALE GARDEN").withStyle(ChatFormatting.BOLD);
@@ -1247,7 +1250,7 @@ public final class TitleOverlay
 				FRAME_WIDTH, FRAME_HEIGHT);
 
 		renderName(graphics, x, y, scale, frame);
-		renderSavingWorld(graphics, frame);
+		renderSavingWorld(graphics);
 	}
 
 	/**
@@ -1349,25 +1352,40 @@ public final class TitleOverlay
 	}
 
 	/**
-	 * Draws the save notice of the reveal in the bottom right corner of the screen, where the game
-	 * puts its own: the line is read for the few frames after the opening flash has cleared, i.e. the
-	 * ones the name is first read on (see {@link #SAVING_WORLD_FRAMES}). It is a moment of the reveal
-	 * rather than a label of it, so it is gone long before the plate is - and on a screen no reveal is
-	 * playing on it is not drawn at all.
+	 * Draws the save notice of the reveal in the bottom right corner of the screen, the way the game
+	 * draws its own: the font as it is, one line, beside the corner of the screen - and read for the
+	 * half second the reveal opens with (see {@link #SAVING_WORLD_MS}), which starts on the frame the
+	 * title itself starts on. It is a moment of the title rather than a label of it: it comes in as
+	 * the title arrives and is gone while the title is still standing, so what tells the player the
+	 * discovery was written down is a notice and not a caption.
 	 */
-	private static void renderSavingWorld(GuiGraphicsExtractor graphics, int frame)
+	private static void renderSavingWorld(GuiGraphicsExtractor graphics)
 	{
-		int shown = frame - VEIL_LAST_FRAME;
+		long shownMs = revealMs;
 
-		if (shown < 0 || shown >= SAVING_WORLD_FRAMES)
+		if (shownMs >= SAVING_WORLD_MS)
 		{
 			return;
 		}
 
-		int fadeFrom = SAVING_WORLD_FRAMES - SAVING_WORLD_FADE_FRAMES;
-		int alpha = shown < fadeFrom
-				? 255
-				: 255 * (SAVING_WORLD_FRAMES - shown) / SAVING_WORLD_FADE_FRAMES;
+		int alpha;
+
+		if (shownMs < SAVING_WORLD_FADE_IN_MS)
+		{
+			alpha = (int) (255L * shownMs / SAVING_WORLD_FADE_IN_MS);
+		}
+		else
+		{
+			long fadeOutStart = SAVING_WORLD_MS - SAVING_WORLD_FADE_OUT_MS;
+			alpha = shownMs <= fadeOutStart
+					? 255
+					: (int) (255L * (SAVING_WORLD_MS - shownMs) / SAVING_WORLD_FADE_OUT_MS);
+		}
+
+		if (alpha <= 0)
+		{
+			return;
+		}
 
 		Minecraft client = Minecraft.getInstance();
 		Font font = client.font;
