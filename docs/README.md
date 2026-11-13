@@ -19,7 +19,7 @@
 │   └── …/client/             entrypoints, title/, collection/, catalog/, world/
 ├── src/main/resources/       fabric.mod.json and the assets (lang, sounds, textures, gui sprites)
 ├── tools/                    checks, previews, and the tools that made the shipped art
-├── versions/                 one Gradle project per Minecraft version (only 26.3 is enabled)
+├── versions/                 one Gradle project per Minecraft version (26.3 and 26.2 are enabled)
 ├── build.gradle              the version matrix (preprocessor nodes)
 ├── common.gradle             what every version project is made of
 ├── settings.gradle           reads settings.json and includes the enabled versions

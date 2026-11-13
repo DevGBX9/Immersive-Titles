@@ -7,7 +7,7 @@
 | JDK | **25** | `common.gradle` compiles the 26.x projects with `JavaVersion.VERSION_25` |
 | Gradle | the wrapper (`./gradlew`) | the plugins and the preprocessor are pinned by it |
 | Fabric Loader | 0.19.5 (build), `>=0.11.4` (declared) | `gradle.properties` / `fabric.mod.json` |
-| Fabric API | `0.160.5+26.3` (build), `>=0.160.5` (declared) | required at runtime by the HUD and client events the titles use |
+| Fabric API | `0.160.5+26.3`, `0.160.0+26.2` (build); `>=0.160.5`, `>=0.160.0` (declared) | required at runtime by the HUD and client events the titles use |
 | Mod Menu | `21.0.0` | **compile only**: the mod works without it |
 
 The mod is built with JDK 25 and the build itself is expected to run on CI; nothing about the project
@@ -21,8 +21,10 @@ Which Minecraft versions exist as Gradle projects is decided in three places tha
    later. `settings.gradle` includes one Gradle subproject per enabled entry.
 2. **`build.gradle`** — the `preprocess` block creates one node per version (`createNode`) and links
    them into a chain, so that the sources of a parent are preprocessed into its children. 26.3 is the
-   root and the only enabled node today, so it is written for 26.3 with no `//#if` guard around the
-   client code.
+   root and 26.2 is its only enabled child, so the sources are written for 26.3 with no `//#if` guard
+   around the client code, and 26.2 is compiled from exactly those sources: the guards that do exist
+   (`WandererTitlesClient`, `ModMenuIntegration`) mean "26.2 and newer", never "26.3 only", so no part
+   of the mod is left out of either version.
 3. **`versions/<version>/gradle.properties`** — per-version metadata: `minecraft_version`,
    `minecraft_dependency`, `game_versions` (what the release is published for),
    `fabric_api_version`, `modmenu_version`. `versions/mainProject` names the core project
@@ -30,7 +32,7 @@ Which Minecraft versions exist as Gradle projects is decided in three places tha
 
 `common.gradle` is the build of every version project: Loom, the preprocessor, yamlang (the language
 files), the license plugin, the jar, and the Fabric API / Mod Menu dependencies that are only added
-for `mcVersion >= 260300`.
+for `mcVersion >= 260200`, i.e. for both enabled 26.x projects.
 
 ### Re-enabling an older version
 
@@ -48,6 +50,7 @@ The steps are also written next to the commented nodes in `build.gradle`:
 ```bash
 ./gradlew build                 # every enabled version project
 ./gradlew :26.3:build           # one version
+./gradlew :26.2:build           # one version
 ./gradlew buildAndGather        # build, then copy the mod jars into build/libs of the root
 ```
 

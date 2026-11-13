@@ -20,6 +20,20 @@ on:
 #        default: false
 
 jobs:
+  # The versions the matrix carries, read out of settings.json so that a version is enabled in
+  # exactly one place: what this job publishes is one artifact per version below.
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read the enabled versions
+        id: versions
+        run: |
+          versions=$(python3 -c "import json; print(json.dumps(json.load(open('settings.json'))['versions']))")
+          echo "versions=$versions" | tee -a "$GITHUB_OUTPUT"
+
   build:
     runs-on: ubuntu-latest
 
@@ -72,18 +86,22 @@ jobs:
       - name: Collect mod jars
         run: |
           shopt -s extglob
-          mkdir mod-jars
+          mkdir -p mod-jars
+          # one folder per Minecraft version: the jar is named after the mod version alone, so two
+          # projects of the matrix build two jars of the same name and a flat folder keeps one of them
           for jar in versions/*/build/libs/!(*-@(dev|sources|shadow)).jar; do
-              cp -p "$jar" mod-jars/
+              version=$(basename "$(dirname "$(dirname "$(dirname "$jar")")")")
+              mkdir -p "mod-jars/$version"
+              cp -p "$jar" "mod-jars/$version/"
           done
-          ls -l mod-jars
+          ls -lR mod-jars
 
       - name: Report build matrix and built jars
         run: |
           enabled_versions=$(python3 -c "import json; print(', '.join(json.load(open('settings.json'))['versions']))")
           echo "::notice title=Enabled Minecraft versions::${enabled_versions}"
-          for jar in mod-jars/*.jar; do
-              echo "::notice title=Built mod jar::$(basename "$jar") ($(stat -c%s "$jar") bytes)"
+          for jar in mod-jars/*/*.jar; do
+              echo "::notice title=Built mod jar::$(basename "$(dirname "$jar")") $(basename "$jar") ($(stat -c%s "$jar") bytes)"
           done
 
       # This is the artifact recommended for users to download
@@ -91,7 +109,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: mod-jars
-          path: mod-jars/*.jar
+          path: mod-jars/**/*.jar
 
 #      # [FEATURE] FALLENS_MAVEN
 #      - name: Publish with gradle
@@ -150,3 +168,30 @@ jobs:
         env:
           TARGET_SUBPROJECT: ${{ inputs.target_subproject }}
           WORKFLOW_ARTIFACTS: ${{ steps.artifacts.outputs.result }}
+
+  # One artifact per Minecraft version, so every version of the mod is a download of its own rather
+  # than a file inside the zip of a folder: the jar of each is named after the mod version alone (see
+  # common.gradle), which is what makes two versions two files of the same name, one folder apart.
+  jars:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - matrix
+    strategy:
+      matrix:
+        version: ${{ fromJson(needs.matrix.outputs.versions) }}
+      fail-fast: false
+
+    steps:
+      - name: Download the built jars
+        uses: actions/download-artifact@v8
+        with:
+          name: mod-jars
+          path: mod-jars
+
+      - name: Upload the jar of ${{ matrix.version }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: immersive_titles-${{ matrix.version }}
+          path: mod-jars/${{ matrix.version }}/*.jar
+          if-no-files-found: error

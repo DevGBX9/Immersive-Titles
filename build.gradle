@@ -25,14 +25,20 @@ preprocess {
 	//
 	// Currently ENABLED:
 	//   26.3 = core project and active development target for the Immersive Titles feature ->
-	//          src/ is written for 26.3, and it is the only version that is built right now
+	//          src/ is written for 26.3, and its sources are preprocessed into its children
+	//   26.2 = child of 26.3, built out of the same src/ folder: not one line of the feature is
+	//          kept out of it, so the two versions are the same titles, the same collection, the
+	//          same rule and the same assets - what differs is the game they compile against
 	//
 	// Everything else is DISABLED for now, see the commented block below.
 	// 26.x is not obfuscated, so its node needs `null` mappings instead of the empty template value
 	def mc2603 = createNode('26.3', 26_03_00, null)
+	def mc2602 = createNode('26.2', 26_02_00, null)
 
-	// 26.3 is the only enabled node, so it is the root of the version chain and has no parent.
-	// A disabled version is re-enabled by hanging it off an enabled node, see the block below.
+	// 26.3 is the core project, so it is the root of the version chain and has no parent, and 26.2
+	// is its child - which is what makes the preprocessor build 26.2 out of the 26.3 sources.
+	// A disabled version is re-enabled by hanging it off an enabled node the same way, see below.
+	mc2603.link(mc2602, null)
 
 	// ---------------------------------------------------------------------------------------------
 	// DISABLED for now - kept so that they can be re-enabled later without rewriting anything
@@ -65,7 +71,6 @@ preprocess {
 	def mc12110 = createNode('1.21.10', 1_21_10, '')
 	def mc12111 = createNode('1.21.11', 1_21_11, '')
 	def mc2601 = createNode('26.1.2', 26_01_02, null)
-	def mc2602 = createNode('26.2', 26_02_00, null)
 
 	mc2603.link(mc1201, null)   // 1.20.1 is disabled too, so it hangs off the core project now
 	mc1201.link(mc114 , null)   // older than 1.20.1
@@ -85,8 +90,8 @@ preprocess {
 	mc1218.link(mc12110, null)
 	mc12110.link(mc12111, null)
 	mc12111.link(mc2601, null)
-	mc2601.link(mc2602, null)
-	// 26.3 is the core project, so it is the root of the chain and no longer a child of 26.2
+	mc2602.link(mc2601, null)
+	// 26.3 is the root of the chain, 26.2 is its child, and 26.1.2 hangs off 26.2 when it is enabled
 	*/
 
 	// See https://github.com/Fallen-Breath/fabric-mod-template/blob/1d72d77a1c5ce0bf060c2501270298a12adab679/build.gradle#L55-L63

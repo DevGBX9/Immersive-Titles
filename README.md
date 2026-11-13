@@ -35,7 +35,7 @@ All three are ordinary key mappings: rebind them in **Options → Controls → K
 
 | | |
 | --- | --- |
-| Minecraft | **26.3** (the only enabled version in the build matrix) |
+| Minecraft | **26.3** and **26.2** (both enabled, both built from the same sources) |
 | Loader | Fabric Loader `>=0.11.4` |
 | Requires | Fabric API `>=0.160.5` |
 | Optional | Mod Menu (adds the collection to the mod list) |
@@ -53,7 +53,7 @@ for what re-enabling one takes.
 
 ## Install
 
-1. Install [Fabric Loader](https://fabricmc.net/use/installer/) for Minecraft 26.3.
+1. Install [Fabric Loader](https://fabricmc.net/use/installer/) for Minecraft 26.3 or 26.2.
 2. Put [Fabric API](https://modrinth.com/mod/fabric-api) and this mod's jar in `.minecraft/mods`.
 3. Optionally add [Mod Menu](https://modrinth.com/mod/modmenu) to reach the collection from the mod list.
 
@@ -67,7 +67,7 @@ for what re-enabling one takes.
 │   └── …/client/             entrypoints, title/, collection/, catalog/, world/
 ├── src/main/resources/       fabric.mod.json, language files, sounds, textures, gui sprites
 ├── tools/                    checks, previews and the art tools (see tools/README.md)
-├── versions/                 one Gradle project per Minecraft version (26.3)
+├── versions/                 one Gradle project per Minecraft version (26.3, 26.2)
 ├── build.gradle              the version matrix (preprocessor nodes)
 ├── common.gradle             what every version project is made of
 ├── settings.json             enabled / disabled Minecraft versions
@@ -79,11 +79,13 @@ Nothing that ships is under `tools/` or `docs/`: `src/` is the mod, and everythi
 ## Development
 
 The source is written for Minecraft 26.3 with the client rendering APIs of 26.x, and is compiled by
-JDK 25.
+JDK 25. 26.2 is a child project of 26.3: the preprocessor builds it out of that same `src/`, and no
+`//#if` guard keeps any of the mod out of it, so both versions are one feature and one implementation.
 
 ```bash
 ./gradlew build          # all enabled versions
 ./gradlew :26.3:build    # just 26.3
+./gradlew :26.2:build    # just 26.2
 ```
 
 The build is run by GitHub Actions (`.github/workflows/gradle.yml`) on every push that touches the
