@@ -93,7 +93,7 @@ import java.util.Optional;
  * of the two is discovered and forgotten on its own.
  *
  * The list is held to the game by a check kept beside the sources ({@code
- * _inspect/check_structures.py}): it reads the registry of the structure files the game ships, the
+ * tools/checks/check_structures.py}): it reads the registry of the structure files the game ships, the
  * tags of them and the biome tags they generate in, and fails if the list below is not exactly the
  * game's own structures, grouped the way the game groups them and filed where their biomes put them -
  * so this class cannot quietly go stale when a Minecraft version adds a structure.

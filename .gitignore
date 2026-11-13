@@ -36,17 +36,19 @@ run/
 
 .freebuff/
 
-# python tools for the template assets
+# python tooling
+
 __pycache__/
 *.pyc
 
-# output of those tools: the frame sets the mod ships are the ones in src/main/resources
-templates/*/frames/
-templates/*/sheet.png
-templates/*/proof.png
+# frame sets and proof sheets the asset tools write
+# (the frames the mod ships are the ones in src/main/resources)
+tools/assets/*/frames/
+tools/assets/*/sheet.png
+tools/assets/*/proof.png
 
-# the pages the check and preview tools write are working files, not part of the set
-_inspect/preview_title.html
-_inspect/preview_collection.html
-_inspect/mock/frames.html
-_inspect/mock/layout.html
+# pages the preview and mock tools write
+tools/previews/preview_title.html
+tools/previews/preview_collection.html
+tools/previews/mock/frames.html
+tools/previews/mock/layout.html

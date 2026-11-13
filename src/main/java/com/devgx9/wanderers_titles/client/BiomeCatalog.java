@@ -207,7 +207,7 @@ final class BiomeCatalog
 	 *
 	 * These two lists are the one place in this mod that copies a fact out of the game rather than
 	 * reading it there, so they are held to the game's own {@code is_nether} and {@code is_end} tags by
-	 * a check kept beside the sources - {@code _inspect/check_dimension_groups.py}, which reads those
+	 * a check kept beside the sources - {@code tools/checks/check_dimension_groups.py}, which reads those
 	 * tags out of the game the build is against. Everything else the game ships is a biome of the
 	 * overworld or of no dimension at all (see {@link #THE_VOID}), so the two short lists are the whole
 	 * of what the mod has to know.

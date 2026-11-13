@@ -54,7 +54,7 @@ import java.util.Locale;
  * The names the mod writes down are written at the length of a title - at most two words, the room a
  * plate has for a name, which is the same rule the names of the biomes are shortened to (see
  * {@link BiomeNames}) - and that is a check kept beside the sources rather than a shortening rule
- * here: they are the mod's own strings, so {@code _inspect/check_structures.py} reads them back and
+ * here: they are the mod's own strings, so {@code tools/checks/check_structures.py} reads them back and
  * holds them to it, while a name of any length is still scaled into the plate at draw time (see
  * {@link TitleOverlay}).
  */

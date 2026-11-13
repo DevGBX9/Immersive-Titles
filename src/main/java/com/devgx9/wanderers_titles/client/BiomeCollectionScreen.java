@@ -410,7 +410,7 @@ final class BiomeCollectionScreen extends Screen
 	/**
 	 * The two lines the list is framed with, one over it and one under it. They are the mod's own
 	 * drawing: a needle with a thread through it, white on nothing, drawn where it is read (see
-	 * {@code templates/collection_frame}), and the list is drawn between the two of them as if they were
+	 * {@code tools/assets/collection_frame}), and the list is drawn between the two of them as if they were
 	 * the top and the bottom of its frame.
 	 */
 	private static final Identifier UP_LINE = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
@@ -420,7 +420,7 @@ final class BiomeCollectionScreen extends Screen
 
 	/**
 	 * The size the two drawings are made at, which is the size they are drawn at: one texture pixel to
-	 * one gui pixel, straight from {@code templates/collection_frame} (see
+	 * one gui pixel, straight from {@code tools/assets/collection_frame} (see
 	 * {@code draw_ornaments.py} there).
 	 *
 	 * A drawing made of one-pixel threads is a drawing that cannot be scaled down. A stroke of it is
@@ -605,10 +605,6 @@ final class BiomeCollectionScreen extends Screen
 	private static final int DONE_WIDTH = 110;
 	private static final int DONE_HEIGHT = 16;
 
-	/** The gear beside Done that opens the title editor, and the gap between the two buttons. */
-	private static final int GEAR_SIZE = 16;
-	private static final int GEAR_GAP = 8;
-
 	/**
 	 * Room the panel leaves below itself: the frame around it, the gap under it, the line that frames
 	 * its bottom, the same gap again and the button that closes the screen - without the room that
@@ -724,14 +720,6 @@ final class BiomeCollectionScreen extends Screen
 	 * keeps a long list of them from drawing the eye away from the ones that were found.
 	 */
 	private static final Identifier WAITING_BUTTON_SPRITE = guiSprite("widget/button_disabled");
-
-	/**
-	 * The gear drawn over the face of the button beside Done: the mod's own 16x16 pixel-art drawing,
-	 * not a sprite of the gui atlas, so it is read as a texture and blitted whole rather than nine
-	 * sliced (see {@link #drawGearIcon}).
-	 */
-	private static final Identifier GEAR_TEXTURE = Identifier.fromNamespaceAndPath(
-			WandererTitles.MOD_ID, "textures/gui/gear.png");
 
 	/**
 	 * The button a row of a discovery is given while the mouse is on that row: the same face the two
@@ -951,7 +939,6 @@ final class BiomeCollectionScreen extends Screen
 	 */
 	private final Map<Page, Button> tabs = new EnumMap<>(Page.class);
 	private Button doneButton;
-	private Button customizeButton;
 
 	/** Where the list has been told to go, in rows: what the wheel and the keys move. */
 	private double scrollTarget;
@@ -1139,21 +1126,6 @@ final class BiomeCollectionScreen extends Screen
 				.build();
 
 		addRenderableWidget(doneButton);
-
-		// the gear stands just right of Done, inside the block, and opens the customization of both
-		// titles over this same collection: an empty label with a tooltip and narration, the shape the
-		// two filters already use, with the gear itself painted over the face in drawButtonFaces
-		customizeButton = Button.builder(Component.empty(),
-						button -> minecraft.gui.setScreen(new TitleCustomizationScreen(this)))
-				.bounds(doneButton.getX() + doneButton.getWidth() + GEAR_GAP, doneButton.getY(),
-						GEAR_SIZE, GEAR_SIZE)
-				.tooltip(Tooltip.create(Component.translatable(
-						"screen.immersive_titles.collection.customize")))
-				.createNarration(defaultNarration -> Component.translatable(
-						"screen.immersive_titles.collection.customize"))
-				.build();
-
-		addRenderableWidget(customizeButton);
 	}
 
 	/**
@@ -1624,19 +1596,6 @@ final class BiomeCollectionScreen extends Screen
 		drawButtonFace(graphics, discoveredFilter, filterSprite(Filter.DISCOVERED, discoveredFilter));
 		drawButtonFace(graphics, remainingFilter, filterSprite(Filter.REMAINING, remainingFilter));
 		drawButtonFace(graphics, doneButton);
-		drawButtonFace(graphics, customizeButton);
-		drawGearIcon(graphics, customizeButton);
-	}
-
-	/**
-	 * Draws the gear over the face of the button beside Done, at the button's own 16x16 box and with
-	 * the drawing's own pixels: the gear is a 16x16 texture and the button is 16x16, so there is no
-	 * scaling and no smoothing (see {@link #GEAR_TEXTURE}).
-	 */
-	private void drawGearIcon(GuiGraphicsExtractor graphics, Button button)
-	{
-		graphics.blit(RenderPipelines.GUI_TEXTURED, GEAR_TEXTURE, button.getX(), button.getY(),
-				0.0F, 0.0F, GEAR_SIZE, GEAR_SIZE, GEAR_SIZE, GEAR_SIZE, GEAR_SIZE, GEAR_SIZE);
 	}
 
 	/**
