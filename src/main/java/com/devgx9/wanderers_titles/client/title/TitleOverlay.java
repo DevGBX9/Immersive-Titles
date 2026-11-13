@@ -461,9 +461,18 @@ public final class TitleOverlay
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
 
+	/**
+	 * The kind of key a key mapping is read with, which 26.3 calls {@code KEYBOARD} and 26.2 calls
+	 * {@code KEYSYM}: the three mappings below are the same mapping on both, so what differs between
+	 * the two versions is the name of this one constant and nothing else.
+	 */
 	private static final KeyMapping PLAY_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.play_title",
+			//#if MC >= 26.3
 			InputConstants.Type.KEYBOARD,
+			//#else
+			//$$ InputConstants.Type.KEYSYM,
+			//#endif
 			InputConstants.KEY_T,
 			CATEGORY));
 
@@ -473,7 +482,11 @@ public final class TitleOverlay
 	 */
 	private static final KeyMapping OPEN_COLLECTION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.open_collection",
+			//#if MC >= 26.3
 			InputConstants.Type.KEYBOARD,
+			//#else
+			//$$ InputConstants.Type.KEYSYM,
+			//#endif
 			InputConstants.KEY_M,
 			CATEGORY));
 
@@ -483,7 +496,11 @@ public final class TitleOverlay
 	 */
 	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.show_corner_title",
+			//#if MC >= 26.3
 			InputConstants.Type.KEYBOARD,
+			//#else
+			//$$ InputConstants.Type.KEYSYM,
+			//#endif
 			InputConstants.KEY_J,
 			CATEGORY));
 

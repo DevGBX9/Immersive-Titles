@@ -76,8 +76,9 @@ jobs:
         if: failure()
         run: |
           if [ -f build.log ]; then
-              grep -aE "error:|FAILURE:|What went wrong|Execution failed|Could not resolve|Caused by" build.log \
-                  | tail -n 10 | tr -d '\r' \
+              # the two lines under a compile error are the ones that name what is missing
+              grep -aA2 -E "error:|FAILURE:|What went wrong|Execution failed|Could not resolve|Caused by" build.log \
+                  | grep -avE "^-{2}$" | tail -n 10 | tr -d '\r' \
                   | while IFS= read -r line; do echo "::error title=gradle build::$line"; done
           fi
           exit 0
@@ -209,3 +210,51 @@ jobs:
           name: immersive_titles-${{ matrix.version }}
           path: mod-jars/${{ matrix.version }}/*.jar
           if-no-files-found: error
+
+  # The jars of every enabled version as assets of one release, which is what makes them downloads
+  # rather than files behind a login: an artifact of a run can only be downloaded by a signed-in
+  # GitHub user, while an asset of a release is a plain link that opens for anybody. The release is
+  # a prerelease that is rewritten by every build of the main branch, so the links of a version do
+  # not change from one build to the next.
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - matrix
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download the built jars
+        uses: actions/download-artifact@v8
+        with:
+          name: mod-jars
+          path: mod-jars
+
+      # both jars are named after the mod version alone (see common.gradle), so the game a jar is for
+      # is put into its file name here - the one thing the release assets cannot carry themselves
+      - name: Name each jar for its game version
+        run: |
+          mkdir -p release
+          for jar in mod-jars/*/*.jar; do
+              version=$(basename "$(dirname "$jar")")
+              name=$(basename "$jar" .jar)
+              cp "$jar" "release/$name-mc$version.jar"
+          done
+          ls -l release
+
+      - name: Publish the jars
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-latest
+          name: Development build
+          prerelease: true
+          make_latest: 'false'
+          overwrite_files: true
+          body: |
+            Built from `${{ github.sha }}` by the Dev Builds workflow.
+
+            One jar per Minecraft version: download the file whose name ends in the version you
+            play. Enabled versions: ${{ needs.matrix.outputs.versions }}
+          files: release/*.jar
