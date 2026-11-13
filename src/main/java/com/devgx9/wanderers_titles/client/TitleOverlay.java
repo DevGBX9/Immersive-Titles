@@ -436,6 +436,15 @@ public final class TitleOverlay
 	/** How far that line is set from the two edges of the screen it sits in, as the game sets its own. */
 	private static final int SAVING_MARGIN = 4;
 
+	/**
+	 * How long the line is read for, counted in frames of the clip from the one the name appears on:
+	 * three tenths of a second, of which the last tenth is the fade out. The notice is a moment of the
+	 * reveal and not a label of it - the game's own save notice is gone just as quickly - while the
+	 * plate and its name hold for the rest of the clip.
+	 */
+	private static final int SAVING_WORLD_FRAMES = 3 * FRAME_FPS / 10;
+	private static final int SAVING_WORLD_FADE_FRAMES = FRAME_FPS / 10;
+
 	/** Used when there is no biome to name, e.g. while a title is triggered from the main menu. */
 	private static final Component FALLBACK_NAME = Component.literal("PALE GARDEN").withStyle(ChatFormatting.BOLD);
 
@@ -1341,17 +1350,24 @@ public final class TitleOverlay
 
 	/**
 	 * Draws the save notice of the reveal in the bottom right corner of the screen, where the game
-	 * puts its own: the line belongs to the title and not to the world, so it is read for as long as
-	 * the name is - it comes in with it, holds with it and is gone with it - instead of standing in
-	 * the corner on a screen no reveal is playing on.
+	 * puts its own: the line is read for the few frames after the opening flash has cleared, i.e. the
+	 * ones the name is first read on (see {@link #SAVING_WORLD_FRAMES}). It is a moment of the reveal
+	 * rather than a label of it, so it is gone long before the plate is - and on a screen no reveal is
+	 * playing on it is not drawn at all.
 	 */
 	private static void renderSavingWorld(GuiGraphicsExtractor graphics, int frame)
 	{
-		int alpha = nameAlpha(frame);
-		if (alpha <= 0)
+		int shown = frame - VEIL_LAST_FRAME;
+
+		if (shown < 0 || shown >= SAVING_WORLD_FRAMES)
 		{
 			return;
 		}
+
+		int fadeFrom = SAVING_WORLD_FRAMES - SAVING_WORLD_FADE_FRAMES;
+		int alpha = shown < fadeFrom
+				? 255
+				: 255 * (SAVING_WORLD_FRAMES - shown) / SAVING_WORLD_FADE_FRAMES;
 
 		Minecraft client = Minecraft.getInstance();
 		Font font = client.font;
