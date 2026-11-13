@@ -1245,7 +1245,13 @@ public final class TitleOverlay
 		//#else
 		//$$ Overlay overlay = client.getOverlay();
 		//#endif
+		//#if MC >= 26.2
 		return overlay != null && overlay.isPausing();
+		//#else
+		// 26.1.2's Overlay does not say whether it pauses the game, and the one that covers the game
+		// (the loading one) does: any overlay is reason enough to hold the reveal.
+		//$$ return overlay != null;
+		//#endif
 	}
 
 	/** Draws the current frame of the cinematic reveal, as long as a playback is running. */
