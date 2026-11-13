@@ -1709,6 +1709,20 @@ public final class BiomeCollectionScreen extends Screen
 	 * thing a player sees of a screen being closed. Closing into the world is the game's own answer and
 	 * is left to it (see {@link Screen#onClose}).
 	 */
+	/**
+	 * Sets the screen the client shows, which 26.2 and newer reach through the gui the game keeps
+	 * its screen state in and 26.1.2 keeps on the client itself: the one thing about showing a
+	 * screen that changed between the two, so it is named once here instead of at every call.
+	 */
+	private static void setScreen(Minecraft client, Screen screen)
+	{
+		//#if MC >= 26.2
+		client.gui.setScreen(screen);
+		//#else
+		//$$ client.setScreen(screen);
+		//#endif
+	}
+
 	@Override
 	public void onClose()
 	{
@@ -1718,7 +1732,7 @@ public final class BiomeCollectionScreen extends Screen
 			return;
 		}
 
-		minecraft.gui.setScreen(parent);
+		setScreen(minecraft, parent);
 	}
 
 	/**
@@ -2262,7 +2276,7 @@ public final class BiomeCollectionScreen extends Screen
 	 */
 	private void askToForget(CollectionEntry entry)
 	{
-		minecraft.gui.setScreen(new ConfirmScreen(
+		setScreen(minecraft, new ConfirmScreen(
 				confirmed ->
 				{
 					if (confirmed)
@@ -2270,7 +2284,7 @@ public final class BiomeCollectionScreen extends Screen
 						forget(entry);
 					}
 
-					minecraft.gui.setScreen(this);
+					setScreen(minecraft, this);
 				},
 				Component.translatable(FORGET_TITLE_KEY),
 				Component.translatable(FORGET_MESSAGE_KEY, entry.name()),

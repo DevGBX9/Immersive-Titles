@@ -72,14 +72,28 @@ jobs:
       # The log of a failed run can only be downloaded by somebody with admin rights on the
       # repository, so the lines that say why it failed are published as annotations of the run,
       # which anyone who can read the repository can read.
+      # A step can only add ten annotations, and one compile error is four lines (the error, the
+      # source line, the symbol and its location), so the whole list is sent as a single annotation.
       - name: Report the gradle failure
         if: failure()
         run: |
           if [ -f build.log ]; then
-              # the two lines under a compile error are the ones that name what is missing
-              grep -aA2 -E "error:|FAILURE:|What went wrong|Execution failed|Could not resolve|Caused by" build.log \
-                  | grep -avE "^-{2}$" | tail -n 10 | tr -d '\r' \
-                  | while IFS= read -r line; do echo "::error title=gradle build::$line"; done
+              python3 - <<'PY'
+          import pathlib, re, sys
+
+          log = pathlib.Path('build.log')
+          if not log.exists():
+              sys.exit(0)
+
+          # what went wrong, and for every compile error the two lines that name what is missing
+          keep = []
+          for line in log.read_text(errors='replace').splitlines():
+              if re.search(r'error:|symbol:|location:|FAILURE: Build failed|Execution failed|Could not resolve|Caused by', line):
+                  keep.append(line.strip())
+
+          text = '\n'.join(keep[:80]).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print('::error title=gradle build errors::' + text)
+          PY
           fi
           exit 0
 

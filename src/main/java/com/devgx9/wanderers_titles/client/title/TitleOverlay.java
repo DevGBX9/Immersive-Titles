@@ -1011,7 +1011,11 @@ public final class TitleOverlay
 	 */
 	private static void toggleCollection(Minecraft client)
 	{
+		//#if MC >= 26.2
 		Screen screen = client.gui.screen();
+		//#else
+		//$$ Screen screen = client.screen;
+		//#endif
 
 		if (screen instanceof BiomeCollectionScreen collection)
 		{
@@ -1026,8 +1030,13 @@ public final class TitleOverlay
 
 		// opened from the game rather than out of another screen, so it closes back into the world, and
 		// set rather than shown: the screen is drawn by the next frame, with the world in it (see above)
+		//#if MC >= 26.2
 		client.gui.setScreen(new BiomeCollectionScreen(client.level, discoveredBiomes(),
 				discoveredStructures(), null));
+		//#else
+		//$$ client.setScreen(new BiomeCollectionScreen(client.level, discoveredBiomes(),
+		//$$ 		discoveredStructures(), null));
+		//#endif
 	}
 
 	/**
@@ -1220,14 +1229,22 @@ public final class TitleOverlay
 	private static boolean held()
 	{
 		Minecraft client = Minecraft.getInstance();
+		//#if MC >= 26.2
 		Screen screen = client.gui.screen();
+		//#else
+		//$$ Screen screen = client.screen;
+		//#endif
 
 		if (screen != null && screen.isPauseScreen())
 		{
 			return true;
 		}
 
+		//#if MC >= 26.2
 		Overlay overlay = client.gui.overlay();
+		//#else
+		//$$ Overlay overlay = client.getOverlay();
+		//#endif
 		return overlay != null && overlay.isPausing();
 	}
 
