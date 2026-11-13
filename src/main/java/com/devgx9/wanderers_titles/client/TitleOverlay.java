@@ -637,7 +637,21 @@ public final class TitleOverlay
 			startCornerTitle(BiomeNames.of(client).orElse(FALLBACK_NAME));
 		}
 
+		// The collection is the one key of the mod that toggles, so it is read as the press of the key
+		// and not as every click the game counts for it: the press and the key coming back up are
+		// counted as two clicks, and acting on both put the collection up and took it down again in
+		// the same breath - a tap of the key looked like it did nothing at all, and only a key held
+		// down long enough for its press to be read on its own opened the list. The click that is
+		// acted on is the one counted while the key is still down, i.e. the press; a tick that has
+		// several of them is still one press of the key, so it toggles once.
+		boolean collectionPressed = false;
+
 		while (OPEN_COLLECTION.consumeClick())
+		{
+			collectionPressed |= OPEN_COLLECTION.isDown();
+		}
+
+		if (collectionPressed)
 		{
 			toggleCollection(client);
 		}
