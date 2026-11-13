@@ -30,7 +30,7 @@ import re
 import sys
 import zipfile
 
-SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
+SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java")
 ASSETS = pathlib.Path("src/main/resources/assets/immersive_titles")
 JAR = pathlib.Path.home() / ".gradle" / "caches" / "fabric-loom" / "26.3" / "minecraft-client.jar"
 PACK = (pathlib.Path.home() / "Desktop" / "Reimagined GUI - Dark - 1.20.2-26.x" / "assets"

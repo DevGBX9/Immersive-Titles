@@ -30,7 +30,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "previews")
 import preview_collection as pc  # noqa: E402
 import preview_font
 
-SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
+SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java")
 PICTURE = pathlib.Path(r"C:\Users\GBX\Desktop\download.png")
 
 

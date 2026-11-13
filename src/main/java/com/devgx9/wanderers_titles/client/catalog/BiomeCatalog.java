@@ -23,7 +23,9 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.catalog;
+
+import com.devgx9.wanderers_titles.client.collection.CollectionEntry;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Holder;
@@ -59,7 +61,7 @@ import java.util.Set;
  * apart from the screen that draws it: the day a Minecraft version adds a biome, the collection is
  * one name short in its order, not broken.
  */
-final class BiomeCatalog
+public final class BiomeCatalog
 {
 	/**
 	 * The vanilla biomes from the ones a player walks into on the way out of a spawn to the ones
@@ -182,7 +184,7 @@ final class BiomeCatalog
 	 * (see {@link #dimensions}), and a biome of a mod or of a datapack is placed by them as exactly
 	 * as a vanilla one is, provided whoever wrote it tagged it like a biome of a dimension.
 	 */
-	enum Dimension
+	public enum Dimension
 	{
 		/** The world a player spawns in: every biome of the surface and of the caves under it. */
 		OVERWORLD,
@@ -280,7 +282,7 @@ final class BiomeCatalog
 	 * a page of the collection is a list of its entries whichever catalog built it (see
 	 * {@link CollectionEntry}), and the two pages of it are handed over the same way.
 	 */
-	static List<CollectionEntry> all(ClientLevel level)
+	public static List<CollectionEntry> all(ClientLevel level)
 	{
 		Registry<Biome> biomes = level.registryAccess().lookupOrThrow(Registries.BIOME);
 		Map<String, Dimension> dimensions = dimensions(biomes);
@@ -325,7 +327,7 @@ final class BiomeCatalog
 	 * in other worlds are still filed under the dimension they are in, and only what not even a world
 	 * places stays unplaced.
 	 */
-	static List<CollectionEntry> known(Set<String> extra, ClientLevel level)
+	public static List<CollectionEntry> known(Set<String> extra, ClientLevel level)
 	{
 		Map<String, Dimension> dimensions = level == null
 				? Map.of()

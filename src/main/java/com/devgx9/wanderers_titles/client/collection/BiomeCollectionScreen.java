@@ -23,9 +23,14 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.collection;
 
 import com.devgx9.wanderers_titles.WandererTitles;
+import com.devgx9.wanderers_titles.client.catalog.BiomeCatalog;
+import com.devgx9.wanderers_titles.client.catalog.StructureCatalog;
+import com.devgx9.wanderers_titles.client.title.TitleOverlay;
+import com.devgx9.wanderers_titles.client.world.DiscoveredBiomes;
+import com.devgx9.wanderers_titles.client.world.DiscoveredStructures;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -224,7 +229,7 @@ import java.util.Set;
  * structure found somewhere rather than in the world the player is in, so there is no one file to
  * take it back out of (see {@link #canForget}).
  */
-final class BiomeCollectionScreen extends Screen
+public final class BiomeCollectionScreen extends Screen
 {
 	/** Which entries of the list are showing: all of them, or only one end of them. */
 	private enum Filter
@@ -1013,7 +1018,7 @@ final class BiomeCollectionScreen extends Screen
 	 * remembers them (see {@link TitleOverlay#discoveredBiomes} and
 	 * {@link TitleOverlay#discoveredStructures}).
 	 */
-	BiomeCollectionScreen(ClientLevel level, Set<String> discoveredBiomes, Set<String> discoveredStructures,
+	public BiomeCollectionScreen(ClientLevel level, Set<String> discoveredBiomes, Set<String> discoveredStructures,
 			Screen parent)
 	{
 		this(BiomeCatalog.all(level), discoveredBiomes, discoveredStructures, true, parent);
@@ -1036,7 +1041,7 @@ final class BiomeCollectionScreen extends Screen
 	 * What the screen is not, built this way, is a world of its own - which is why a row of it never
 	 * offers to forget anything (see {@link #canForget}).
 	 */
-	static BiomeCollectionScreen ofEveryWorld(Minecraft client, Screen parent)
+	public static BiomeCollectionScreen ofEveryWorld(Minecraft client, Screen parent)
 	{
 		Set<String> found = DiscoveredBiomes.loadAll();
 		found.addAll(TitleOverlay.discoveredBiomes());

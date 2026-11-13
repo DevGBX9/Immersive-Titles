@@ -45,7 +45,7 @@ ROOT = HERE.parents[1]
 SHIPPED = ROOT / "src/main/resources/assets/immersive_titles/textures/gui/sprites"
 PACK = (pathlib.Path.home() / "Desktop" / "Reimagined GUI - Dark - 1.20.2-26.x" / "assets"
         / "minecraft" / "textures" / "gui" / "sprites")
-SCREEN = ROOT / "src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java"
+SCREEN = ROOT / "src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java"
 OUT = HERE / "preview_collection.html"
 
 # the drawing of the strip before the change: the wash over the button of the tab being read and over

@@ -23,9 +23,16 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.title;
 
 import com.devgx9.wanderers_titles.WandererTitles;
+import com.devgx9.wanderers_titles.client.catalog.BiomeNames;
+import com.devgx9.wanderers_titles.client.catalog.StructureNames;
+import com.devgx9.wanderers_titles.client.collection.BiomeCollectionScreen;
+import com.devgx9.wanderers_titles.client.world.DiscoveredBiomes;
+import com.devgx9.wanderers_titles.client.world.DiscoveredStructures;
+import com.devgx9.wanderers_titles.client.world.StructurePresence;
+import com.devgx9.wanderers_titles.client.world.WorldIdentity;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
@@ -1012,7 +1019,7 @@ public final class TitleOverlay
 	 * what the reveals know: a discovery it takes back is taken back through {@link #forgetBiome},
 	 * and an empty set while there is no world.
 	 */
-	static Set<String> discoveredBiomes()
+	public static Set<String> discoveredBiomes()
 	{
 		return Set.copyOf(VISITED_BIOMES);
 	}
@@ -1022,7 +1029,7 @@ public final class TitleOverlay
 	 * collection marks as found on its other page: a copy for the same reason {@link #discoveredBiomes}
 	 * is one, and an empty set while there is no world.
 	 */
-	static Set<String> discoveredStructures()
+	public static Set<String> discoveredStructures()
 	{
 		return Set.copyOf(VISITED_STRUCTURES);
 	}
@@ -1037,7 +1044,7 @@ public final class TitleOverlay
 	 * {@link BiomeCollectionScreen}); a biome that was never discovered changes nothing, and so does
 	 * a world whose discoveries were never written down.
 	 */
-	static void forgetBiome(String biomeId)
+	public static void forgetBiome(String biomeId)
 	{
 		if (!VISITED_BIOMES.remove(biomeId))
 		{
@@ -1057,7 +1064,7 @@ public final class TitleOverlay
 	 * It is the counterpart of {@link #forgetBiome} for the other kind of discovery, and the collection
 	 * screen is what asks for it, after warning the player about it (see {@link BiomeCollectionScreen}).
 	 */
-	static void forgetStructure(String structureId)
+	public static void forgetStructure(String structureId)
 	{
 		if (!VISITED_STRUCTURES.remove(structureId))
 		{

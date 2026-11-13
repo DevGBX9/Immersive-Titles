@@ -37,7 +37,7 @@ import pathlib
 import re
 import sys
 
-SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
+SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java")
 
 DECLARATION = re.compile(r"(?:private|static|final|\s)*int\s+([A-Z][A-Z_0-9]*)\s*=\s*([^;]+);")
 LITERAL = re.compile(r"^[A-Za-z_0-9\s+*/\-()]+$")

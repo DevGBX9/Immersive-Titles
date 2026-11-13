@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.world;
 
 import com.devgx9.wanderers_titles.WandererTitles;
 
@@ -61,7 +61,7 @@ import java.util.Set;
  * cannot parse, so a failure is logged and the titles fall back to remembering the world for as
  * long as the player stays in it.
  */
-final class DiscoveredBiomes
+public final class DiscoveredBiomes
 {
 	private DiscoveredBiomes()
 	{
@@ -71,7 +71,7 @@ final class DiscoveredBiomes
 	 * The biomes of {@code world} that already had their reveal, or an empty set while there is no
 	 * world, nothing was written down in it yet, or the file cannot be read.
 	 */
-	static Set<String> load(WorldIdentity world)
+	public static Set<String> load(WorldIdentity world)
 	{
 		return world == null ? new HashSet<>() : read(world.file());
 	}
@@ -90,7 +90,7 @@ final class DiscoveredBiomes
 	 * Reading is best effort for each file on its own (see {@link #read}), so one file this client
 	 * cannot read is one world missing from the list and not an empty list.
 	 */
-	static Set<String> loadAll()
+	public static Set<String> loadAll()
 	{
 		Set<String> discovered = new HashSet<>();
 
@@ -159,7 +159,7 @@ final class DiscoveredBiomes
 	 * is logged and the discovery stays where it is, which is the side to fail on, since the reveal
 	 * the player asked to have back is then only still had when they ask for it again.
 	 */
-	static void forget(WorldIdentity world, String biomeId)
+	public static void forget(WorldIdentity world, String biomeId)
 	{
 		if (world == null)
 		{
@@ -205,7 +205,7 @@ final class DiscoveredBiomes
 	 * Writes down that the biome {@code biomeId} had its reveal in {@code world}, so the next visit
 	 * only gets the corner title. Nothing happens while there is no world.
 	 */
-	static void remember(WorldIdentity world, String biomeId)
+	public static void remember(WorldIdentity world, String biomeId)
 	{
 		if (world == null)
 		{

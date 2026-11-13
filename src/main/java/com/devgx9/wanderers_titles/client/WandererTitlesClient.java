@@ -26,6 +26,7 @@
 package com.devgx9.wanderers_titles.client;
 
 import com.devgx9.wanderers_titles.WandererTitles;
+import com.devgx9.wanderers_titles.client.title.TitleOverlay;
 import net.fabricmc.api.ClientModInitializer;
 
 /**

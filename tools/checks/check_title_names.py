@@ -27,8 +27,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "previews")
 
 from preview_font import JAR, load_font  # noqa: E402
 
-NAMES = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeNames.java")
-CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCatalog.java")
+NAMES = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/catalog/BiomeNames.java")
+CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/catalog/BiomeCatalog.java")
 
 # names of the kind a mod gives a biome of its own: the rule has to hold for those too
 MODDED = [

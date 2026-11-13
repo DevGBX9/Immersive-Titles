@@ -45,9 +45,9 @@ import pathlib
 import re
 import sys
 
-PRESENCE = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/StructurePresence.java")
-CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/StructureCatalog.java")
-OVERLAY = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/TitleOverlay.java")
+PRESENCE = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/world/StructurePresence.java")
+CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/catalog/StructureCatalog.java")
+OVERLAY = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/title/TitleOverlay.java")
 
 VILLAGE = "minecraft:village_plains"
 MONUMENT = "minecraft:monument"

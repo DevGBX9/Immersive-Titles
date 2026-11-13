@@ -25,6 +25,8 @@
 
 package com.devgx9.wanderers_titles.client;
 
+import com.devgx9.wanderers_titles.client.collection.BiomeCollectionScreen;
+
 //#if MC >= 26.3
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;

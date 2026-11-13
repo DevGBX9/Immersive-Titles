@@ -22,8 +22,8 @@ import re
 import sys
 
 CLIENT = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client")
-IDENTITY = CLIENT / "WorldIdentity.java"
-DISCOVERED = CLIENT / "DiscoveredBiomes.java"
+IDENTITY = CLIENT / "world" / "WorldIdentity.java"
+DISCOVERED = CLIENT / "world" / "DiscoveredBiomes.java"
 
 
 def main():

@@ -7,6 +7,25 @@ everything to `TitleOverlay`. Nothing of the mod runs on a server.
 Nothing in the mod is configured and nothing is registered with an item, a block or a packet: it
 watches the place the player is in and draws over the HUD.
 
+## Where the code lives
+
+One package per question, so a file is found by what it answers rather than by remembering a name:
+
+| package | files | what it answers |
+| --- | --- | --- |
+| `com.devgx9.wanderers_titles` | `WandererTitles` | which mod this is: the id, the logger, the metadata |
+| `.client` | `WandererTitlesClient`, `ModMenuIntegration` | how the game starts the mod, and how the mod list reaches the collection |
+| `.client.title` | `TitleOverlay` | what a title says, when it plays, and how it is drawn and keyed |
+| `.client.collection` | `BiomeCollectionScreen`, `CollectionEntry` | the screen that lists everything a world can hand out, and the row it lists |
+| `.client.catalog` | `BiomeCatalog`, `StructureCatalog`, `BiomeNames`, `StructureNames` | what the game can hand out (biomes, structures) and the names of it |
+| `.client.world` | `WorldIdentity`, `DiscoveredBiomes`, `DiscoveredStructures`, `StructurePresence` | which world is open, what it has already discovered (in memory and on disk), and what the server sees the player inside |
+
+The dependencies point one way: `title` and `collection` are the two things a player looks at, and
+both read `catalog` and `world`, which know nothing about either. The one edge back is the memory of
+what was discovered: it belongs to the titles for the session, so the collection asks them for it and
+asks them to forget a discovery (see `docs/version-support.md`, which orders the same packages by how
+much of the game they touch).
+
 ## What is titled, and when
 
 Two titles, one rule: the **reveal** on the first visit of a biome or a structure in a world, the

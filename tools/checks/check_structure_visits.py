@@ -37,9 +37,9 @@ import pathlib
 import re
 import sys
 
-OVERLAY = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/TitleOverlay.java")
-CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/StructureCatalog.java")
-PRESENCE = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/StructurePresence.java")
+OVERLAY = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/title/TitleOverlay.java")
+CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/catalog/StructureCatalog.java")
+PRESENCE = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/world/StructurePresence.java")
 
 VILLAGE = "minecraft:village_plains"
 MINESHAFT = "minecraft:mineshaft"
@@ -272,7 +272,7 @@ def main():
               "it, so the ground between its pieces would be read as leaving it")
         failures += 1
 
-    if not re.search(r"\n\trecord Region\(String structure, BoundingBox box\)", catalog):
+    if not re.search(r"\n\t(?:public )?record Region\(String structure, BoundingBox box\)", catalog):
         print("BROKEN no region is kept with the row of the structure, so a visit could not be held "
               "by the whole of one")
         failures += 1

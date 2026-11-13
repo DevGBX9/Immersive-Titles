@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.catalog;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -58,7 +58,7 @@ import java.util.Locale;
  * holds them to it, while a name of any length is still scaled into the plate at draw time (see
  * {@link TitleOverlay}).
  */
-final class StructureNames
+public final class StructureNames
 {
 	private static final String STRUCTURE_TRANSLATION_PREFIX = "structure.";
 
@@ -85,7 +85,7 @@ final class StructureNames
 	}
 
 	/** The uppercase display name of a title card, e.g. {@code NETHER FORTRESS}. */
-	static Component displayName(String id)
+	public static Component displayName(String id)
 	{
 		return Component.literal(name(id).getString().toUpperCase(Locale.ROOT))
 				.withStyle(ChatFormatting.BOLD);

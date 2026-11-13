@@ -34,8 +34,8 @@ import sys
 import zipfile
 
 SOURCES = pathlib.Path("src/main/java/com/devgx9/wanderers_titles")
-SCREEN = SOURCES / "client/BiomeCollectionScreen.java"
-OVERLAY = SOURCES / "client/TitleOverlay.java"
+SCREEN = SOURCES / "client/collection/BiomeCollectionScreen.java"
+OVERLAY = SOURCES / "client/title/TitleOverlay.java"
 JAR = (pathlib.Path.home() / ".gradle" / "caches" / "fabric-loom" / "minecraftMaven" / "net"
        / "minecraft" / "minecraft-merged-deobf" / "26.3" / "minecraft-merged-deobf-26.3.jar")
 GAME_SCREEN = "net/minecraft/client/gui/screens/Screen.class"

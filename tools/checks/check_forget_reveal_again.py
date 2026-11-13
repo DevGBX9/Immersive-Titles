@@ -30,7 +30,7 @@ import pathlib
 import re
 import sys
 
-OVERLAY = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/TitleOverlay.java")
+OVERLAY = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/title/TitleOverlay.java")
 
 
 def block_at(source, at):

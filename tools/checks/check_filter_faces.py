@@ -38,7 +38,7 @@ import pathlib
 import re
 import sys
 
-SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
+SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java")
 
 FILTERS = ("discovered", "remaining")
 LIT = "green"

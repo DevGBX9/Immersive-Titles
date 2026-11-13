@@ -34,8 +34,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "previews")
 
 from preview_font import JAR  # noqa: E402
 
-CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCatalog.java")
-SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
+CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/catalog/BiomeCatalog.java")
+SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java")
 LANG = pathlib.Path("src/main/resources/assets/immersive_titles/lang/en_us.json")
 
 # the dimensions of the collection, in the order the sections are shown in
@@ -63,7 +63,7 @@ def tags():
 
 def declared_dimensions(body):
     """The constants of the `Dimension` enum of the catalog, in the order they are declared in."""
-    enum = re.search(r"\tenum Dimension\n\t\{\n(.*?)\n\t\}", body, re.S).group(1)
+    enum = re.search(r"\t(?:public )?enum Dimension\n\t\{\n(.*?)\n\t\}", body, re.S).group(1)
 
     return re.findall(r"^\t\t([A-Z_]+),?$", enum, re.M)
 

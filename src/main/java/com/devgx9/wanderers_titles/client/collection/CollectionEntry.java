@@ -23,7 +23,9 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.collection;
+
+import com.devgx9.wanderers_titles.client.catalog.BiomeCatalog;
 
 import net.minecraft.network.chat.Component;
 
@@ -47,7 +49,7 @@ import net.minecraft.network.chat.Component;
  * filed under it exactly like a biome (see {@link StructureCatalog}), since a list of what a player
  * has found is read the same way whatever kind of thing it is made of.
  */
-interface CollectionEntry
+public interface CollectionEntry
 {
 	/** The id this entry is remembered by, e.g. {@code minecraft:plains}. */
 	String id();

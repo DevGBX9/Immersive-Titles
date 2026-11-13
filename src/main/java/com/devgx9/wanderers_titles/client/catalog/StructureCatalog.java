@@ -23,7 +23,9 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.catalog;
+
+import com.devgx9.wanderers_titles.client.collection.CollectionEntry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -98,7 +100,7 @@ import java.util.Optional;
  * game's own structures, grouped the way the game groups them and filed where their biomes put them -
  * so this class cannot quietly go stale when a Minecraft version adds a structure.
  */
-final class StructureCatalog
+public final class StructureCatalog
 {
 	/**
 	 * The namespace a group of structures is remembered by. It is written out rather than taken from
@@ -223,7 +225,7 @@ final class StructureCatalog
 	 * {@link BiomeCatalog#all}), so nothing of the world in front of the player is read here and the
 	 * list needs none of it.
 	 */
-	static List<CollectionEntry> all()
+	public static List<CollectionEntry> all()
 	{
 		List<CollectionEntry> entries = new ArrayList<>(LISTED.size());
 
@@ -257,7 +259,7 @@ final class StructureCatalog
 	 * one, or a world whose datapack removed it - is simply not among the ones looked for, and the
 	 * position cannot be inside it.
 	 */
-	static Optional<String> at(ServerLevel level, BlockPos pos)
+	public static Optional<String> at(ServerLevel level, BlockPos pos)
 	{
 		return sight(level).flatMap(sight -> sight.at(pos));
 	}
@@ -274,7 +276,7 @@ final class StructureCatalog
 	 * of that crossing. Where a visit begins is still a piece - the touch of one is what this answers
 	 * - and the box is what that visit is then held by until it is left.
 	 */
-	static Optional<Region> region(ServerLevel level, BlockPos pos)
+	public static Optional<Region> region(ServerLevel level, BlockPos pos)
 	{
 		return sight(level).flatMap(sight -> sight.region(pos));
 	}
@@ -300,7 +302,7 @@ final class StructureCatalog
 	 * asked of them, so a line of a few dozen positions is one list of the game's structures rather than
 	 * one per position (see {@link #sight}).
 	 */
-	static Optional<String> along(ServerLevel level, Vec3 from, Vec3 to)
+	public static Optional<String> along(ServerLevel level, Vec3 from, Vec3 to)
 	{
 		Optional<Sight> reading = sight(level);
 
@@ -408,7 +410,7 @@ final class StructureCatalog
 	 * {@link StructurePresence}), which keeps one of these per player and gives it up when the player
 	 * leaves it (see {@link StructureCatalog#region}, which reads it).
 	 */
-	record Region(String structure, BoundingBox box)
+	public record Region(String structure, BoundingBox box)
 	{
 	}
 

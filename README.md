@@ -63,7 +63,8 @@ for what re-enabling one takes.
 .
 ├── .github/                  build and release workflows, issue templates
 ├── docs/                     architecture, build matrix, art pipeline
-├── src/main/java/            the mod (com.devgx9.wanderers_titles, + client/)
+├── src/main/java/            the mod (com.devgx9.wanderers_titles)
+│   └── …/client/             entrypoints, title/, collection/, catalog/, world/
 ├── src/main/resources/       fabric.mod.json, language files, sounds, textures, gui sprites
 ├── tools/                    checks, previews and the art tools (see tools/README.md)
 ├── versions/                 one Gradle project per Minecraft version (26.3)
@@ -105,6 +106,8 @@ python tools/checks/check_structures.py
   the per-world memory fit together
 - [`docs/build-and-release.md`](docs/build-and-release.md) — the version matrix, Gradle tasks, workflows
 - [`docs/asset-pipeline.md`](docs/asset-pipeline.md) — the frame set, the drawings, and the tools behind them
+- [`docs/version-support.md`](docs/version-support.md) — the version matrix, the package map by how
+  close each package is to the game, and how to add an older version
 - [`tools/README.md`](tools/README.md) — every check and preview, and what each holds to what
 
 ## Credits

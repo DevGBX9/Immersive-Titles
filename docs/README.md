@@ -5,6 +5,7 @@
 | [`architecture.md`](architecture.md) | what the mod does and how the pieces fit: titles, place detection, structures, per-world memory, the collection screen |
 | [`build-and-release.md`](build-and-release.md) | the version matrix, the Gradle layout, the GitHub workflows and what each one produces |
 | [`asset-pipeline.md`](asset-pipeline.md) | the frame set the reveal plays, the drawings that frame the collection, and the tools that made them |
+| [`version-support.md`](version-support.md) | the version matrix, the package map ordered by how much of the game each package touches, and how to enable an older version |
 | [`../tools/README.md`](../tools/README.md) | the checks and previews, what each one holds to what, and how to run them |
 
 ## Repository map
@@ -14,7 +15,8 @@
 ├── .github/                  workflows (build, release) and issue templates
 ├── docs/                     these notes
 ├── gradle/, gradlew(.bat)    the Gradle wrapper
-├── src/main/java/            the mod: com.devgx9.wanderers_titles (+ client/)
+├── src/main/java/            the mod: com.devgx9.wanderers_titles
+│   └── …/client/             entrypoints, title/, collection/, catalog/, world/
 ├── src/main/resources/       fabric.mod.json and the assets (lang, sounds, textures, gui sprites)
 ├── tools/                    checks, previews, and the tools that made the shipped art
 ├── versions/                 one Gradle project per Minecraft version (only 26.3 is enabled)

@@ -26,7 +26,7 @@ import sys
 
 from PIL import Image
 
-SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
+SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java")
 DRAWING = pathlib.Path("tools/assets/collection_frame/draw_ornaments.py")
 TEXTURES = pathlib.Path("src/main/resources/assets/immersive_titles/textures/gui")
 

@@ -42,7 +42,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "previews")
 
 from preview_font import JAR  # noqa: E402
 
-CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/StructureCatalog.java")
+CATALOG = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/catalog/StructureCatalog.java")
 PROPERTIES = pathlib.Path("gradle.properties")
 LANG = pathlib.Path("src/main/resources/assets/immersive_titles/lang/en_us.json")
 
@@ -248,7 +248,7 @@ def main():
 
     # the sections of the collection are the dimensions of the catalog, in the order of the enum, so
     # the rows have to be written in that order and not interleaved
-    order = re.findall(r"^\t\t([A-Z_]+),?$", re.search(r"\tenum Dimension\n\t\{\n(.*?)\n\t\}",
+    order = re.findall(r"^\t\t([A-Z_]+),?$", re.search(r"\t(?:public )?enum Dimension\n\t\{\n(.*?)\n\t\}",
                                                        pathlib.Path(
                                                                "src/main/java/com/devgx9/"
                                                                "wanderers_titles/client/"

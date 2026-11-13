@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.world;
 
 import com.devgx9.wanderers_titles.WandererTitles;
 import net.fabricmc.loader.api.FabricLoader;
@@ -68,7 +68,7 @@ import java.util.UUID;
  * locally. That leaves the address the player joined with as the one thing to tell two servers
  * apart, so the discoveries of a server world are kept in the config folder under that address.
  */
-final class WorldIdentity
+public final class WorldIdentity
 {
 	/** The folder a hosted world keeps its own data in, inside the world's own folder. */
 	private static final String WORLD_FOLDER = "immersive_titles";
@@ -118,7 +118,7 @@ final class WorldIdentity
 	}
 
 	/** The id of the world, as log lines name it. Never empty, never shared with another world. */
-	String id()
+	public String id()
 	{
 		return id;
 	}
@@ -197,7 +197,7 @@ final class WorldIdentity
 	 * The world the client is in, or an empty optional while there is no world yet or the data of the
 	 * world cannot be reached.
 	 */
-	static Optional<WorldIdentity> of(Minecraft client)
+	public static Optional<WorldIdentity> of(Minecraft client)
 	{
 		Optional<WorldIdentity> hosted = hosted(client);
 

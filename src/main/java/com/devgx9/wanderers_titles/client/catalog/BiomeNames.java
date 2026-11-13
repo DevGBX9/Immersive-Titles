@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.catalog;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -62,7 +62,7 @@ import java.util.Set;
  *   reporting ground for the player instead of a place they are in - under the biome over their
  *   head, and in any biome the surface of the ground around them wears, see there.
  */
-final class BiomeNames
+public final class BiomeNames
 {
 	private static final String BIOME_TRANSLATION_PREFIX = "biome.";
 
@@ -168,7 +168,7 @@ final class BiomeNames
 	 * titled like any other, while a surface biome of a mod is worn by it like one of the game's
 	 * own.
 	 */
-	static Optional<String> place(Minecraft client)
+	public static Optional<String> place(Minecraft client)
 	{
 		if (client.level == null || client.player == null)
 		{
@@ -258,7 +258,7 @@ final class BiomeNames
 	}
 
 	/** The uppercase display name of the biome the player is in, e.g. {@code PALE GARDEN}. */
-	static Optional<Component> of(Minecraft client)
+	public static Optional<Component> of(Minecraft client)
 	{
 		return id(client).map(BiomeNames::displayName);
 	}

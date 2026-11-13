@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.world;
 
 import com.devgx9.wanderers_titles.WandererTitles;
 
@@ -61,7 +61,7 @@ import java.util.Set;
  * loop over lines, and what each keeps is what it is the reader of: a set of ids that belong to its
  * own page.
  */
-final class DiscoveredStructures
+public final class DiscoveredStructures
 {
 	private DiscoveredStructures()
 	{
@@ -71,7 +71,7 @@ final class DiscoveredStructures
 	 * The structures of {@code world} that already had their reveal, or an empty set while there is no
 	 * world, nothing was written down in it yet, or the file cannot be read.
 	 */
-	static Set<String> load(WorldIdentity world)
+	public static Set<String> load(WorldIdentity world)
 	{
 		return world == null ? new HashSet<>() : read(world.file());
 	}
@@ -86,7 +86,7 @@ final class DiscoveredStructures
 	 * played, is a structure they have seen. Reading is best effort for each file on its own (see
 	 * {@link #read}), so one file this client cannot read is one world missing from the list.
 	 */
-	static Set<String> loadAll()
+	public static Set<String> loadAll()
 	{
 		Set<String> discovered = new HashSet<>();
 
@@ -152,7 +152,7 @@ final class DiscoveredStructures
 	 * logged and the discovery stays where it is, which is the side to fail on, since the reveal the
 	 * player asked to have back is then only still had when they ask for it again.
 	 */
-	static void forget(WorldIdentity world, String structureId)
+	public static void forget(WorldIdentity world, String structureId)
 	{
 		if (world == null)
 		{
@@ -199,7 +199,7 @@ final class DiscoveredStructures
 	 * Writes down that the structure {@code structureId} had its reveal in {@code world}, so the next
 	 * visit only gets the corner title. Nothing happens while there is no world.
 	 */
-	static void remember(WorldIdentity world, String structureId)
+	public static void remember(WorldIdentity world, String structureId)
 	{
 		if (world == null)
 		{

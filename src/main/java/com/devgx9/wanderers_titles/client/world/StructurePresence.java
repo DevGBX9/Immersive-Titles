@@ -23,7 +23,9 @@
  * SOFTWARE.
  */
 
-package com.devgx9.wanderers_titles.client;
+package com.devgx9.wanderers_titles.client.world;
+
+import com.devgx9.wanderers_titles.client.catalog.StructureCatalog;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
@@ -95,7 +97,7 @@ import java.util.UUID;
  * the two of them, and never through a wall, whether that wall is a hill, a tree or the wall of a
  * structure of its own (see {@link #lookedAt}).
  */
-final class StructurePresence
+public final class StructurePresence
 {
 	/**
 	 * How many ticks between two readings of every player in a level. The title is a reveal for
@@ -178,7 +180,7 @@ final class StructurePresence
 	 * client is the only side that has this mod at all, and a game that is only a client simply never
 	 * ticks a level of its own.
 	 */
-	static void initialize()
+	public static void initialize()
 	{
 		ServerTickEvents.END_LEVEL_TICK.register(StructurePresence::tick);
 	}
@@ -370,7 +372,7 @@ final class StructurePresence
 	 * none, while no world has been asked yet, or while the world is one on a server (see the class of
 	 * this one).
 	 */
-	static Optional<String> of(Minecraft client)
+	public static Optional<String> of(Minecraft client)
 	{
 		if (client.player == null)
 		{
@@ -390,7 +392,7 @@ final class StructurePresence
 	 * world the player is in, which the client keeps (see {@link TitleOverlay}, which is the one reader
 	 * of this).
 	 */
-	static Optional<String> takeLookedAt(Minecraft client)
+	public static Optional<String> takeLookedAt(Minecraft client)
 	{
 		if (client.player == null)
 		{
@@ -414,7 +416,7 @@ final class StructurePresence
 	 * way in another world is not a look at this one, and a reveal that is already waiting to be read is
 	 * about a structure of the world that was left.
 	 */
-	static void clear()
+	public static void clear()
 	{
 		INSIDE.clear();
 		LOOKING.clear();

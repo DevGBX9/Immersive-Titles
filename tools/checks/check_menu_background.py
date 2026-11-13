@@ -26,7 +26,7 @@ import re
 import sys
 import zipfile
 
-SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/BiomeCollectionScreen.java")
+SCREEN = pathlib.Path("src/main/java/com/devgx9/wanderers_titles/client/collection/BiomeCollectionScreen.java")
 JAR = (pathlib.Path.home() / ".gradle" / "caches" / "fabric-loom" / "minecraftMaven" / "net"
        / "minecraft" / "minecraft-merged-deobf" / "26.3" / "minecraft-merged-deobf-26.3.jar")
 PATCH = "net/minecraft/client/gui/screens/Screen.class"
