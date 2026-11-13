@@ -55,18 +55,32 @@ jobs:
 
       - name: Build with gradle
         run: |
+          set -o pipefail
           chmod +x gradlew
           if [ -z "${{ inputs.target_subproject }}" ]; then
               echo "Building all subprojects"
-              ./gradlew build
+              ./gradlew build 2>&1 | tee build.log
           else
               args=$(echo "${{ inputs.target_subproject }}" | tr ',' '\n' | sed 's/$/:build/' | paste -sd ' ')
               echo "Building with arguments=$args"
-              ./gradlew $args
+              ./gradlew $args 2>&1 | tee build.log
           fi
         env:
           BUILD_ID: ${{ github.run_number }}
           BUILD_RELEASE: ${{ inputs.release }}
+
+      # The log of a failed run can only be downloaded by somebody with admin rights on the
+      # repository, so the lines that say why it failed are published as annotations of the run,
+      # which anyone who can read the repository can read.
+      - name: Report the gradle failure
+        if: failure()
+        run: |
+          if [ -f build.log ]; then
+              grep -aE "error:|FAILURE:|What went wrong|Execution failed|Could not resolve|Caused by" build.log \
+                  | tail -n 10 | tr -d '\r' \
+                  | while IFS= read -r line; do echo "::error title=gradle build::$line"; done
+          fi
+          exit 0
 
 #      # [FEATURE] MIXIN_AUDITOR
 #      - name: Run mixin audit check for Minecraft client
