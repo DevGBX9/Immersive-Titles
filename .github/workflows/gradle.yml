@@ -5,6 +5,7 @@
 #          Immersive Titles feature; the shared sources in src/ are written for it
 #   26.2 = child of 26.3, built by the preprocessor out of the same src/ folder, so the two
 #          versions ship the same feature with no code kept out of either of them
+#   26.1.2 = child of 26.2, built the same way: the same feature again, for 26.1, 26.1.1 and 26.1.2
 #
 # Every other configured Minecraft version is disabled for now, see the "disabled_versions" list
 # in settings.json and the commented block in build.gradle.

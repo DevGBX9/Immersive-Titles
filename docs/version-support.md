@@ -3,6 +3,7 @@
 The sources under `src/` are written for **one** Minecraft version at a time — today 26.3 — and every
 other version is a Gradle project that the preprocessor builds out of those same sources. That is how
 26.2 is carried: it is an enabled child of 26.3, and not one line of the mod is kept out of it.
+26.1.2 is carried the same way, as the child of 26.2.
 Supporting an older version is therefore not a rewrite: it is choosing which lines have to differ, and
 knowing which files are close enough to the game to be the ones that do.
 
@@ -35,7 +36,7 @@ breaks them in.
 | `.client.catalog` | `BiomeNames`, `StructureNames` | registry ids turned into the names the game shows | **some** — registry lookups and `Component` |
 | `.client.world` | `WorldIdentity` | which world is open, and where its discoveries file goes | **some** — `MinecraftServer` and the saves folder |
 | `.client.world` | `DiscoveredBiomes`, `DiscoveredStructures` | the discoveries of a world, on disk | **none** — plain files and a logger; a version that changes rendering never touches them |
-| `.client` | `WandererTitlesClient`, `ModMenuIntegration` | the two entrypoints | **some** — `ClientModInitializer`, and Mod Menu, which already carries `//#if MC >= 26.2` guards |
+| `.client` | `WandererTitlesClient`, `ModMenuIntegration` | the two entrypoints | **some** — `ClientModInitializer`, and Mod Menu, which already carries `//#if MC >= 26.1.2` guards |
 | *(root)* | `WandererTitles` | the mod id, the logger and the metadata | **none** |
 
 The dependency direction follows the same order: `title` → `collection` / `catalog` / `world`, and
@@ -62,7 +63,7 @@ HUD APIs move.
 - **A few lines**: guard them in the shared source, the way `ModMenuIntegration` already does:
 
   ```java
-  //#if MC >= 26.2
+  //#if MC >= 26.1.2
   …
   //#endif
   ```

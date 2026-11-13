@@ -462,9 +462,9 @@ public final class TitleOverlay
 			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
 
 	/**
-	 * The kind of key a key mapping is read with, which 26.3 calls {@code KEYBOARD} and 26.2 calls
-	 * {@code KEYSYM}: the three mappings below are the same mapping on both, so what differs between
-	 * the two versions is the name of this one constant and nothing else.
+	 * The kind of key a key mapping is read with, which 26.3 calls {@code KEYBOARD} and 26.2 and
+	 * 26.1.2 call {@code KEYSYM}: the three mappings below are the same mapping on all of them, so
+	 * what differs between the versions is the name of this one constant and nothing else.
 	 */
 	private static final KeyMapping PLAY_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.play_title",
