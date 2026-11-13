@@ -427,6 +427,15 @@ public final class TitleOverlay
 	/** The color of the titles: pure white, only its alpha is animated by the fades. */
 	private static final int TITLE_TEXT_RGB = 0xFFFFFF;
 
+	/**
+	 * The line the reveal signs off with, in the corner the game keeps its own save notice in: the
+	 * title is what the player earned, and the line under it is what the world did with it.
+	 */
+	private static final Component SAVING_WORLD = Component.translatable("hud.immersive_titles.saving_world");
+
+	/** How far that line is set from the two edges of the screen it sits in, as the game sets its own. */
+	private static final int SAVING_MARGIN = 4;
+
 	/** Used when there is no biome to name, e.g. while a title is triggered from the main menu. */
 	private static final Component FALLBACK_NAME = Component.literal("PALE GARDEN").withStyle(ChatFormatting.BOLD);
 
@@ -446,11 +455,11 @@ public final class TitleOverlay
 	private static final KeyMapping OPEN_COLLECTION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.immersive_titles.open_collection",
 			InputConstants.Type.KEYBOARD,
-			InputConstants.KEY_K,
+			InputConstants.KEY_M,
 			CATEGORY));
 
 	/**
-	 * The corner title, on a key of its own because K now opens the collection. Both titles have a
+	 * The corner title, on a key of its own because M now opens the collection. Both titles have a
 	 * key of their own so that either can be seen without walking into the right biome for it.
 	 */
 	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -1229,6 +1238,7 @@ public final class TitleOverlay
 				FRAME_WIDTH, FRAME_HEIGHT);
 
 		renderName(graphics, x, y, scale, frame);
+		renderSavingWorld(graphics, frame);
 	}
 
 	/**
@@ -1327,6 +1337,30 @@ public final class TitleOverlay
 		pose.scale(textScale, textScale);
 		graphics.text(font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		pose.popMatrix();
+	}
+
+	/**
+	 * Draws the save notice of the reveal in the bottom right corner of the screen, where the game
+	 * puts its own: the line belongs to the title and not to the world, so it is read for as long as
+	 * the name is - it comes in with it, holds with it and is gone with it - instead of standing in
+	 * the corner on a screen no reveal is playing on.
+	 */
+	private static void renderSavingWorld(GuiGraphicsExtractor graphics, int frame)
+	{
+		int alpha = nameAlpha(frame);
+		if (alpha <= 0)
+		{
+			return;
+		}
+
+		Minecraft client = Minecraft.getInstance();
+		Font font = client.font;
+		Window window = client.getWindow();
+
+		int x = window.getGuiScaledWidth() - SAVING_MARGIN - font.width(SAVING_WORLD);
+		int y = window.getGuiScaledHeight() - SAVING_MARGIN - font.lineHeight;
+
+		graphics.text(font, SAVING_WORLD, x, y, (alpha << 24) | TITLE_TEXT_RGB, true);
 	}
 
 	/**

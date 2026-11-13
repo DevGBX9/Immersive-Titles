@@ -86,7 +86,7 @@ discovered row offers to **forget** it: with a confirmation, the line is taken o
 id is dropped from the session, and the reveal plays again the next time it is entered (after the
 player walks a block, so it is walked into rather than handed straight back).
 
-Opened from the mod's own key (`K`) it is that world's collection; opened from the Mod Menu entry it
+Opened from the mod's own key (`M`) it is that world's collection; opened from the Mod Menu entry it
 is every world the client has written discoveries for (`DiscoveredBiomes.loadAll`).
 
 ## The reveal

@@ -24,7 +24,7 @@ Cinematic, per-world **biome and structure titles** for Minecraft, on Fabric —
 
 | key | action |
 | --- | --- |
-| `K` | open / close the collection |
+| `M` | open / close the collection |
 | `T` | play the reveal of the biome you are in |
 | `J` | play the corner title of the biome you are in |
 

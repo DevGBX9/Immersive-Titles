@@ -25,7 +25,8 @@ SOURCES = pathlib.Path("src/main/java")
 LANG = pathlib.Path("src/main/resources/assets/immersive_titles/lang/en_us.json")
 
 # the namespaces the mod owns: everything else a source names is a key of the game's own
-OWNED = ("key.category.immersive_titles.", "key.immersive_titles.", "screen.immersive_titles.")
+OWNED = ("hud.immersive_titles.", "key.category.immersive_titles.", "key.immersive_titles.",
+         "screen.immersive_titles.")
 
 # the keys no source holds as a literal, since they are named by an id a catalog lists: the names of
 # the structures, which the check beside this one reads out of the catalog and the language file
