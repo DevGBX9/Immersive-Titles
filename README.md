@@ -44,6 +44,17 @@ All three are ordinary key mappings: rebind them in **Options → Controls → K
 Older versions are kept configured but disabled; see [`docs/build-and-release.md`](docs/build-and-release.md)
 for what re-enabling one takes.
 
+### Downloads
+
+Every build of `main` publishes one jar per enabled version, as public assets of the
+[`dev-latest` development build](https://github.com/DevGBX9/Immersive-Titles/releases/tag/dev-latest):
+
+- `immersive_titles-v0.1.0-mc26.3.jar` — for Minecraft 26.3
+- `immersive_titles-v0.1.0-mc26.2.jar` — for Minecraft 26.2
+
+No account is needed to download. The `dev-latest` tag is rewritten by each build, so those links keep
+working and always point at the newest build.
+
 ### Known scope
 
 - It is a **client side** mod: nothing is installed on a server, and no packet is sent.

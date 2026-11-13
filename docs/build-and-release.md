@@ -65,6 +65,7 @@ player's).
 | --- | --- | --- |
 | `.github/workflows/gradle.yml` — **Dev Builds** | push to `*.gradle`, `gradle.properties`, `src/**`, `versions/**`, `.github/**`; every pull request | calls `build.yml` with the default target (all enabled versions) |
 | `.github/workflows/build.yml` | called by the two above | JDK 25 (Temurin), Gradle cache, prints the version matrix into the run summary, runs `./gradlew build` (or `:26.3:build` for a target), uploads `build-artifacts` and the collected `mod-jars`, logs a notice per built jar; a `summary` job downloads the artifacts and renders `.github/workflows/scripts/summary.py` |
+| `.github/workflows/dev-jars.yml` — **Dev jars** | after every completed **Dev Builds** run on `main` | downloads that run's `mod-jars` artifact, renames each jar to `<name>-mc<version>.jar` and attaches them all to the `dev-latest` prerelease, so each version has a public download link. It cannot be a job of `build.yml`: an asset of a release is a plain link, while an artifact of a run needs a signed-in GitHub account |
 | `.github/workflows/matrix_prep.yml` | called by `release.yml` | runs `scripts/matrix.py` to turn `settings.json` into a job matrix |
 | `.github/workflows/release.yml` — **Release** | a published release, or a manual dispatch with a release tag | validates the tag, builds with `release: true`, then publishes each version project's jar as an asset of that release (`Kira-NT/mc-publish`). The Modrinth and CurseForge blocks are commented out, so only GitHub is targeted today |
 

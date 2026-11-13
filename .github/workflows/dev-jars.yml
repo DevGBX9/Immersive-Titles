@@ -1,0 +1,63 @@
+name: Dev jars
+
+# The jars of the build that just finished, attached to one release as an asset each: an asset of a
+# release is a plain link that opens for anybody, while an artifact of a run can only be downloaded
+# by somebody signed in to GitHub.
+#
+# It is a workflow of its own rather than a job of the build, because the build is a reusable
+# workflow: what is published here is a fact about a run that has already finished, and it is read
+# from that run. The release is a prerelease that is rewritten by every build of the main branch, so
+# the link of a version does not change from one build to the next.
+on:
+  workflow_run:
+    workflows:
+      - Dev Builds
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Download the jars of that build
+        uses: actions/download-artifact@v8
+        with:
+          name: mod-jars
+          path: mod-jars
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # both jars are named after the mod version alone (see common.gradle), so the game a jar is for
+      # is put into its file name here - the one thing a release asset cannot say about itself
+      - name: Name each jar for its game version
+        run: |
+          mkdir -p release
+          for jar in mod-jars/*/*.jar; do
+              version=$(basename "$(dirname "$jar")")
+              name=$(basename "$jar" .jar)
+              cp "$jar" "release/$name-mc$version.jar"
+          done
+          ls -l release
+
+      - name: Publish the jars
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-latest
+          name: Development build
+          prerelease: true
+          make_latest: "false"
+          overwrite_files: true
+          files: release/*.jar
+          body: |
+            One jar per Minecraft version: take the file whose name ends in the version you play.
+
+            Built from `${{ github.event.workflow_run.head_sha }}` by run
+            `${{ github.event.workflow_run.run_number }}` of the Dev Builds workflow.
