@@ -37,7 +37,7 @@ All three are ordinary key mappings: rebind them in **Options → Controls → K
 | --- | --- |
 | Minecraft | **26.3** and **26.2** (both enabled, both built from the same sources) |
 | Loader | Fabric Loader `>=0.11.4` |
-| Requires | Fabric API `>=0.160.5` |
+| Requires | Fabric API `>=0.160.5` on 26.3, `>=0.160.0` on 26.2 (each jar asks for the API it was built against) |
 | Optional | Mod Menu (adds the collection to the mod list) |
 | Java | 25 |
 
