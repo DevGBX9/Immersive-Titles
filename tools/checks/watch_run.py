@@ -10,6 +10,7 @@ annotations. Run it in the background and read its output, because the wait can 
 
 import argparse
 import json
+import os
 import time
 import urllib.request
 
@@ -21,10 +22,12 @@ def get(path):
     """A GitHub api response, retried while the network is down, or {} if it stays down."""
     for _ in range(8):
         try:
-            request = urllib.request.Request(
-                "https://api.github.com" + path,
-                headers={"Accept": "application/vnd.github+json", "User-Agent": "immersive-titles"},
-            )
+            headers = {"Accept": "application/vnd.github+json", "User-Agent": "immersive-titles"}
+            token = os.environ.get("GITHUB_TOKEN")
+            if token:
+                headers["Authorization"] = "Bearer " + token
+
+            request = urllib.request.Request("https://api.github.com" + path, headers=headers)
             with urllib.request.urlopen(request, timeout=25) as response:
                 return json.load(response)
         except Exception:
