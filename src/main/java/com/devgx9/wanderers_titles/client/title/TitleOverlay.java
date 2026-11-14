@@ -35,9 +35,17 @@ import com.devgx9.wanderers_titles.client.world.StructurePresence;
 import com.devgx9.wanderers_titles.client.world.WorldIdentity;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
+//#if MC >= 26.0
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
+//#else
+//$$ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
+//#endif
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+//#if MC >= 26.0
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+//#else
+//$$ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+//#endif
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.ChatFormatting;
@@ -45,19 +53,27 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+//#if MC >= 26.0
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
+//#if MC >= 26.0
 import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Util;
+import com.devgx9.wanderers_titles.client.render.Draw;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3x2fStack;
 
@@ -265,7 +281,7 @@ public final class TitleOverlay
 	 * the namespace out since they are all under {@code minecraft}.
 	 */
 	private static final SoundEvent REVEAL_SOUND = SoundEvent.createVariableRangeEvent(
-			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_reveal"));
+			Draw.id("title_reveal"));
 
 	// ---------------------------------------------------------------------------------------------
 	// When a title plays
@@ -459,14 +475,18 @@ public final class TitleOverlay
 	private static final Component FALLBACK_NAME = Component.literal("PALE GARDEN").withStyle(ChatFormatting.BOLD);
 
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
-			Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title"));
+			Draw.id("title"));
 
 	/**
 	 * The kind of key a key mapping is read with, which 26.3 calls {@code KEYBOARD} and 26.2 and
 	 * 26.1.2 call {@code KEYSYM}: the three mappings below are the same mapping on all of them, so
 	 * what differs between the versions is the name of this one constant and nothing else.
 	 */
+//#if MC >= 26.0
 	private static final KeyMapping PLAY_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+//#else
+//$$ 	private static final KeyMapping PLAY_TITLE = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+//#endif
 			"key.immersive_titles.play_title",
 			//#if MC >= 26.3
 			InputConstants.Type.KEYBOARD,
@@ -480,7 +500,11 @@ public final class TitleOverlay
 	 * The collection of biomes, which is what the mod's own key opens: the list is the half of the
 	 * feature a player looks at, so it gets the key they are told about.
 	 */
+//#if MC >= 26.0
 	private static final KeyMapping OPEN_COLLECTION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+//#else
+//$$ 	private static final KeyMapping OPEN_COLLECTION = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+//#endif
 			"key.immersive_titles.open_collection",
 			//#if MC >= 26.3
 			InputConstants.Type.KEYBOARD,
@@ -494,7 +518,11 @@ public final class TitleOverlay
 	 * The corner title, on a key of its own because M now opens the collection. Both titles have a
 	 * key of their own so that either can be seen without walking into the right biome for it.
 	 */
+//#if MC >= 26.0
 	private static final KeyMapping SHOW_CORNER_TITLE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+//#else
+//$$ 	private static final KeyMapping SHOW_CORNER_TITLE = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+//#endif
 			"key.immersive_titles.show_corner_title",
 			//#if MC >= 26.3
 			InputConstants.Type.KEYBOARD,
@@ -600,7 +628,11 @@ public final class TitleOverlay
 	private static int ticksUntilCheck = 0;
 
 	/** The frame textures that are currently loaded, oldest first. */
+//#if MC >= 26.0
 	private static final Deque<Identifier> LOADED_FRAMES = new ArrayDeque<>();
+//#else
+//$$ 	private static final Deque<ResourceLocation> LOADED_FRAMES = new ArrayDeque<>();
+//#endif
 
 	private TitleOverlay()
 	{
@@ -614,12 +646,16 @@ public final class TitleOverlay
 		// drawn over the titles instead of the titles being drawn over them.
 		HudElementRegistry.attachElementBefore(
 				VanillaHudElements.CHAT,
-				Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, "title_overlay"),
+				Draw.id("title_overlay"),
 				TitleOverlay::render);
 
 		// A world is prepared the moment the game loads its level, and everything after that is
 		// watched from the tick, see levelChanged and tick.
+//#if MC >= 26.0
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register(TitleOverlay::levelChanged);
+//#else
+//$$ 		ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register(TitleOverlay::levelChanged);
+//#endif
 		ClientTickEvents.END_CLIENT_TICK.register(TitleOverlay::tick);
 
 		// The structures of a world are known to the server side of a game and to nothing else, so
@@ -1200,7 +1236,11 @@ public final class TitleOverlay
 	 * to the end of the clip instead of playing the clip from its start again. The small corner title
 	 * holds the same way.
 	 */
+//#if MC >= 26.0
 	private static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker)
+//#else
+//$$ 	private static void render(GuiGraphics graphics, DeltaTracker deltaTracker)
+//#endif
 	{
 		long now = Util.getMillis();
 		long elapsedMs = held() ? 0L : Math.min(now - lastFrameMs, MAX_FRAME_STEP_MS);
@@ -1255,7 +1295,11 @@ public final class TitleOverlay
 	}
 
 	/** Draws the current frame of the cinematic reveal, as long as a playback is running. */
+//#if MC >= 26.0
 	private static void renderSequence(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private static void renderSequence(GuiGraphics graphics)
+//#endif
 	{
 		if (!revealPlaying)
 		{
@@ -1269,7 +1313,11 @@ public final class TitleOverlay
 			return;
 		}
 
+//#if MC >= 26.0
 		Identifier texture = Identifier.fromNamespaceAndPath(
+//#else
+//$$ 		ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(
+//#endif
 				WandererTitles.MOD_ID,
 				String.format("%sframe_%04d.png", TEXTURE_FOLDER, frame + 1));
 		keepFrameTexture(texture);
@@ -1288,8 +1336,7 @@ public final class TitleOverlay
 
 		renderClipSeam(graphics, texture, x, y, width, height, screenWidth, screenHeight);
 
-		graphics.blit(
-				RenderPipelines.GUI_TEXTURED,
+		Draw.picture(graphics, 
 				texture,
 				x, y, 0, FRAME_CROP,
 				width, height,
@@ -1313,7 +1360,11 @@ public final class TitleOverlay
 	 * At a frame whose edge sample is transparent - every frame outside the opening flash - nothing is
 	 * drawn, so the world is untouched by all of this at any other time.
 	 */
+//#if MC >= 26.0
 	private static void renderClipSeam(GuiGraphicsExtractor graphics, Identifier texture, int plateX,
+//#else
+//$$ 	private static void renderClipSeam(GuiGraphics graphics, ResourceLocation texture, int plateX,
+//#endif
 			int plateY, int width, int height, int screenWidth, int screenHeight)
 	{
 		int right = plateX + width;
@@ -1349,11 +1400,14 @@ public final class TitleOverlay
 	 * Draws the {@code bandWidth} x {@code bandHeight} pixels of the clip at ({@code u}, {@code v})
 	 * into the screen rectangle from ({@code x0}, {@code y0}) to ({@code x1}, {@code y1}).
 	 */
+//#if MC >= 26.0
 	private static void blitBand(GuiGraphicsExtractor graphics, Identifier texture, int x0, int y0,
+//#else
+//$$ 	private static void blitBand(GuiGraphics graphics, ResourceLocation texture, int x0, int y0,
+//#endif
 			int x1, int y1, float u, float v, int bandWidth, int bandHeight)
 	{
-		graphics.blit(
-				RenderPipelines.GUI_TEXTURED,
+		Draw.picture(graphics, 
 				texture,
 				x0, y0, u, v,
 				x1 - x0, y1 - y0,
@@ -1366,7 +1420,11 @@ public final class TitleOverlay
 	 * drawn in so the two stay in step at any screen size and gui scale, and centred on the middle of
 	 * that box as the frames measure it (see {@link #NAME_CENTER_X}).
 	 */
+//#if MC >= 26.0
 	private static void renderName(GuiGraphicsExtractor graphics, int plateX, int plateY, float scale, int frame)
+//#else
+//$$ 	private static void renderName(GuiGraphics graphics, int plateX, int plateY, float scale, int frame)
+//#endif
 	{
 		int alpha = nameAlpha(frame);
 		if (alpha <= 0 || revealName == null)
@@ -1394,7 +1452,7 @@ public final class TitleOverlay
 		pose.pushMatrix();
 		pose.translate(centerX - textWidth / 2.0F, centerY - textHeight / 2.0F);
 		pose.scale(textScale, textScale);
-		graphics.text(font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
+		Draw.text(graphics, font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		pose.popMatrix();
 	}
 
@@ -1406,7 +1464,11 @@ public final class TitleOverlay
 	 * the title arrives and is gone while the title is still standing, so what tells the player the
 	 * discovery was written down is a notice and not a caption.
 	 */
+//#if MC >= 26.0
 	private static void renderSavingWorld(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private static void renderSavingWorld(GuiGraphics graphics)
+//#endif
 	{
 		long shownMs = revealMs;
 
@@ -1441,7 +1503,7 @@ public final class TitleOverlay
 		int x = window.getGuiScaledWidth() - SAVING_MARGIN - font.width(SAVING_WORLD);
 		int y = window.getGuiScaledHeight() - SAVING_MARGIN - font.lineHeight;
 
-		graphics.text(font, SAVING_WORLD, x, y, (alpha << 24) | TITLE_TEXT_RGB, true);
+		Draw.text(graphics, font, SAVING_WORLD, x, y, (alpha << 24) | TITLE_TEXT_RGB, true);
 	}
 
 	/**
@@ -1484,7 +1546,11 @@ public final class TitleOverlay
 	 * {@link #CORNER_MARGIN} from the left edge of it, and the small word is placed against the name:
 	 * centred on it, and set {@link #CORNER_LINE_GAP} over the top of its capitals.
 	 */
+//#if MC >= 26.0
 	private static void renderCornerTitle(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private static void renderCornerTitle(GuiGraphics graphics)
+//#endif
 	{
 		if (!cornerPlaying || cornerName == null)
 		{
@@ -1512,7 +1578,7 @@ public final class TitleOverlay
 		pose.pushMatrix();
 		pose.translate(x, y);
 		pose.scale(CORNER_NAME_SCALE, CORNER_NAME_SCALE);
-		graphics.text(font, cornerName, 0, 0, color, true);
+		Draw.text(graphics, font, cornerName, 0, 0, color, true);
 		pose.popMatrix();
 	}
 
@@ -1560,7 +1626,11 @@ public final class TitleOverlay
 	 * {@link #FONT_CAP_HEIGHT} measures: the game font draws a capital from the row it is drawn at, so
 	 * the top of the name is the row the name is drawn at, whichever word of the two is longer.
 	 */
+//#if MC >= 26.0
 	private static void drawCornerWord(GuiGraphicsExtractor graphics, Font font, int x, int y, int color)
+//#else
+//$$ 	private static void drawCornerWord(GuiGraphics graphics, Font font, int x, int y, int color)
+//#endif
 	{
 		if (cornerKicker == null)
 		{
@@ -1585,7 +1655,7 @@ public final class TitleOverlay
 		{
 			Component one = Component.literal(word.substring(letter, letter + 1))
 					.withStyle(cornerKicker.getStyle());
-			graphics.text(font, one, pen, 0, color, true);
+			Draw.text(graphics, font, one, pen, 0, color, true);
 			pen += font.width(one) + CORNER_KICKER_SPACING;
 		}
 
@@ -1623,7 +1693,11 @@ public final class TitleOverlay
 	 * Marks the frame texture as in use and releases the textures of the frames that have already
 	 * been drawn, so playing the full resolution sequence does not fill the video memory of the game.
 	 */
+//#if MC >= 26.0
 	private static void keepFrameTexture(Identifier texture)
+//#else
+//$$ 	private static void keepFrameTexture(ResourceLocation texture)
+//#endif
 	{
 		if (LOADED_FRAMES.contains(texture))
 		{

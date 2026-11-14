@@ -33,20 +33,32 @@ import com.devgx9.wanderers_titles.client.world.DiscoveredBiomes;
 import com.devgx9.wanderers_titles.client.world.DiscoveredStructures;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
+//#if MC >= 26.0
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+//#else
+//$$ import net.minecraft.client.gui.GuiGraphics;
+//#endif
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
+//#if MC >= 26.0
 import net.minecraft.client.input.KeyEvent;
+//#endif
+//#if MC >= 26.0
 import net.minecraft.client.input.MouseButtonEvent;
+//#endif
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+//#if MC >= 26.0
 import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
+import com.devgx9.wanderers_titles.client.render.Draw;
 import org.joml.Matrix3x2fStack;
 
 import java.util.ArrayList;
@@ -418,9 +430,17 @@ public final class BiomeCollectionScreen extends Screen
 	 * {@code tools/assets/collection_frame}), and the list is drawn between the two of them as if they were
 	 * the top and the bottom of its frame.
 	 */
+//#if MC >= 26.0
 	private static final Identifier UP_LINE = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#else
+//$$ 	private static final ResourceLocation UP_LINE = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#endif
 			"textures/gui/collection_up_line.png");
+//#if MC >= 26.0
 	private static final Identifier DOWN_LINE = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#else
+//$$ 	private static final ResourceLocation DOWN_LINE = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#endif
 			"textures/gui/collection_down_line.png");
 
 	/**
@@ -715,8 +735,16 @@ public final class BiomeCollectionScreen extends Screen
 	 * the page on the screen (see {@link #tabSprite}), and, as the sprite the game draws what cannot be
 	 * pressed with, a row whose reveal is still waiting.
 	 */
+//#if MC >= 26.0
 	private static final Identifier BUTTON_SPRITE = guiSprite("widget/button");
+//#else
+//$$ 	private static final ResourceLocation BUTTON_SPRITE = guiSprite("widget/button");
+//#endif
+//#if MC >= 26.0
 	private static final Identifier LIT_BUTTON_SPRITE = guiSprite("widget/button_highlighted");
+//#else
+//$$ 	private static final ResourceLocation LIT_BUTTON_SPRITE = guiSprite("widget/button_highlighted");
+//#endif
 
 	/**
 	 * The third of them: the flat, dimmed panel the game draws a button it will not let anyone press in
@@ -724,7 +752,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * do with yet, so it is drawn the way the game draws what cannot be pressed - which is also what
 	 * keeps a long list of them from drawing the eye away from the ones that were found.
 	 */
+//#if MC >= 26.0
 	private static final Identifier WAITING_BUTTON_SPRITE = guiSprite("widget/button_disabled");
+//#else
+//$$ 	private static final ResourceLocation WAITING_BUTTON_SPRITE = guiSprite("widget/button_disabled");
+//#endif
 
 	/**
 	 * The button a row of a discovery is given while the mouse is on that row: the same face the two
@@ -736,8 +768,16 @@ public final class BiomeCollectionScreen extends Screen
 	 * (see {@link #drawItem}), so that a row of a discovery ends in it the way it opens in the game's own
 	 * check (see {@link #CHECK}).
 	 */
+//#if MC >= 26.0
 	private static final Identifier FORGET_BUTTON_SPRITE = BUTTON_SPRITE;
+//#else
+//$$ 	private static final ResourceLocation FORGET_BUTTON_SPRITE = BUTTON_SPRITE;
+//#endif
+//#if MC >= 26.0
 	private static final Identifier FORGET_HOVERED_SPRITE = LIT_BUTTON_SPRITE;
+//#else
+//$$ 	private static final ResourceLocation FORGET_HOVERED_SPRITE = LIT_BUTTON_SPRITE;
+//#endif
 
 	/**
 	 * How large that button is, in gui pixels, on both sides: twelve, where a row is fourteen (see
@@ -758,15 +798,27 @@ public final class BiomeCollectionScreen extends Screen
 	 * One of the mod's own copies of the pack's gui sprites: the file the game reads a sprite of the gui
 	 * atlas out of, under {@code assets/immersive_titles/textures/gui/sprites}.
 	 */
+//#if MC >= 26.0
 	private static Identifier guiSprite(String path)
+//#else
+//$$ 	private static ResourceLocation guiSprite(String path)
+//#endif
 	{
-		return Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID, path);
+		return Draw.id(path);
 	}
 
 	/** The game's own scroller, and the groove it runs in. */
-	private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("widget/scroller");
+//#if MC >= 26.0
+	private static final Identifier SCROLLER_SPRITE = Draw.vanilla("widget/scroller");
+//#else
+//$$ 	private static final ResourceLocation SCROLLER_SPRITE = Draw.vanilla("widget/scroller");
+//#endif
+//#if MC >= 26.0
 	private static final Identifier SCROLLER_BACKGROUND_SPRITE =
-			Identifier.withDefaultNamespace("widget/scroller_background");
+//#else
+//$$ 	private static final ResourceLocation SCROLLER_BACKGROUND_SPRITE =
+//#endif
+			Draw.vanilla("widget/scroller_background");
 
 	/**
 	 * The window the block of the list is drawn as, and the two halves of the bar that counts the
@@ -787,10 +839,22 @@ public final class BiomeCollectionScreen extends Screen
 	 * size on the screen and the size of the region it takes from the texture as two separate pairs (see
 	 * {@link #drawProgressBar}).
 	 */
+//#if MC >= 26.0
 	private static final Identifier FRAME_SPRITE = guiSprite("social_interactions/background");
+//#else
+//$$ 	private static final ResourceLocation FRAME_SPRITE = guiSprite("social_interactions/background");
+//#endif
+//#if MC >= 26.0
 	private static final Identifier BAR_TRACK = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#else
+//$$ 	private static final ResourceLocation BAR_TRACK = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#endif
 			"textures/gui/sprites/hud/experience_bar_background.png");
+//#if MC >= 26.0
 	private static final Identifier BAR_FILL = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#else
+//$$ 	private static final ResourceLocation BAR_FILL = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
+//#endif
 			"textures/gui/sprites/hud/experience_bar_progress.png");
 
 	/**
@@ -1443,8 +1507,33 @@ public final class BiomeCollectionScreen extends Screen
 	 * {@link #drawTabs}, {@link #drawFilterIcons} and {@link #drawDoneFocus}), which is what keeps a
 	 * button hovering, clicking and speaking for itself while the mod's own mark sits on it.
 	 */
+	//#if MC >= 26.0
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
+	{
+		drawBehind(graphics, mouseX, mouseY);
+		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+		drawOver(graphics);
+	}
+	//#else
+	//$$ @Override
+	//$$ public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
+	//$$ {
+	//$$ 	drawBehind(graphics, mouseX, mouseY);
+	//$$ 	super.render(graphics, mouseX, mouseY, partialTick);
+	//$$ 	drawOver(graphics);
+	//$$ }
+	//#endif
+
+	/**
+	 * The half of the frame drawn before the game draws the buttons of the screen: the title, the
+	 * count and its bar, the block, the list in it and the two lines the list is framed with.
+	 */
+	//#if MC >= 26.0
+	private void drawBehind(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+	//#else
+	//$$ private void drawBehind(GuiGraphics graphics, int mouseX, int mouseY)
+	//#endif
 	{
 		advanceScroll();
 
@@ -1469,13 +1558,19 @@ public final class BiomeCollectionScreen extends Screen
 		drawLine(graphics, UP_LINE, UP_LINE_WIDTH, UP_LINE_HEIGHT, blockTop + UP_LINE_Y);
 		drawLine(graphics, DOWN_LINE, DOWN_LINE_WIDTH, DOWN_LINE_HEIGHT, listBottom + DOWN_LINE_OFFSET);
 
-		// the buttons added in init() are among the screen's renderables
-		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+	}
 
-		// and what the screen draws over them, once the buttons themselves are on the screen: the face of
-		// each of them in the pack's own button, the bar of the two pages with the names of both in it,
-		// the marks of the two filters, the name of the button that closes the screen and the border of
-		// it the keyboard is on
+	/**
+	 * The half drawn over the buttons, once the game has drawn them: the face of each of them in the
+	 * pack's own button, the bar of the two pages with the names of both in it, the marks of the two
+	 * filters, the name of the button that closes the screen and the border of it the keyboard is on.
+	 */
+	//#if MC >= 26.0
+	private void drawOver(GuiGraphicsExtractor graphics)
+	//#else
+	//$$ private void drawOver(GuiGraphics graphics)
+	//#endif
+	{
 		drawButtonFaces(graphics);
 		drawTabs(graphics);
 		drawFilterIcons(graphics);
@@ -1492,7 +1587,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * font as everything else here, drawn scaled and centred by its own scaled width - which is what keeps
 	 * it in the middle of the screen at a size the game's own text has no share of.
 	 */
+//#if MC >= 26.0
 	private void drawTitle(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawTitle(GuiGraphics graphics)
+//#endif
 	{
 		float scale = TITLE_SIZE_PERCENT / 100.0F;
 		Matrix3x2fStack pose = graphics.pose();
@@ -1500,7 +1599,7 @@ public final class BiomeCollectionScreen extends Screen
 		pose.pushMatrix();
 		pose.translate((width - font.width(title) * scale) / 2.0F, (float) (blockTop + TITLE_Y));
 		pose.scale(scale, scale);
-		graphics.text(font, title, 0, 0, TITLE_COLOR, true);
+		Draw.text(graphics, font, title, 0, 0, TITLE_COLOR, true);
 		pose.popMatrix();
 	}
 
@@ -1516,7 +1615,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * the game itself draws: the fill grows out of the left end of the trough and stops where the count
 	 * stops, four pixels tall, in the colours the sprite is drawn in rather than in a colour of the mod's.
 	 */
+//#if MC >= 26.0
 	private void drawProgressBar(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawProgressBar(GuiGraphics graphics)
+//#endif
 	{
 		int x = (width - BAR_WIDTH) / 2;
 		int y = blockTop + BAR_Y;
@@ -1524,12 +1627,12 @@ public final class BiomeCollectionScreen extends Screen
 		int filled = total == 0 ? 0
 				: (int) Math.round((double) foundCount() / total * BAR_WIDTH);
 
-		graphics.blit(RenderPipelines.GUI_TEXTURED, BAR_TRACK, x, y, 0.0F, 0.0F,
+		Draw.picture(graphics, BAR_TRACK, x, y, 0.0F, 0.0F,
 				BAR_WIDTH, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT);
 
 		if (filled > 0)
 		{
-			graphics.blit(RenderPipelines.GUI_TEXTURED, BAR_FILL, x, y, 0.0F, 0.0F,
+			Draw.picture(graphics, BAR_FILL, x, y, 0.0F, 0.0F,
 					filled, BAR_HEIGHT, filled, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT);
 		}
 	}
@@ -1546,7 +1649,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * sprite itself is drawn from {@link #FRAME_PADDING} past the list on every side, so the band of it
 	 * is outside what it holds rather than over it.
 	 */
+//#if MC >= 26.0
 	private void drawFrame(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawFrame(GuiGraphics graphics)
+//#endif
 	{
 		int left = listLeft - FRAME_PADDING;
 		int top = listTop - FRAME_PADDING;
@@ -1556,7 +1663,7 @@ public final class BiomeCollectionScreen extends Screen
 		graphics.fill(left + SHADOW_OFFSET, top + SHADOW_OFFSET, right + SHADOW_OFFSET,
 				bottom + SHADOW_OFFSET, FRAME_SHADOW);
 
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, FRAME_SPRITE, left, top, right - left,
+		Draw.sprite(graphics, FRAME_SPRITE, left, top, right - left,
 				bottom - top);
 	}
 
@@ -1566,7 +1673,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * with: a line of one pixel on a screen of gui pixels is a line, and nothing about a block of the
 	 * game is drawn with a thickness of its own.
 	 */
+//#if MC >= 26.0
 	private static void drawBorder(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom,
+//#else
+//$$ 	private static void drawBorder(GuiGraphics graphics, int left, int top, int right, int bottom,
+//#endif
 			int color)
 	{
 		graphics.fill(left, top, right, top + 1, color);
@@ -1591,7 +1702,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * {@link #filterSprite}), so a filter that has been turned off is lit while the mouse is on it and
 	 * plain again as soon as it leaves - and the keyboard the press leaves on it does not keep it lit.
 	 */
+//#if MC >= 26.0
 	private void drawButtonFaces(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawButtonFaces(GuiGraphics graphics)
+//#endif
 	{
 		for (Page tab : Page.values())
 		{
@@ -1615,7 +1730,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * game has already drawn each of them as the same plain button - which is what the face painted
 	 * over them is for (see {@link #drawButtonFaces}).
 	 */
+//#if MC >= 26.0
 	private Identifier tabSprite(Page tab)
+//#else
+//$$ 	private ResourceLocation tabSprite(Page tab)
+//#endif
 	{
 		return tab == page ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
 	}
@@ -1630,7 +1749,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * face lit by it would go on saying "on" after the press that turned the filter off. The tabs are
 	 * painted by the page alone (see {@link #tabSprite}).
 	 */
+//#if MC >= 26.0
 	private Identifier filterSprite(Filter filter, Button button)
+//#else
+//$$ 	private ResourceLocation filterSprite(Filter filter, Button button)
+//#endif
 	{
 		return this.filter == filter || button.isHovered() ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
 	}
@@ -1648,7 +1771,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * drawn in the place the button is covers it exactly, and what the player sees is the same button of
 	 * the game in the drawing of the collection.
 	 */
+//#if MC >= 26.0
 	private void drawButtonFace(GuiGraphicsExtractor graphics, Button button)
+//#else
+//$$ 	private void drawButtonFace(GuiGraphics graphics, Button button)
+//#endif
 	{
 		drawButtonFace(graphics, button, button.isHoveredOrFocused() ? LIT_BUTTON_SPRITE : BUTTON_SPRITE);
 	}
@@ -1658,9 +1785,13 @@ public final class BiomeCollectionScreen extends Screen
 	 * drawn: the sprite is read at the whole of the button's box, which is what the pack's own button is
 	 * drawn at, so the face covers the game's button exactly (see {@link #drawButtonFaces}).
 	 */
+//#if MC >= 26.0
 	private static void drawButtonFace(GuiGraphicsExtractor graphics, Button button, Identifier sprite)
+//#else
+//$$ 	private static void drawButtonFace(GuiGraphics graphics, Button button, ResourceLocation sprite)
+//#endif
 	{
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite,
+		Draw.sprite(graphics, sprite,
 				button.getX(), button.getY(), button.getWidth(), button.getHeight());
 	}
 
@@ -1670,11 +1801,15 @@ public final class BiomeCollectionScreen extends Screen
 	 * {@link #drawButtonFaces}), so the label is written here instead - in the place the game centres a
 	 * label in and in the white it writes one.
 	 */
+//#if MC >= 26.0
 	private void drawDoneLabel(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawDoneLabel(GuiGraphics graphics)
+//#endif
 	{
 		Component label = doneButton.getMessage();
 
-		graphics.text(font, label, doneButton.getX() + (doneButton.getWidth() - font.width(label)) / 2,
+		Draw.text(graphics, font, label, doneButton.getX() + (doneButton.getWidth() - font.width(label)) / 2,
 				doneButton.getY() + (doneButton.getHeight() - font.lineHeight) / 2, LABEL_COLOR, true);
 	}
 
@@ -1688,7 +1823,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * touches the mouse, and what the game's own focus of a button is too faint to say on a panel as
 	 * dark as this one.
 	 */
+//#if MC >= 26.0
 	private void drawDoneFocus(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawDoneFocus(GuiGraphics graphics)
+//#endif
 	{
 		if (doneButton == null || !doneButton.isFocused())
 		{
@@ -1765,7 +1904,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * on the way. A filter that keeps nothing leaves the panel with a line saying so, in the middle,
 	 * because an empty panel reads as a fault.
 	 */
+//#if MC >= 26.0
 	private void drawRows(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+//#else
+//$$ 	private void drawRows(GuiGraphics graphics, int mouseX, int mouseY)
+//#endif
 	{
 		if (rows.isEmpty())
 		{
@@ -1849,7 +1992,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * opens a section of them. Which of the two a row is, is what the list itself holds and not what this
 	 * decides (see {@link Row}), so the row is read for it here and handed on to what draws it.
 	 */
+//#if MC >= 26.0
 	private void drawRow(GuiGraphicsExtractor graphics, Row row, int index, int y, int rowRight,
+//#else
+//$$ 	private void drawRow(GuiGraphics graphics, Row row, int index, int y, int rowRight,
+//#endif
 			int hovered, int mouseX, int mouseY)
 	{
 		if (row instanceof Row.Section section)
@@ -1874,15 +2021,19 @@ public final class BiomeCollectionScreen extends Screen
 	 * the list is at its top, and is clipped away with everything else that hangs out of the box, so the
 	 * list is never opened with a line it did not draw a section for.
 	 */
+//#if MC >= 26.0
 	private void drawSection(GuiGraphicsExtractor graphics, Row.Section section, int y, int rowRight)
+//#else
+//$$ 	private void drawSection(GuiGraphics graphics, Row.Section section, int y, int rowRight)
+//#endif
 	{
 		int textY = y + (ROW_HEIGHT - font.lineHeight) / 2;
 		String count = section.found() + " / " + section.total();
 
 		graphics.fill(listLeft, y - 1, rowRight, y, RULE_COLOR);
-		graphics.text(font, Component.translatable(dimensionKey(section.dimension())),
+		Draw.text(graphics, font, Component.translatable(dimensionKey(section.dimension())),
 				listLeft + NAME_X, textY, SECTION_COLOR, true);
-		graphics.text(font, count, rowRight - TEXT_MARGIN - font.width(count), textY, COUNT_COLOR, true);
+		Draw.text(graphics, font, count, rowRight - TEXT_MARGIN - font.width(count), textY, COUNT_COLOR, true);
 	}
 
 	/** The name the section of {@code dimension} is read by, from the language file of the mod. */
@@ -1906,13 +2057,17 @@ public final class BiomeCollectionScreen extends Screen
 	 * row of a discovery - the button that forgets it, which takes the place of that id so that a long
 	 * list from a modpack stays readable and the button keeps to the end of its own row.
 	 */
+//#if MC >= 26.0
 	private void drawItem(GuiGraphicsExtractor graphics, CollectionEntry entry, int index, int y,
+//#else
+//$$ 	private void drawItem(GuiGraphics graphics, CollectionEntry entry, int index, int y,
+//#endif
 			int rowRight, int hovered, int mouseX, int mouseY)
 	{
 		boolean found = discovered().contains(entry.id());
 		int textY = y + (ROW_HEIGHT - font.lineHeight) / 2;
 
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
+		Draw.sprite(graphics,
 				found ? BUTTON_SPRITE : WAITING_BUTTON_SPRITE,
 				listLeft, y, rowRight - listLeft, ROW_HEIGHT);
 
@@ -1926,10 +2081,10 @@ public final class BiomeCollectionScreen extends Screen
 
 		if (found)
 		{
-			graphics.text(font, CHECK, listLeft + CHECK_X, textY, CHECK_COLOR, true);
+			Draw.text(graphics, font, CHECK, listLeft + CHECK_X, textY, CHECK_COLOR, true);
 		}
 
-		graphics.text(font, entry.name(), listLeft + NAME_X, textY,
+		Draw.text(graphics, font, entry.name(), listLeft + NAME_X, textY,
 				found ? FOUND_COLOR : WAITING_COLOR, true);
 
 		if (found && canForget() && index == hovered)
@@ -1941,7 +2096,7 @@ public final class BiomeCollectionScreen extends Screen
 		String source = source(entry.id());
 		if (source != null)
 		{
-			graphics.text(font, source, rowRight - TEXT_MARGIN - font.width(source), textY,
+			Draw.text(graphics, font, source, rowRight - TEXT_MARGIN - font.width(source), textY,
 					SOURCE_COLOR, true);
 		}
 	}
@@ -1971,14 +2126,18 @@ public final class BiomeCollectionScreen extends Screen
 	 * what a press would do: a press anywhere on the row does nothing, a press on the button asks about
 	 * forgetting the discovery.
 	 */
+//#if MC >= 26.0
 	private void drawForgetButton(GuiGraphicsExtractor graphics, CollectionEntry entry, int y,
+//#else
+//$$ 	private void drawForgetButton(GuiGraphics graphics, CollectionEntry entry, int y,
+//#endif
 			int rowRight, int mouseX, int mouseY)
 	{
 		boolean onButton = isOverForgetButton(y, rowRight, mouseX, mouseY);
 		int x = forgetButtonX(rowRight);
 		int buttonY = forgetButtonY(y);
 
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
+		Draw.sprite(graphics,
 				onButton ? FORGET_HOVERED_SPRITE : FORGET_BUTTON_SPRITE,
 				x, buttonY, FORGET_SIZE, FORGET_SIZE);
 
@@ -1987,7 +2146,7 @@ public final class BiomeCollectionScreen extends Screen
 
 		if (onButton)
 		{
-			graphics.setTooltipForNextFrame(Component.translatable(FORGET_KEY, entry.name()), mouseX, mouseY);
+			Draw.tooltip(graphics, Component.translatable(FORGET_KEY, entry.name()), mouseX, mouseY);
 		}
 	}
 
@@ -2042,7 +2201,11 @@ public final class BiomeCollectionScreen extends Screen
 	}
 
 	/** Draws where the list is, in the game's own scroller, while there is more of it than fits. */
+//#if MC >= 26.0
 	private void drawScrollBar(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawScrollBar(GuiGraphics graphics)
+//#endif
 	{
 		if (maxScroll() <= 0.0D)
 		{
@@ -2052,9 +2215,9 @@ public final class BiomeCollectionScreen extends Screen
 
 		int x = listRight - SCROLLBAR_WIDTH;
 
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_BACKGROUND_SPRITE,
+		Draw.sprite(graphics, SCROLLER_BACKGROUND_SPRITE,
 				x, listTop, SCROLLBAR_WIDTH, listBottom - listTop);
-		graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_SPRITE,
+		Draw.sprite(graphics, SCROLLER_SPRITE,
 				x, scrollBarThumbTop(), SCROLLBAR_WIDTH, scrollBarThumbHeight());
 	}
 
@@ -2070,14 +2233,22 @@ public final class BiomeCollectionScreen extends Screen
 	 * it is lit under the mouse as well, so a filter that is off is answered by the hand while the
 	 * mark in it still says the list is read by neither of them.
 	 */
+//#if MC >= 26.0
 	private void drawFilterIcons(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawFilterIcons(GuiGraphics graphics)
+//#endif
 	{
 		drawFilterIcon(graphics, true, CHECK, filter == Filter.DISCOVERED ? CHECK_COLOR : FILTER_OFF_COLOR);
 		drawFilterIcon(graphics, false, QUESTION, filter == Filter.REMAINING ? REMAINING_COLOR : FILTER_OFF_COLOR);
 	}
 
 	/** Draws {@code mark} centred in the filter button beside the left or the right of the list. */
+//#if MC >= 26.0
 	private void drawFilterIcon(GuiGraphicsExtractor graphics, boolean left, String mark, int color)
+//#else
+//$$ 	private void drawFilterIcon(GuiGraphics graphics, boolean left, String mark, int color)
+//#endif
 	{
 		drawButtonMark(graphics, mark, filterButtonX(left), listTop, FILTER_BUTTON_SIZE, color);
 	}
@@ -2087,10 +2258,14 @@ public final class BiomeCollectionScreen extends Screen
 	 * {@code size} pixels on both sides: the same centring for the two marks the two filters are read
 	 * by, so the two of them sit in their buttons alike.
 	 */
+//#if MC >= 26.0
 	private void drawButtonMark(GuiGraphicsExtractor graphics, String mark, int x, int y, int size,
+//#else
+//$$ 	private void drawButtonMark(GuiGraphics graphics, String mark, int x, int y, int size,
+//#endif
 			int color)
 	{
-		graphics.text(font, mark, x + (size - font.width(mark)) / 2,
+		Draw.text(graphics, font, mark, x + (size - font.width(mark)) / 2,
 				y + (size - font.lineHeight) / 2, color, true);
 	}
 
@@ -2112,7 +2287,11 @@ public final class BiomeCollectionScreen extends Screen
 	 * under the drawing of the pack, and a dark one at that turns the lit button of the pack into a
 	 * green gone dark - which is what the two tabs were before this (see {@link #TAB_ON_COLOR}).
 	 */
+//#if MC >= 26.0
 	private void drawTabs(GuiGraphicsExtractor graphics)
+//#else
+//$$ 	private void drawTabs(GuiGraphics graphics)
+//#endif
 	{
 		int x = tabStripLeft;
 
@@ -2121,7 +2300,7 @@ public final class BiomeCollectionScreen extends Screen
 			Component name = tab.label();
 			int y = tabY();
 
-			graphics.text(font, name, x + (TAB_WIDTH - font.width(name)) / 2,
+			Draw.text(graphics, font, name, x + (TAB_WIDTH - font.width(name)) / 2,
 					y + (TAB_HEIGHT - font.lineHeight) / 2,
 					tab == page ? TAB_ON_COLOR : TAB_OFF_COLOR, true);
 
@@ -2162,18 +2341,26 @@ public final class BiomeCollectionScreen extends Screen
 	 * takes one pair of sizes and means both at once, and handing it anything but the size of the texture
 	 * quietly draws the corner of the drawing blown up by the gui scale.
 	 */
+//#if MC >= 26.0
 	private void drawLine(GuiGraphicsExtractor graphics, Identifier texture, int width, int height, int y)
+//#else
+//$$ 	private void drawLine(GuiGraphics graphics, ResourceLocation texture, int width, int height, int y)
+//#endif
 	{
 		int x = listLeft + (listRight - listLeft - width) / 2;
 
-		graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0.0F, 0.0F,
+		Draw.picture(graphics, texture, x, y, 0.0F, 0.0F,
 				width, height, width, height, width, height);
 	}
 
 	/** Draws {@code text} centred on the screen, at {@code y}. */
+//#if MC >= 26.0
 	private void drawCentered(GuiGraphicsExtractor graphics, Component text, int y, int color)
+//#else
+//$$ 	private void drawCentered(GuiGraphics graphics, Component text, int y, int color)
+//#endif
 	{
-		graphics.text(font, text, (width - font.width(text)) / 2, y, color, true);
+		Draw.text(graphics, font, text, (width - font.width(text)) / 2, y, color, true);
 	}
 
 	/**
@@ -2188,26 +2375,42 @@ public final class BiomeCollectionScreen extends Screen
 	 * mouse is on it (see {@link #forgetTargetAt}); anywhere else it is left to the rest of the screen,
 	 * so a row of the list is still not something that answers a click of its own.
 	 */
+	//#if MC >= 26.0
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
 	{
-		if (event.button() == LEFT_BUTTON && maxScroll() > 0.0D && isOverScrollBar(event.x(), event.y()))
+		return clickAt(event.x(), event.y(), event.button())
+				|| super.mouseClicked(event, doubleClick);
+	}
+	//#else
+	//$$ @Override
+	//$$ public boolean mouseClicked(double mouseX, double mouseY, int button)
+	//$$ {
+	//$$ 	return clickAt(mouseX, mouseY, button)
+	//$$ 			|| super.mouseClicked(mouseX, mouseY, button);
+	//$$ }
+	//#endif
+
+	/** A press at a point, or false while the press is the game's own to answer. */
+	private boolean clickAt(double mouseX, double mouseY, int button)
+	{
+		if (button == LEFT_BUTTON && maxScroll() > 0.0D && isOverScrollBar(mouseX, mouseY))
 		{
 			int thumbTop = scrollBarThumbTop();
 			int thumbHeight = scrollBarThumbHeight();
 
-			scrollBarGrabOffset = event.y() >= thumbTop && event.y() < thumbTop + thumbHeight
-					? (int) event.y() - thumbTop
+			scrollBarGrabOffset = mouseY >= thumbTop && mouseY < thumbTop + thumbHeight
+					? (int) mouseY - thumbTop
 					: thumbHeight / 2;
 			draggingScrollBar = true;
-			dragScrollBarTo(event.y());
+			dragScrollBarTo(mouseY);
 
 			return true;
 		}
 
-		if (event.button() == LEFT_BUTTON)
+		if (button == LEFT_BUTTON)
 		{
-			CollectionEntry forget = forgetTargetAt(event.x(), event.y());
+			CollectionEntry forget = forgetTargetAt(mouseX, mouseY);
 
 			if (forget != null)
 			{
@@ -2216,7 +2419,7 @@ public final class BiomeCollectionScreen extends Screen
 			}
 		}
 
-		return super.mouseClicked(event, doubleClick);
+		return false;
 	}
 
 	/**
@@ -2325,6 +2528,7 @@ public final class BiomeCollectionScreen extends Screen
 		scrollTarget = clampScroll(scrollTarget);
 	}
 
+	//#if MC >= 26.0
 	@Override
 	public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY)
 	{
@@ -2345,6 +2549,28 @@ public final class BiomeCollectionScreen extends Screen
 
 		return super.mouseReleased(event);
 	}
+	//#else
+	//$$ @Override
+	//$$ public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY)
+	//$$ {
+	//$$ 	if (!draggingScrollBar)
+	//$$ 	{
+	//$$ 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	//$$ 	}
+	//$$
+	//$$ 	dragScrollBarTo(mouseY);
+	//$$
+	//$$ 	return true;
+	//$$ }
+	//$$
+	//$$ @Override
+	//$$ public boolean mouseReleased(double mouseX, double mouseY, int button)
+	//$$ {
+	//$$ 	draggingScrollBar = false;
+	//$$
+	//$$ 	return super.mouseReleased(mouseX, mouseY, button);
+	//$$ }
+	//#endif
 
 	/**
 	 * Puts the point of the thumb the player is holding under {@code mouseY}, and the list with it.
@@ -2408,40 +2634,54 @@ public final class BiomeCollectionScreen extends Screen
 		return true;
 	}
 
+	//#if MC >= 26.0
 	@Override
 	public boolean keyPressed(KeyEvent event)
 	{
-		if (event.key() == InputConstants.KEY_DOWN)
+		return keyAt(event.key()) || super.keyPressed(event);
+	}
+	//#else
+	//$$ @Override
+	//$$ public boolean keyPressed(int keyCode, int scanCode, int modifiers)
+	//$$ {
+	//$$ 	return keyAt(keyCode) || super.keyPressed(keyCode, scanCode, modifiers);
+	//$$ }
+	//#endif
+
+	/** A key the list answers itself, or false while the key is the game's own to answer. */
+	private boolean keyAt(int keyCode)
+	{
+		if (keyCode == InputConstants.KEY_DOWN)
 		{
 			scrollBy(1);
 			return true;
 		}
 
-		if (event.key() == InputConstants.KEY_UP)
+		if (keyCode == InputConstants.KEY_UP)
 		{
 			scrollBy(-1);
 			return true;
 		}
 
-		if (event.key() == InputConstants.KEY_PAGEDOWN)
+		if (keyCode == InputConstants.KEY_PAGEDOWN)
 		{
 			scrollBy(pageRows());
 			return true;
 		}
 
-		if (event.key() == InputConstants.KEY_PAGEUP)
+		if (keyCode == InputConstants.KEY_PAGEUP)
 		{
 			scrollBy(-pageRows());
 			return true;
 		}
 
-		if (event.key() == InputConstants.KEY_HOME)
+		if (keyCode == InputConstants.KEY_HOME)
 		{
 			scrollBy(-rows.size());
 			return true;
 		}
 
-		if (event.key() == InputConstants.KEY_END)
+		if (keyCode == InputConstants.KEY_END)
 		{
 			scrollBy(rows.size());
 			return true;
@@ -2449,7 +2689,7 @@ public final class BiomeCollectionScreen extends Screen
 
 		// escape is the game's own business, and the key that opens the screen is left to the key
 		// mapping: it is consumed on the client tick, which closes the screen from there
-		return super.keyPressed(event);
+		return false;
 	}
 
 	/** Moves the list {@code rows} rows further down, letting the slide catch up with it. */
