@@ -30,7 +30,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
-//$$ import net.minecraft.resources.ResourceLocation;
 //#endif
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
@@ -90,13 +89,13 @@ public final class Draw
 	}
 	//#else
 	//$$ /** The mod's own id, e.g. {@code immersive_titles:icons/up}. */
-	//$$ public static ResourceLocation id(String path) {
-	//$$ 	return ResourceLocation.fromNamespaceAndPath(com.devgx9.wanderers_titles.WandererTitles.MOD_ID, path);
+	//$$ public static Identifier id(String path) {
+	//$$ 	return Identifier.fromNamespaceAndPath(com.devgx9.wanderers_titles.WandererTitles.MOD_ID, path);
 	//$$ }
 	//$$
 	//$$ /** An id of the game's own, e.g. {@code minecraft:widget/scroller}. */
-	//$$ public static ResourceLocation vanilla(String path) {
-	//$$ 	return ResourceLocation.withDefaultNamespace(path);
+	//$$ public static Identifier vanilla(String path) {
+	//$$ 	return Identifier.withDefaultNamespace(path);
 	//$$ }
 	//$$
 	//$$ /** One line of text, scaled as the caller has already set the pose up. */
@@ -106,13 +105,13 @@ public final class Draw
 	//$$ }
 	//$$
 	//$$ /** One sprite of the gui atlas, at its own size. */
-	//$$ public static void sprite(GuiGraphics graphics, ResourceLocation sprite, int x, int y, int width,
+	//$$ public static void sprite(GuiGraphics graphics, Identifier sprite, int x, int y, int width,
 	//$$ 		int height) {
 	//$$ 	graphics.blitSprite(sprite, x, y, width, height);
 	//$$ }
 	//$$
 	//$$ /** A picture out of a texture file, drawn at a size of its own. */
-	//$$ public static void picture(GuiGraphics graphics, ResourceLocation texture, int x, int y, float u, float v,
+	//$$ public static void picture(GuiGraphics graphics, Identifier texture, int x, int y, float u, float v,
 	//$$ 		int width, int height, int sampleWidth, int sampleHeight, int textureWidth, int textureHeight) {
 	//$$ 	graphics.blit(texture, x, y, width, height, u, v, sampleWidth, sampleHeight, textureWidth, textureHeight);
 	//$$ }

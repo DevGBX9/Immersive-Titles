@@ -51,11 +51,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-//#if MC >= 26.0
 import net.minecraft.resources.Identifier;
-//#else
-//$$ import net.minecraft.resources.ResourceLocation;
-//#endif
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import com.devgx9.wanderers_titles.client.render.Draw;
@@ -430,17 +426,9 @@ public final class BiomeCollectionScreen extends Screen
 	 * {@code tools/assets/collection_frame}), and the list is drawn between the two of them as if they were
 	 * the top and the bottom of its frame.
 	 */
-//#if MC >= 26.0
 	private static final Identifier UP_LINE = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#else
-//$$ 	private static final ResourceLocation UP_LINE = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#endif
 			"textures/gui/collection_up_line.png");
-//#if MC >= 26.0
 	private static final Identifier DOWN_LINE = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#else
-//$$ 	private static final ResourceLocation DOWN_LINE = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#endif
 			"textures/gui/collection_down_line.png");
 
 	/**
@@ -735,16 +723,8 @@ public final class BiomeCollectionScreen extends Screen
 	 * the page on the screen (see {@link #tabSprite}), and, as the sprite the game draws what cannot be
 	 * pressed with, a row whose reveal is still waiting.
 	 */
-//#if MC >= 26.0
 	private static final Identifier BUTTON_SPRITE = guiSprite("widget/button");
-//#else
-//$$ 	private static final ResourceLocation BUTTON_SPRITE = guiSprite("widget/button");
-//#endif
-//#if MC >= 26.0
 	private static final Identifier LIT_BUTTON_SPRITE = guiSprite("widget/button_highlighted");
-//#else
-//$$ 	private static final ResourceLocation LIT_BUTTON_SPRITE = guiSprite("widget/button_highlighted");
-//#endif
 
 	/**
 	 * The third of them: the flat, dimmed panel the game draws a button it will not let anyone press in
@@ -752,11 +732,7 @@ public final class BiomeCollectionScreen extends Screen
 	 * do with yet, so it is drawn the way the game draws what cannot be pressed - which is also what
 	 * keeps a long list of them from drawing the eye away from the ones that were found.
 	 */
-//#if MC >= 26.0
 	private static final Identifier WAITING_BUTTON_SPRITE = guiSprite("widget/button_disabled");
-//#else
-//$$ 	private static final ResourceLocation WAITING_BUTTON_SPRITE = guiSprite("widget/button_disabled");
-//#endif
 
 	/**
 	 * The button a row of a discovery is given while the mouse is on that row: the same face the two
@@ -768,16 +744,8 @@ public final class BiomeCollectionScreen extends Screen
 	 * (see {@link #drawItem}), so that a row of a discovery ends in it the way it opens in the game's own
 	 * check (see {@link #CHECK}).
 	 */
-//#if MC >= 26.0
 	private static final Identifier FORGET_BUTTON_SPRITE = BUTTON_SPRITE;
-//#else
-//$$ 	private static final ResourceLocation FORGET_BUTTON_SPRITE = BUTTON_SPRITE;
-//#endif
-//#if MC >= 26.0
 	private static final Identifier FORGET_HOVERED_SPRITE = LIT_BUTTON_SPRITE;
-//#else
-//$$ 	private static final ResourceLocation FORGET_HOVERED_SPRITE = LIT_BUTTON_SPRITE;
-//#endif
 
 	/**
 	 * How large that button is, in gui pixels, on both sides: twelve, where a row is fourteen (see
@@ -798,26 +766,14 @@ public final class BiomeCollectionScreen extends Screen
 	 * One of the mod's own copies of the pack's gui sprites: the file the game reads a sprite of the gui
 	 * atlas out of, under {@code assets/immersive_titles/textures/gui/sprites}.
 	 */
-//#if MC >= 26.0
 	private static Identifier guiSprite(String path)
-//#else
-//$$ 	private static ResourceLocation guiSprite(String path)
-//#endif
 	{
 		return Draw.id(path);
 	}
 
 	/** The game's own scroller, and the groove it runs in. */
-//#if MC >= 26.0
 	private static final Identifier SCROLLER_SPRITE = Draw.vanilla("widget/scroller");
-//#else
-//$$ 	private static final ResourceLocation SCROLLER_SPRITE = Draw.vanilla("widget/scroller");
-//#endif
-//#if MC >= 26.0
 	private static final Identifier SCROLLER_BACKGROUND_SPRITE =
-//#else
-//$$ 	private static final ResourceLocation SCROLLER_BACKGROUND_SPRITE =
-//#endif
 			Draw.vanilla("widget/scroller_background");
 
 	/**
@@ -839,22 +795,10 @@ public final class BiomeCollectionScreen extends Screen
 	 * size on the screen and the size of the region it takes from the texture as two separate pairs (see
 	 * {@link #drawProgressBar}).
 	 */
-//#if MC >= 26.0
 	private static final Identifier FRAME_SPRITE = guiSprite("social_interactions/background");
-//#else
-//$$ 	private static final ResourceLocation FRAME_SPRITE = guiSprite("social_interactions/background");
-//#endif
-//#if MC >= 26.0
 	private static final Identifier BAR_TRACK = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#else
-//$$ 	private static final ResourceLocation BAR_TRACK = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#endif
 			"textures/gui/sprites/hud/experience_bar_background.png");
-//#if MC >= 26.0
 	private static final Identifier BAR_FILL = Identifier.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#else
-//$$ 	private static final ResourceLocation BAR_FILL = ResourceLocation.fromNamespaceAndPath(WandererTitles.MOD_ID,
-//#endif
 			"textures/gui/sprites/hud/experience_bar_progress.png");
 
 	/**
@@ -1730,11 +1674,7 @@ public final class BiomeCollectionScreen extends Screen
 	 * game has already drawn each of them as the same plain button - which is what the face painted
 	 * over them is for (see {@link #drawButtonFaces}).
 	 */
-//#if MC >= 26.0
 	private Identifier tabSprite(Page tab)
-//#else
-//$$ 	private ResourceLocation tabSprite(Page tab)
-//#endif
 	{
 		return tab == page ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
 	}
@@ -1749,11 +1689,7 @@ public final class BiomeCollectionScreen extends Screen
 	 * face lit by it would go on saying "on" after the press that turned the filter off. The tabs are
 	 * painted by the page alone (see {@link #tabSprite}).
 	 */
-//#if MC >= 26.0
 	private Identifier filterSprite(Filter filter, Button button)
-//#else
-//$$ 	private ResourceLocation filterSprite(Filter filter, Button button)
-//#endif
 	{
 		return this.filter == filter || button.isHovered() ? LIT_BUTTON_SPRITE : BUTTON_SPRITE;
 	}
@@ -1788,7 +1724,7 @@ public final class BiomeCollectionScreen extends Screen
 //#if MC >= 26.0
 	private static void drawButtonFace(GuiGraphicsExtractor graphics, Button button, Identifier sprite)
 //#else
-//$$ 	private static void drawButtonFace(GuiGraphics graphics, Button button, ResourceLocation sprite)
+//$$ 	private static void drawButtonFace(GuiGraphics graphics, Button button, Identifier sprite)
 //#endif
 	{
 		Draw.sprite(graphics, sprite,
@@ -2344,7 +2280,7 @@ public final class BiomeCollectionScreen extends Screen
 //#if MC >= 26.0
 	private void drawLine(GuiGraphicsExtractor graphics, Identifier texture, int width, int height, int y)
 //#else
-//$$ 	private void drawLine(GuiGraphics graphics, ResourceLocation texture, int width, int height, int y)
+//$$ 	private void drawLine(GuiGraphics graphics, Identifier texture, int width, int height, int y)
 //#endif
 	{
 		int x = listLeft + (listRight - listLeft - width) / 2;
