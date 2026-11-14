@@ -1447,7 +1447,6 @@ public final class BiomeCollectionScreen extends Screen
 	 * {@link #drawTabs}, {@link #drawFilterIcons} and {@link #drawDoneFocus}), which is what keeps a
 	 * button hovering, clicking and speaking for itself while the mod's own mark sits on it.
 	 */
-	//#if MC >= 26.0
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
 	{
