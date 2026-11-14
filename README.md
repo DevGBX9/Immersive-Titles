@@ -35,9 +35,9 @@ All three are ordinary key mappings: rebind them in **Options → Controls → K
 
 | | |
 | --- | --- |
-| Minecraft | **26.3**, **26.2** and **26.1.2** (all enabled, all built from the same sources) |
+| Minecraft | **26.3**, **26.2**, **26.1.2** and **1.21.11** (all enabled, all built from the same sources) |
 | Loader | Fabric Loader `>=0.11.4` |
-| Requires | Fabric API `>=0.160.5` on 26.3, `>=0.160.0` on 26.2, `>=0.155.3` on 26.1.2 (each jar asks for the API it was built against) |
+| Requires | Fabric API `>=0.160.5` on 26.3, `>=0.160.0` on 26.2, `>=0.155.3` on 26.1.2, `>=0.141.6` on 1.21.11 (each jar asks for the API it was built against) |
 | Optional | Mod Menu (adds the collection to the mod list) |
 | Java | 25 |
 
@@ -52,6 +52,7 @@ Every build of `main` publishes one jar per enabled version, as public assets of
 - `immersive_titles-v0.1.0-mc26.3.jar` — for Minecraft 26.3
 - `immersive_titles-v0.1.0-mc26.2.jar` — for Minecraft 26.2
 - `immersive_titles-v0.1.0-mc26.1.2.jar` — for Minecraft 26.1, 26.1.1 and 26.1.2
+- `immersive_titles-v0.1.0-mc1.21.11.jar` — for Minecraft 1.21.11
 
 No account is needed to download. The `dev-latest` tag is rewritten by each build, so those links keep
 working and always point at the newest build.
@@ -79,7 +80,7 @@ working and always point at the newest build.
 │   └── …/client/             entrypoints, title/, collection/, catalog/, world/
 ├── src/main/resources/       fabric.mod.json, language files, sounds, textures, gui sprites
 ├── tools/                    checks, previews and the art tools (see tools/README.md)
-├── versions/                 one Gradle project per Minecraft version (26.3, 26.2, 26.1.2)
+├── versions/                 one Gradle project per Minecraft version (26.3, 26.2, 26.1.2, 1.21.11)
 ├── build.gradle              the version matrix (preprocessor nodes)
 ├── common.gradle             what every version project is made of
 ├── settings.json             enabled / disabled Minecraft versions
@@ -100,6 +101,7 @@ three versions are one feature and one implementation.
 ./gradlew :26.3:build    # just 26.3
 ./gradlew :26.2:build    # just 26.2
 ./gradlew :26.1.2:build  # just 26.1.2
+./gradlew :1.21.11:build # just 1.21.11
 ```
 
 The build is run by GitHub Actions (`.github/workflows/gradle.yml`) on every push that touches the

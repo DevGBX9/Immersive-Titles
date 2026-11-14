@@ -7,8 +7,8 @@
 | JDK | **25** | `common.gradle` compiles the 26.x projects with `JavaVersion.VERSION_25` |
 | Gradle | the wrapper (`./gradlew`) | the plugins and the preprocessor are pinned by it |
 | Fabric Loader | 0.19.5 (build), `>=0.11.4` (declared) | `gradle.properties` / `fabric.mod.json` |
-| Fabric API | `0.160.5+26.3`, `0.160.0+26.2`, `0.155.3+26.1.2` (build); `>=0.160.5`, `>=0.160.0`, `>=0.155.3` (declared) | required at runtime by the HUD and client events the titles use |
-| Mod Menu | `21.0.0` (26.3), `20.0.3` (26.2), `18.0.2` (26.1.2) | **compile only**: the mod works without it |
+| Fabric API | `0.160.5+26.3`, `0.160.0+26.2`, `0.155.3+26.1.2`, `0.141.6+1.21.11` (build); `>=0.160.5`, `>=0.160.0`, `>=0.155.3`, `>=0.141.6` (declared) | required at runtime by the HUD and client events the titles use |
+| Mod Menu | `21.0.0` (26.3), `20.0.3` (26.2), `18.0.2` (26.1.2), `17.0.1` (1.21.11) | **compile only**: the mod works without it |
 
 The mod is built with JDK 25 and the build itself is expected to run on CI; nothing about the project
 needs a local toolchain to be read, checked or edited.
@@ -32,7 +32,7 @@ Which Minecraft versions exist as Gradle projects is decided in three places tha
 
 `common.gradle` is the build of every version project: Loom, the preprocessor, yamlang (the language
 files), the license plugin, the jar, and the Fabric API / Mod Menu dependencies that are only added
-for `mcVersion >= 260102`, i.e. for the three enabled 26.x projects.
+for `mcVersion >= 12111`, i.e. for the four enabled projects.
 
 ### Re-enabling an older version
 
@@ -52,6 +52,7 @@ The steps are also written next to the commented nodes in `build.gradle`:
 ./gradlew :26.3:build           # one version
 ./gradlew :26.2:build           # one version
 ./gradlew :26.1.2:build         # one version
+./gradlew :1.21.11:build        # one version
 ./gradlew buildAndGather        # build, then copy the mod jars into build/libs of the root
 ```
 

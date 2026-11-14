@@ -6,6 +6,8 @@
 #   26.2 = child of 26.3, built by the preprocessor out of the same src/ folder, so the two
 #          versions ship the same feature with no code kept out of either of them
 #   26.1.2 = child of 26.2, built the same way: the same feature again, for 26.1, 26.1.1 and 26.1.2
+#   1.21.11 = child of 26.1.2, the same feature again on the last obfuscated version; only the call
+#          sites the game renamed before 26.x are guarded with //#if MC >= 26.0
 #
 # Every other configured Minecraft version is disabled for now, see the "disabled_versions" list
 # in settings.json and the commented block in build.gradle.
