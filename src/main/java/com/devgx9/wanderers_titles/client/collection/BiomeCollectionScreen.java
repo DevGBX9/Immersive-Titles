@@ -57,7 +57,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import com.devgx9.wanderers_titles.client.render.Draw;
+//#if MC >= 1.21.6
 import org.joml.Matrix3x2fStack;
+//#else
+//$$ import com.mojang.blaze3d.vertex.PoseStack;
+//#endif
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -1592,13 +1596,23 @@ public final class BiomeCollectionScreen extends Screen
 //#endif
 	{
 		float scale = TITLE_SIZE_PERCENT / 100.0F;
+		//#if MC >= 1.21.6
 		Matrix3x2fStack pose = graphics.pose();
 
 		pose.pushMatrix();
+		//#else
+//$$ 		PoseStack pose = graphics.pose();
+//$$
+//$$ 		pose.pushPose();
+		//#endif
 		pose.translate((width - font.width(title) * scale) / 2.0F, (float) (blockTop + TITLE_Y));
 		pose.scale(scale, scale);
 		Draw.text(graphics, font, title, 0, 0, TITLE_COLOR, true);
+		//#if MC >= 1.21.6
 		pose.popMatrix();
+		//#else
+//$$ 		pose.popPose();
+		//#endif
 	}
 
 	/**

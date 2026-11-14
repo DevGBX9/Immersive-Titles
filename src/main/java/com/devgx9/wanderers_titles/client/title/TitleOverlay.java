@@ -81,7 +81,11 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Util;
 import com.devgx9.wanderers_titles.client.render.Draw;
 import net.minecraft.world.phys.Vec3;
+//#if MC >= 1.21.6
 import org.joml.Matrix3x2fStack;
+//#else
+//$$ import com.mojang.blaze3d.vertex.PoseStack;
+//#endif
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -1497,12 +1501,21 @@ public final class TitleOverlay
 		// capitals a title is set in from the top of the cell down this far, so that band is the line
 		// as a reader sees it, and the empty room the line keeps under its descenders is not part of
 		// the block that has to sit in the middle
+		//#if MC >= 1.21.6
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
+		//#else
+//$$ 		PoseStack pose = graphics.pose();
+//$$ 		pose.pushPose();
+		//#endif
 		pose.translate(centerX - textWidth / 2.0F, centerY - textHeight / 2.0F);
 		pose.scale(textScale, textScale);
 		Draw.text(graphics, font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
+		//#if MC >= 1.21.6
 		pose.popMatrix();
+		//#else
+//$$ 		pose.popPose();
+		//#endif
 	}
 
 	/**
@@ -1623,12 +1636,21 @@ public final class TitleOverlay
 
 		drawCornerWord(graphics, font, x, y, color);
 
+		//#if MC >= 1.21.6
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
+		//#else
+//$$ 		PoseStack pose = graphics.pose();
+//$$ 		pose.pushPose();
+		//#endif
 		pose.translate(x, y);
 		pose.scale(CORNER_NAME_SCALE, CORNER_NAME_SCALE);
 		Draw.text(graphics, font, cornerName, 0, 0, color, true);
+		//#if MC >= 1.21.6
 		pose.popMatrix();
+		//#else
+//$$ 		pose.popPose();
+		//#endif
 	}
 
 	/**
@@ -1693,8 +1715,13 @@ public final class TitleOverlay
 		int wordX = x + Math.round((nameWidth - wordWidth) / 2.0F);
 		int wordY = y - CORNER_LINE_GAP - (int) (FONT_CAP_HEIGHT * CORNER_KICKER_SCALE);
 
+		//#if MC >= 1.21.6
 		Matrix3x2fStack pose = graphics.pose();
 		pose.pushMatrix();
+		//#else
+//$$ 		PoseStack pose = graphics.pose();
+//$$ 		pose.pushPose();
+		//#endif
 		pose.translate(wordX, wordY);
 		pose.scale(CORNER_KICKER_SCALE, CORNER_KICKER_SCALE);
 
@@ -1708,7 +1735,11 @@ public final class TitleOverlay
 			pen += font.width(one) + CORNER_KICKER_SPACING;
 		}
 
+		//#if MC >= 1.21.6
 		pose.popMatrix();
+		//#else
+//$$ 		pose.popPose();
+		//#endif
 	}
 
 	/** The alpha of the corner title at {@code elapsedMs} of its animation: fade in, hold, fade out. */
