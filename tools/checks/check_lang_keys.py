@@ -38,7 +38,9 @@ LITERAL = re.compile(r'"([A-Za-z0-9_.]+)"')
 # language file from that identifier, so the key it needs is named by the registration and not by a
 # literal: Category.register(Identifier.fromNamespaceAndPath(<mod id>, "title")) asks for
 # key.category.<mod id>.title
-CATEGORY = re.compile(r'Category\.register\(\s*Identifier\.fromNamespaceAndPath\(\s*WandererTitles\.MOD_ID,\s*"([A-Za-z0-9_]+)"')
+CATEGORY = re.compile(
+    r'Category\.register\(\s*(?:Draw\.id\(|Identifier\.fromNamespaceAndPath\(\s*WandererTitles\.MOD_ID,\s*)\s*"([A-Za-z0-9_]+)"'
+)
 
 
 def main():

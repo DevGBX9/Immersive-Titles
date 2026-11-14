@@ -37,26 +37,34 @@ def strip(text):
 def branches(text):
     """The two texts a preprocessed file stands for: the written branch and the commented one."""
     written, commented = [], []
-    state = "written"  # which half of the `//#if` block is being read
+    stack = []  # one "written" or "commented" per open `//#if`, so nesting is followed
+
+    def in_commented():
+        return "commented" in stack
 
     for line in text.split("\n"):
         marker = MARKER.match(line.strip())
         if marker:
             what = marker.group(1)
             if what == "if":
-                state = "written"
+                stack.append("written")
             elif what == "else":
-                state = "commented"
-            else:
-                state = "both"
+                if stack:
+                    stack[-1] = "commented"
+            elif stack:
+                stack.pop()
             continue
 
-        if line.startswith("//$$"):
-            commented.append(line[4:])
+        # the commented branch keeps the indentation in front of its marker, so the marker is found
+        # after the whitespace rather than at the very start of the line
+        marked = line.lstrip()
+        if marked.startswith("//$$"):
+            commented.append(marked[4:])
             continue
 
-        written.append(line)
-        if state != "commented":
+        if not in_commented():
+            written.append(line)
+        if "written" not in stack:
             commented.append(line)
 
     return strip("\n".join(written)), strip("\n".join(commented))
