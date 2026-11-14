@@ -474,8 +474,16 @@ public final class TitleOverlay
 	/** Used when there is no biome to name, e.g. while a title is triggered from the main menu. */
 	private static final Component FALLBACK_NAME = Component.literal("PALE GARDEN").withStyle(ChatFormatting.BOLD);
 
+	//#if MC >= 1.21.9
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
 			Draw.id("title"));
+	//#else
+	//$$ /**
+	//$$  * The category the mod's keys are listed under. The game before 1.21.9 names a category by the
+	//$$  * translation key of its name rather than by an id of its own, so that is what this is there.
+	//$$  */
+	//$$ private static final String CATEGORY = "key.category.immersive_titles.title";
+	//#endif
 
 	/**
 	 * The kind of key a key mapping is read with, which 26.3 calls {@code KEYBOARD} and 26.2 and

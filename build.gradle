@@ -46,6 +46,9 @@ preprocess {
 	def mc12111 = createNode('1.21.11', 1_21_11, '')
 	def mc12110 = createNode('1.21.10', 1_21_10, '')
 	def mc1219 = createNode('1.21.9', 1_21_09, '')
+	def mc1218 = createNode('1.21.8', 1_21_08, '')
+	def mc1217 = createNode('1.21.7', 1_21_07, '')
+	def mc1216 = createNode('1.21.6', 1_21_06, '')
 
 	// 26.3 is the core project, so it is the root of the version chain and has no parent, and 26.2
 	// and 26.1.2 are its children, one under the other - which is what makes the preprocessor build
@@ -56,6 +59,9 @@ preprocess {
 	mc2601.link(mc12111, null)
 	mc12111.link(mc12110, null)
 	mc12110.link(mc1219, null)
+	mc1219.link(mc1218, null)
+	mc1218.link(mc1217, null)
+	mc1217.link(mc1216, null)
 
 	// ---------------------------------------------------------------------------------------------
 	// DISABLED for now - kept so that they can be re-enabled later without rewriting anything
@@ -84,7 +90,6 @@ preprocess {
 	def mc1213 = createNode('1.21.3', 1_21_03, '')
 	def mc1214 = createNode('1.21.4', 1_21_04, '')
 	def mc1215 = createNode('1.21.5', 1_21_05, '')
-	def mc1218 = createNode('1.21.8', 1_21_08, '')
 
 	mc2603.link(mc1201, null)   // 1.20.1 is disabled too, so it hangs off the core project now
 	mc1201.link(mc114 , null)   // older than 1.20.1
