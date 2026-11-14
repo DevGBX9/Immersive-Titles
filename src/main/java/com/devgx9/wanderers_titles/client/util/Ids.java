@@ -51,7 +51,7 @@ public final class Ids
 	}
 	//#else
 	//$$ /** The id a key is registered under. */
-	//$$ public static Identifier of(ResourceKey<?> key) {
+	//$$ public static ResourceLocation of(ResourceKey<?> key) {
 	//$$ 	return key.location();
 	//$$ }
 	//#endif
