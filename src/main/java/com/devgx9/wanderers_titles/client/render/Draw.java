@@ -119,13 +119,15 @@ public final class Draw
 	//$$ /** One sprite of the gui atlas, at its own size. */
 	//$$ public static void sprite(GuiGraphics graphics, Identifier sprite, int x, int y, int width,
 	//$$ 		int height) {
-	//$$ 	graphics.blitSprite(sprite, x, y, width, height);
+	//$$ 	graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, sprite, x, y,
+//$$ 			width, height);
 	//$$ }
 	//$$
 	//$$ /** A picture out of a texture file, drawn at a size of its own. */
 	//$$ public static void picture(GuiGraphics graphics, Identifier texture, int x, int y, float u, float v,
 	//$$ 		int width, int height, int sampleWidth, int sampleHeight, int textureWidth, int textureHeight) {
-	//$$ 	graphics.blit(texture, x, y, width, height, u, v, sampleWidth, sampleHeight, textureWidth, textureHeight);
+	//$$ 	graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, texture, x, y, u, v,
+//$$ 			width, height, sampleWidth, sampleHeight, textureWidth, textureHeight);
 	//$$ }
 	//$$
 	//$$ /** The game's own tooltip, at the point the mouse is. */
