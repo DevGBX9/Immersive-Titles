@@ -27,7 +27,7 @@ package com.devgx9.wanderers_titles.client;
 
 import com.devgx9.wanderers_titles.client.collection.BiomeCollectionScreen;
 
-//#if MC >= 26.1.2
+//#if MC >= 1.21.11
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import net.minecraft.client.Minecraft;
@@ -56,11 +56,11 @@ import net.minecraft.client.gui.screens.Screen;
  * Menu itself, so a player without it never loads this class.
  */
 public class ModMenuIntegration
-		//#if MC >= 26.1.2
+		//#if MC >= 1.21.11
 		implements ModMenuApi
 		//#endif
 {
-	//#if MC >= 26.1.2
+	//#if MC >= 1.21.11
 	/**
 	 * The screen the mod list opens: the collection of every world at once, which is what the mod list
 	 * is asked for - not the world in front of the player, which the mod's own key already shows (see

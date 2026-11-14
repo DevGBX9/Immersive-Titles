@@ -50,7 +50,7 @@ public class WandererTitlesClient implements ClientModInitializer
 	{
 		WandererTitles.readMetadata();
 
-		//#if MC >= 26.1.2
+		//#if MC >= 1.21.11
 		TitleOverlay.initialize();
 		//#endif
 
