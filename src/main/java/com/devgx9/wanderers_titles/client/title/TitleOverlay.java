@@ -1508,8 +1508,13 @@ public final class TitleOverlay
 //$$ 		PoseStack pose = graphics.pose();
 //$$ 		pose.pushPose();
 		//#endif
+		//#if MC >= 1.21.6
 		pose.translate(centerX - textWidth / 2.0F, centerY - textHeight / 2.0F);
 		pose.scale(textScale, textScale);
+		//#else
+//$$ 		pose.translate(centerX - textWidth / 2.0F, centerY - textHeight / 2.0F, 0.0D);
+//$$ 		pose.scale(textScale, textScale, 1.0F);
+		//#endif
 		Draw.text(graphics, font, revealName, 0, 0, (alpha << 24) | TITLE_TEXT_RGB, false);
 		//#if MC >= 1.21.6
 		pose.popMatrix();
@@ -1643,8 +1648,13 @@ public final class TitleOverlay
 //$$ 		PoseStack pose = graphics.pose();
 //$$ 		pose.pushPose();
 		//#endif
+		//#if MC >= 1.21.6
 		pose.translate(x, y);
 		pose.scale(CORNER_NAME_SCALE, CORNER_NAME_SCALE);
+		//#else
+//$$ 		pose.translate(x, y, 0.0D);
+//$$ 		pose.scale(CORNER_NAME_SCALE, CORNER_NAME_SCALE, 1.0F);
+		//#endif
 		Draw.text(graphics, font, cornerName, 0, 0, color, true);
 		//#if MC >= 1.21.6
 		pose.popMatrix();
@@ -1722,8 +1732,13 @@ public final class TitleOverlay
 //$$ 		PoseStack pose = graphics.pose();
 //$$ 		pose.pushPose();
 		//#endif
+		//#if MC >= 1.21.6
 		pose.translate(wordX, wordY);
 		pose.scale(CORNER_KICKER_SCALE, CORNER_KICKER_SCALE);
+		//#else
+//$$ 		pose.translate(wordX, wordY, 0.0D);
+//$$ 		pose.scale(CORNER_KICKER_SCALE, CORNER_KICKER_SCALE, 1.0F);
+		//#endif
 
 		int pen = 0;
 

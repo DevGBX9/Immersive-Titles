@@ -1605,8 +1605,13 @@ public final class BiomeCollectionScreen extends Screen
 //$$
 //$$ 		pose.pushPose();
 		//#endif
+		//#if MC >= 1.21.6
 		pose.translate((width - font.width(title) * scale) / 2.0F, (float) (blockTop + TITLE_Y));
 		pose.scale(scale, scale);
+		//#else
+//$$ 		pose.translate((width - font.width(title) * scale) / 2.0F, blockTop + TITLE_Y, 0.0D);
+//$$ 		pose.scale(scale, scale, 1.0F);
+		//#endif
 		Draw.text(graphics, font, title, 0, 0, TITLE_COLOR, true);
 		//#if MC >= 1.21.6
 		pose.popMatrix();
