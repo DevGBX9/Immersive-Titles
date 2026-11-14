@@ -42,12 +42,9 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
-//#if MC >= 26.0
 import net.minecraft.client.input.KeyEvent;
 //#endif
-//#if MC >= 26.0
 import net.minecraft.client.input.MouseButtonEvent;
-//#endif
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -1459,16 +1456,7 @@ public final class BiomeCollectionScreen extends Screen
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 		drawOver(graphics);
 	}
-	//#else
-	//$$ @Override
-	//$$ public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
-	//$$ {
-	//$$ 	drawBehind(graphics, mouseX, mouseY);
-	//$$ 	super.render(graphics, mouseX, mouseY, partialTick);
-	//$$ 	drawOver(graphics);
-	//$$ }
-	//#endif
-
+	
 	/**
 	 * The half of the frame drawn before the game draws the buttons of the screen: the title, the
 	 * count and its bar, the block, the list in it and the two lines the list is framed with.
@@ -2311,22 +2299,13 @@ public final class BiomeCollectionScreen extends Screen
 	 * mouse is on it (see {@link #forgetTargetAt}); anywhere else it is left to the rest of the screen,
 	 * so a row of the list is still not something that answers a click of its own.
 	 */
-	//#if MC >= 26.0
-	@Override
+		@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
 	{
 		return clickAt(event.x(), event.y(), event.button())
 				|| super.mouseClicked(event, doubleClick);
 	}
-	//#else
-	//$$ @Override
-	//$$ public boolean mouseClicked(double mouseX, double mouseY, int button)
-	//$$ {
-	//$$ 	return clickAt(mouseX, mouseY, button)
-	//$$ 			|| super.mouseClicked(mouseX, mouseY, button);
-	//$$ }
-	//#endif
-
+	
 	/** A press at a point, or false while the press is the game's own to answer. */
 	private boolean clickAt(double mouseX, double mouseY, int button)
 	{
@@ -2464,8 +2443,7 @@ public final class BiomeCollectionScreen extends Screen
 		scrollTarget = clampScroll(scrollTarget);
 	}
 
-	//#if MC >= 26.0
-	@Override
+		@Override
 	public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY)
 	{
 		if (!draggingScrollBar)
@@ -2485,29 +2463,7 @@ public final class BiomeCollectionScreen extends Screen
 
 		return super.mouseReleased(event);
 	}
-	//#else
-	//$$ @Override
-	//$$ public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY)
-	//$$ {
-	//$$ 	if (!draggingScrollBar)
-	//$$ 	{
-	//$$ 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-	//$$ 	}
-	//$$
-	//$$ 	dragScrollBarTo(mouseY);
-	//$$
-	//$$ 	return true;
-	//$$ }
-	//$$
-	//$$ @Override
-	//$$ public boolean mouseReleased(double mouseX, double mouseY, int button)
-	//$$ {
-	//$$ 	draggingScrollBar = false;
-	//$$
-	//$$ 	return super.mouseReleased(mouseX, mouseY, button);
-	//$$ }
-	//#endif
-
+	
 	/**
 	 * Puts the point of the thumb the player is holding under {@code mouseY}, and the list with it.
 	 *
@@ -2570,20 +2526,12 @@ public final class BiomeCollectionScreen extends Screen
 		return true;
 	}
 
-	//#if MC >= 26.0
-	@Override
+		@Override
 	public boolean keyPressed(KeyEvent event)
 	{
 		return keyAt(event.key()) || super.keyPressed(event);
 	}
-	//#else
-	//$$ @Override
-	//$$ public boolean keyPressed(int keyCode, int scanCode, int modifiers)
-	//$$ {
-	//$$ 	return keyAt(keyCode) || super.keyPressed(keyCode, scanCode, modifiers);
-	//$$ }
-	//#endif
-
+	
 	/** A key the list answers itself, or false while the key is the game's own to answer. */
 	private boolean keyAt(int keyCode)
 	{

@@ -182,7 +182,11 @@ public final class StructurePresence
 	 */
 	public static void initialize()
 	{
+		//#if MC >= 26.0
 		ServerTickEvents.END_LEVEL_TICK.register(StructurePresence::tick);
+		//#else
+		//$$ ServerTickEvents.END_WORLD_TICK.register(StructurePresence::tick);
+		//#endif
 	}
 
 	/**

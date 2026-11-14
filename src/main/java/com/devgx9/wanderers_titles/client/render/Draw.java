@@ -27,10 +27,10 @@ package com.devgx9.wanderers_titles.client.render;
 
 //#if MC >= 26.0
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.resources.Identifier;
 //#else
 //$$ import net.minecraft.client.gui.GuiGraphics;
 //#endif
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 
@@ -70,6 +70,12 @@ public final class Draw
 		graphics.text(font, text, x, y, color, shadow);
 	}
 
+	/** One line of text that is already a plain string, e.g. a mark of the mod's own. */
+	public static void text(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color,
+			boolean shadow) {
+		graphics.text(font, text, x, y, color, shadow);
+	}
+
 	/** One sprite of the gui atlas, at its own size. */
 	public static void sprite(GuiGraphicsExtractor graphics, Identifier sprite, int x, int y, int width,
 			int height) {
@@ -100,6 +106,12 @@ public final class Draw
 	//$$
 	//$$ /** One line of text, scaled as the caller has already set the pose up. */
 	//$$ public static void text(GuiGraphics graphics, Font font, Component text, int x, int y, int color,
+	//$$ 		boolean shadow) {
+	//$$ 	graphics.drawString(font, text, x, y, color, shadow);
+	//$$ }
+	//$$
+	//$$ /** One line of text that is already a plain string, e.g. a mark of the mod's own. */
+	//$$ public static void text(GuiGraphics graphics, Font font, String text, int x, int y, int color,
 	//$$ 		boolean shadow) {
 	//$$ 	graphics.drawString(font, text, x, y, color, shadow);
 	//$$ }
