@@ -33,7 +33,11 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+//#if MC >= 1.21.11
 import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
@@ -289,7 +293,11 @@ public final class BiomeCatalog
 		Map<String, Dimension> dimensions = dimensions(biomes);
 		List<Entry> entries = new ArrayList<>(biomes.keySet().size());
 
+//#if MC >= 1.21.11
 		for (Identifier id : biomes.keySet())
+//#else
+//$$ 		for (ResourceLocation id : biomes.keySet())
+//#endif
 		{
 			String key = id.toString();
 			entries.add(new Entry(key, BiomeNames.name(key), dimension(dimensions, key), rank(key)));

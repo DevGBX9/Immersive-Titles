@@ -65,7 +65,11 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
+//#if MC >= 1.21.11
 import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Util;
@@ -624,7 +628,11 @@ public final class TitleOverlay
 	private static int ticksUntilCheck = 0;
 
 	/** The frame textures that are currently loaded, oldest first. */
+//#if MC >= 1.21.11
 	private static final Deque<Identifier> LOADED_FRAMES = new ArrayDeque<>();
+//#else
+//$$ 	private static final Deque<ResourceLocation> LOADED_FRAMES = new ArrayDeque<>();
+//#endif
 
 	private TitleOverlay()
 	{
@@ -1305,7 +1313,11 @@ public final class TitleOverlay
 			return;
 		}
 
+//#if MC >= 1.21.11
 		Identifier texture = Identifier.fromNamespaceAndPath(
+//#else
+//$$ 		ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(
+//#endif
 				WandererTitles.MOD_ID,
 				String.format("%sframe_%04d.png", TEXTURE_FOLDER, frame + 1));
 		keepFrameTexture(texture);
@@ -1348,10 +1360,14 @@ public final class TitleOverlay
 	 * At a frame whose edge sample is transparent - every frame outside the opening flash - nothing is
 	 * drawn, so the world is untouched by all of this at any other time.
 	 */
+//#if MC >= 1.21.11
 //#if MC >= 26.0
 	private static void renderClipSeam(GuiGraphicsExtractor graphics, Identifier texture, int plateX,
 //#else
 //$$ 	private static void renderClipSeam(GuiGraphics graphics, Identifier texture, int plateX,
+//#endif
+//#else
+//$$ 	private static void renderClipSeam(GuiGraphics graphics, ResourceLocation texture, int plateX,
 //#endif
 			int plateY, int width, int height, int screenWidth, int screenHeight)
 	{
@@ -1388,10 +1404,14 @@ public final class TitleOverlay
 	 * Draws the {@code bandWidth} x {@code bandHeight} pixels of the clip at ({@code u}, {@code v})
 	 * into the screen rectangle from ({@code x0}, {@code y0}) to ({@code x1}, {@code y1}).
 	 */
+//#if MC >= 1.21.11
 //#if MC >= 26.0
 	private static void blitBand(GuiGraphicsExtractor graphics, Identifier texture, int x0, int y0,
 //#else
 //$$ 	private static void blitBand(GuiGraphics graphics, Identifier texture, int x0, int y0,
+//#endif
+//#else
+//$$ 	private static void blitBand(GuiGraphics graphics, ResourceLocation texture, int x0, int y0,
 //#endif
 			int x1, int y1, float u, float v, int bandWidth, int bandHeight)
 	{
@@ -1681,7 +1701,11 @@ public final class TitleOverlay
 	 * Marks the frame texture as in use and releases the textures of the frames that have already
 	 * been drawn, so playing the full resolution sequence does not fill the video memory of the game.
 	 */
+//#if MC >= 1.21.11
 	private static void keepFrameTexture(Identifier texture)
+//#else
+//$$ 	private static void keepFrameTexture(ResourceLocation texture)
+//#endif
 	{
 		if (LOADED_FRAMES.contains(texture))
 		{

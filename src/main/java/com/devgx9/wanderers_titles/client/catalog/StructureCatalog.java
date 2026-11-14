@@ -34,7 +34,11 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+//#if MC >= 1.21.11
 import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.StructureManager;
@@ -341,7 +345,11 @@ public final class StructureCatalog
 
 		for (String id : LISTED_AS.keySet())
 		{
+//#if MC >= 1.21.11
 			ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, Identifier.parse(id));
+//#else
+//$$ 			ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, ResourceLocation.parse(id));
+//#endif
 			structures.get(key).ifPresent(listed::add);
 		}
 

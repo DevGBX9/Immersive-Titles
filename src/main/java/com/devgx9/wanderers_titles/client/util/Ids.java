@@ -25,7 +25,11 @@
 
 package com.devgx9.wanderers_titles.client.util;
 
+//#if MC >= 1.21.11
 import net.minecraft.resources.Identifier;
+//#else
+//$$ import net.minecraft.resources.ResourceLocation;
+//#endif
 import net.minecraft.resources.ResourceKey;
 
 /**
