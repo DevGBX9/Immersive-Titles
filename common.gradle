@@ -94,7 +94,7 @@ dependencies {
 	// mod fabric.mod.json demands. Bundling them into the jar with include(...) is no way out
 	// either - every mod that does it ships one more frozen copy of Fabric API, and the loader is
 	// left to sort out two mods carrying the same module.
-	if (mcVersion >= 12111) {
+	if (mcVersion >= 12109) {
 		autoImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
 	}
 
@@ -104,7 +104,7 @@ dependencies {
 	// dependency of the mod, though - a player without it simply has the mod's own key - so it is
 	// compiled against and not required at runtime, and the dependency is only resolved for the
 	// versions that have a build of it.
-	if (mcVersion >= 12111) {
+	if (mcVersion >= 12109) {
 		autoCompileOnly("com.terraformersmc:modmenu:${project.modmenu_version}")
 	}
 }
