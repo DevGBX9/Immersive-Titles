@@ -35,10 +35,12 @@ import com.devgx9.wanderers_titles.client.world.StructurePresence;
 import com.devgx9.wanderers_titles.client.world.WorldIdentity;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
+//#if MC >= 1.21.6
 //#if MC >= 26.0
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 //#else
 //$$ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
+//#endif
 //#endif
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 //#if MC >= 26.0
@@ -46,8 +48,12 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 //#else
 //$$ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 //#endif
+//#if MC >= 1.21.6
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+//#else
+//$$ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+//#endif
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
@@ -635,6 +641,11 @@ public final class TitleOverlay
 	/** Ticks left until the place the player is in is checked again. */
 	private static int ticksUntilCheck = 0;
 
+//#if MC < 1.21.6
+	//$$ /** The level the titles are following, as the tick last saw it, see {@link #tick}. */
+	//$$ private static ClientLevel watchedLevel = null;
+	//#endif
+
 	/** The frame textures that are currently loaded, oldest first. */
 //#if MC >= 1.21.11
 	private static final Deque<Identifier> LOADED_FRAMES = new ArrayDeque<>();
@@ -652,17 +663,25 @@ public final class TitleOverlay
 		// HUD element is also what keeps the titles behind every screen the player opens: the game
 		// extracts the HUD before it extracts a screen, so the inventory and the pause menu are
 		// drawn over the titles instead of the titles being drawn over them.
+		//#if MC >= 1.21.6
 		HudElementRegistry.attachElementBefore(
 				VanillaHudElements.CHAT,
 				Draw.id("title_overlay"),
 				TitleOverlay::render);
+		//#else
+		//$$ // the game before 1.21.6 knows one point in the HUD and not the elements of it, so the
+		//$$ // titles are drawn there: after the vanilla HUD, with the chat still over them
+		//$$ HudRenderCallback.EVENT.register((graphics, deltaTracker) -> render(graphics, deltaTracker));
+		//#endif
 
 		// A world is prepared the moment the game loads its level, and everything after that is
 		// watched from the tick, see levelChanged and tick.
 //#if MC >= 26.0
 		ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register(TitleOverlay::levelChanged);
 //#else
+//#if MC >= 1.21.6
 //$$ 		ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register(TitleOverlay::levelChanged);
+//#endif
 //#endif
 		ClientTickEvents.END_CLIENT_TICK.register(TitleOverlay::tick);
 
@@ -716,6 +735,20 @@ public final class TitleOverlay
 
 	private static void tick(Minecraft client)
 	{
+		//#if MC < 1.21.6
+		//$$ // the game before 1.21.6 has no event for a level arriving, so it is the tick that
+		//$$ // notices it: a level that is not the one being followed is the one being entered
+		//$$ if (client.level != watchedLevel)
+		//$$ {
+		//$$ 	watchedLevel = client.level;
+		//$$
+		//$$ 	if (client.level != null)
+		//$$ 	{
+		//$$ 		levelChanged(client, client.level);
+		//$$ 	}
+		//$$ }
+		//#endif
+
 		while (PLAY_TITLE.consumeClick())
 		{
 			startReveal(BiomeNames.of(client).orElse(FALLBACK_NAME));
