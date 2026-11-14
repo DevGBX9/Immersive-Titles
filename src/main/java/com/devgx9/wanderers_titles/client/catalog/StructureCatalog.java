@@ -27,6 +27,7 @@ package com.devgx9.wanderers_titles.client.catalog;
 
 import com.devgx9.wanderers_titles.client.collection.CollectionEntry;
 
+import com.devgx9.wanderers_titles.client.util.Ids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -397,7 +398,7 @@ public final class StructureCatalog
 		private Optional<String> rowOf(StructureStart start)
 		{
 			return structures.getResourceKey(start.getStructure())
-					.map(key -> LISTED_AS.get(key.identifier().toString()));
+					.map(key -> LISTED_AS.get(Ids.of(key).toString()));
 		}
 	}
 

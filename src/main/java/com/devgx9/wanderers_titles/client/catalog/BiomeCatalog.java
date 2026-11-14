@@ -27,6 +27,7 @@ package com.devgx9.wanderers_titles.client.catalog;
 
 import com.devgx9.wanderers_titles.client.collection.CollectionEntry;
 
+import com.devgx9.wanderers_titles.client.util.Ids;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -390,7 +391,7 @@ public final class BiomeCatalog
 	{
 		for (Holder<Biome> biome : biomes.getTagOrEmpty(tag))
 		{
-			biome.unwrapKey().ifPresent(key -> dimensions.put(key.identifier().toString(), dimension));
+			biome.unwrapKey().ifPresent(key -> dimensions.put(Ids.of(key).toString(), dimension));
 		}
 	}
 

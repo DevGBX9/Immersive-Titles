@@ -25,6 +25,7 @@
 
 package com.devgx9.wanderers_titles.client.catalog;
 
+import com.devgx9.wanderers_titles.client.util.Ids;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -136,7 +137,7 @@ public final class BiomeNames
 	private static Optional<String> id(LevelReader level, BlockPos pos)
 	{
 		Holder<Biome> biome = level.getBiome(pos);
-		return biome.unwrapKey().map(key -> key.identifier().toString());
+		return biome.unwrapKey().map(key -> Ids.of(key).toString());
 	}
 
 	/**
