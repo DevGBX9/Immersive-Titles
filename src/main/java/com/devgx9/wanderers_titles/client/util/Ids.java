@@ -29,7 +29,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 
 /**
- * The id of a registry key, which the game calls {@code identifier()} from 26.x and {@code location()}
+ * The id of a registry key, which the game calls {@code identifier()} from 1.21.11 and {@code location()}
  * before it.
  *
  * It is the one place those two names meet: every reader of a biome or structure key in the mod asks
@@ -40,7 +40,7 @@ public final class Ids
 	private Ids() {
 	}
 
-	//#if MC >= 26.0
+	//#if MC >= 1.21.11
 	/** The id a key is registered under. */
 	public static Identifier of(ResourceKey<?> key) {
 		return key.identifier();
