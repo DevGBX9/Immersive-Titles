@@ -36,12 +36,16 @@ import net.fabricmc.api.ClientModInitializer;
  * server, and the game never loads this class there.
  *
  * The title reveals need Fabric API - its HUD, key mapping and client lifecycle events - plus the
- * client rendering classes of the 26.x Minecraft versions the build matrix carries (26.3, the core
- * project, 26.2 and 26.1.2, built out of the same sources), so their implementation lives right next to
- * this class in {@code TitleOverlay} and is wired up below. Fabric API is declared as a dependency
- * in fabric.mod.json, i.e. it is a mod of its own next to this one. Those APIs changed a lot over
- * time, so a version older than 26.1.2 would need a port of the overlay before it can be re-enabled
- * in the build matrix - which is why the guard below is the 26.1.2 floor and not the core version.
+ * client rendering classes of the Minecraft versions the build matrix carries (26.3, the core project,
+ * 26.2, 26.1.2 and the whole 1.21 series, built out of the same sources), so their implementation lives
+ * right next to this class in {@code TitleOverlay} and is wired up below. Fabric API is declared as a
+ * dependency in fabric.mod.json, i.e. it is a mod of its own next to this one, and the overlay names
+ * the HUD hook, the level event, the input handlers and the key category of each version inside
+ * itself, so the guard below is only the floor of what the overlay exists for: 1.21.
+ *
+ * That floor is the oldest version of the series and it is what the guard says. A guard that names a
+ * newer version here would leave every version below it initialized but empty - listed in the mod
+ * list, with no keys and nothing drawn - which is exactly the bug this line is written to not have.
  */
 public class WandererTitlesClient implements ClientModInitializer
 {
@@ -50,7 +54,7 @@ public class WandererTitlesClient implements ClientModInitializer
 	{
 		WandererTitles.readMetadata();
 
-		//#if MC >= 1.21.11
+		//#if MC >= 1.21
 		TitleOverlay.initialize();
 		//#endif
 
