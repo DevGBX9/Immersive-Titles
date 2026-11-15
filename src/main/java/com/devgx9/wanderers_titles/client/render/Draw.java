@@ -273,6 +273,28 @@ public final class Draw
 //$$ 		graphics.renderTooltip(net.minecraft.client.Minecraft.getInstance().font, text, mouseX, mouseY);
 //$$ 	}
 //#else
+//$$ 	/** The mod's own id, e.g. {@code immersive_titles:icons/up}. */
+//$$ 	public static ResourceLocation id(String path) {
+//$$ 		return ResourceLocation.fromNamespaceAndPath(com.devgx9.wanderers_titles.WandererTitles.MOD_ID, path);
+//$$ 	}
+//$$
+//$$ 	/** An id of the game's own, e.g. {@code minecraft:widget/scroller}. */
+//$$ 	public static ResourceLocation vanilla(String path) {
+//$$ 		return ResourceLocation.withDefaultNamespace(path);
+//$$ 	}
+//$$
+//$$ 	/** One line of text, scaled as the caller has already set the pose up. */
+//$$ 	public static void text(GuiGraphics graphics, Font font, Component text, int x, int y, int color,
+//$$ 			boolean shadow) {
+//$$ 		graphics.drawString(font, text, x, y, color, shadow);
+//$$ 	}
+//$$
+//$$ 	/** One line of text that is already a plain string, e.g. a mark of the mod's own. */
+//$$ 	public static void text(GuiGraphics graphics, Font font, String text, int x, int y, int color,
+//$$ 			boolean shadow) {
+//$$ 		graphics.drawString(font, text, x, y, color, shadow);
+//$$ 	}
+//$$
 //$$ 	/** One sprite of the gui atlas, at its own size. */
 //$$ 	public static void sprite(GuiGraphics graphics, ResourceLocation sprite, int x, int y, int width,
 //$$ 			int height) {
@@ -285,6 +307,11 @@ public final class Draw
 //$$ 			int textureHeight) {
 //$$ 		graphics.blit(texture, x, y, width, height, u, v, sampleWidth, sampleHeight, textureWidth,
 //$$ 				textureHeight);
+//$$ 	}
+//$$
+//$$ 	/** The game's own tooltip, at the point the mouse is. */
+//$$ 	public static void tooltip(GuiGraphics graphics, Component text, int mouseX, int mouseY) {
+//$$ 		graphics.renderTooltip(net.minecraft.client.Minecraft.getInstance().font, text, mouseX, mouseY);
 //$$ 	}
 //#endif
 //#endif
