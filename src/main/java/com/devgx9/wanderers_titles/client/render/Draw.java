@@ -301,12 +301,26 @@ public final class Draw
 //$$ 		graphics.blitSprite(sprite, x, y, width, height);
 //$$ 	}
 //$$
-//$$ 	/** A picture out of a texture file, drawn at a size of its own. */
+//$$ 	/**
+//$$ 	 * A picture out of a texture file, drawn at a size of its own.
+//$$ 	 *
+//$$ 	 * The blit of 1.21 and 1.21.1 takes a {@code blitOffset} between the position and the texture
+//$$ 	 * coordinates, so the call that draws a source rectangle of one size at another is not the one
+//$$ 	 * the newer versions have: a width handed to it as an {@code int} is read as that offset and every
+//$$ 	 * argument after it moves on by one, which compiles and draws the wrong part of the texture. So
+//$$ 	 * the source rectangle is blitted at its own size and the pose is what scales it, which is the same
+//$$ 	 * rectangle of pixels on the screen on every version.
+//$$ 	 */
 //$$ 	public static void picture(GuiGraphics graphics, ResourceLocation texture, int x, int y, float u,
 //$$ 			float v, int width, int height, int sampleWidth, int sampleHeight, int textureWidth,
 //$$ 			int textureHeight) {
-//$$ 		graphics.blit(texture, x, y, width, height, u, v, sampleWidth, sampleHeight, textureWidth,
-//$$ 				textureHeight);
+//$$ 		com.mojang.blaze3d.vertex.PoseStack pose = graphics.pose();
+//$$
+//$$ 		pose.pushPose();
+//$$ 		pose.translate(x, y, 0.0D);
+//$$ 		pose.scale(width / (float) sampleWidth, height / (float) sampleHeight, 1.0F);
+//$$ 		graphics.blit(texture, 0, 0, u, v, sampleWidth, sampleHeight, textureWidth, textureHeight);
+//$$ 		pose.popPose();
 //$$ 	}
 //$$
 //$$ 	/** The game's own tooltip, at the point the mouse is. */
