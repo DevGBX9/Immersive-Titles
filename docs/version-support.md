@@ -3,7 +3,8 @@
 The sources under `src/` are written for **one** Minecraft version at a time — today 26.3 — and every
 other version is a Gradle project that the preprocessor builds out of those same sources. That is how
 26.2 is carried: it is an enabled child of 26.3, and not one line of the mod is kept out of it.
-26.1.2 is carried the same way, as the child of 26.2.
+26.1.2 is carried the same way, as the child of 26.2, and the 1.21 series runs down from 1.21.11
+to 1.21 under it.
 Supporting an older version is therefore not a rewrite: it is choosing which lines have to differ, and
 knowing which files are close enough to the game to be the ones that do.
 

@@ -46,7 +46,7 @@ checkout.
 
 | script | what it holds to what |
 | --- | --- |
-| `check_java_shape.py` | every Java source is structurally balanced |
+| `check_java_shape.py` | every Java source is structurally balanced, at each enabled version (the guards are evaluated, so nested branches are not added together) |
 | `check_lang_keys.py` | the language file and the keys the sources ask for are the same set |
 | `check_structures.py` | the structures the collection lists, against the game the build is against |
 | `check_dimension_groups.py` | the dimensions the collection divides its list by, against the game's own tags |

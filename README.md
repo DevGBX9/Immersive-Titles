@@ -35,14 +35,14 @@ All three are ordinary key mappings: rebind them in **Options → Controls → K
 
 | | |
 | --- | --- |
-| Minecraft | **26.3**, **26.2**, **26.1.2** and **1.21.11** (all enabled, all built from the same sources) |
+| Minecraft | **26.3**, **26.2**, **26.1.2** and the whole **1.21 series** (1.21.11 down to 1.21 — all enabled, all built from the same sources) |
 | Loader | Fabric Loader `>=0.11.4` |
-| Requires | Fabric API `>=0.160.5` on 26.3, `>=0.160.0` on 26.2, `>=0.155.3` on 26.1.2, `>=0.141.6` on 1.21.11 (each jar asks for the API it was built against) |
+| Requires | Fabric API: each jar asks for the API it was built against (`>=0.160.5` on 26.3, `>=0.160.0` on 26.2, `>=0.155.3` on 26.1.2, and the 1.21.11, 1.21.10 … 1.21 builds from `versions/<version>/gradle.properties`) |
 | Optional | Mod Menu (adds the collection to the mod list) |
-| Java | 25 |
+| Java | 25 on 26.x, 21 on the 1.21 series |
 
-Older versions are kept configured but disabled; see [`docs/build-and-release.md`](docs/build-and-release.md)
-for what re-enabling one takes.
+Three versions below are kept configured but disabled (1.20.1 and older); see
+[`docs/build-and-release.md`](docs/build-and-release.md) for what re-enabling one takes.
 
 ### Downloads
 
@@ -53,6 +53,8 @@ Every build of `main` publishes one jar per enabled version, as public assets of
 - `immersive_titles-v0.1.0-mc26.2.jar` — for Minecraft 26.2
 - `immersive_titles-v0.1.0-mc26.1.2.jar` — for Minecraft 26.1, 26.1.1 and 26.1.2
 - `immersive_titles-v0.1.0-mc1.21.11.jar` — for Minecraft 1.21.11
+- …and one for every other version of the 1.21 series: `mc1.21.10`, `mc1.21.9`, `mc1.21.8`,
+  `mc1.21.7`, `mc1.21.6`, `mc1.21.5`, `mc1.21.4`, `mc1.21.3`, `mc1.21.2`, `mc1.21.1`, `mc1.21`
 
 No account is needed to download. The `dev-latest` tag is rewritten by each build, so those links keep
 working and always point at the newest build.
@@ -80,7 +82,7 @@ working and always point at the newest build.
 │   └── …/client/             entrypoints, title/, collection/, catalog/, world/
 ├── src/main/resources/       fabric.mod.json, language files, sounds, textures, gui sprites
 ├── tools/                    checks, previews and the art tools (see tools/README.md)
-├── versions/                 one Gradle project per Minecraft version (26.3, 26.2, 26.1.2, 1.21.11)
+├── versions/                 one Gradle project per Minecraft version (26.3, 26.2, 26.1.2 and 1.21.11 down to 1.21)
 ├── build.gradle              the version matrix (preprocessor nodes)
 ├── common.gradle             what every version project is made of
 ├── settings.json             enabled / disabled Minecraft versions
@@ -92,16 +94,20 @@ Nothing that ships is under `tools/` or `docs/`: `src/` is the mod, and everythi
 ## Development
 
 The source is written for Minecraft 26.3 with the client rendering APIs of 26.x, and is compiled by
-JDK 25. 26.2 is a child project of 26.3, and 26.1.2 is the child of 26.2: the preprocessor builds
-each of them out of that same `src/`, and no `//#if` guard keeps any of the mod out of them, so the
-three versions are one feature and one implementation.
+JDK 25. 26.2 is a child project of 26.3, 26.1.2 is the child of 26.2, and the 1.21 series runs down
+from 1.21.11 to 1.21 under it: the preprocessor builds each of them out of that same `src/`, so the
+whole matrix is one feature and one implementation. What the game renamed along the way - the
+drawing object, the id class, the blit, the pose stack, the input handlers, the key category and the
+HUD hook - is named once per version inside `client/render/Draw.java`, `client/util/Ids.java` and a
+handful of guards, never at the call sites.
 
 ```bash
-./gradlew build          # all enabled versions
-./gradlew :26.3:build    # just 26.3
-./gradlew :26.2:build    # just 26.2
-./gradlew :26.1.2:build  # just 26.1.2
-./gradlew :1.21.11:build # just 1.21.11
+./gradlew build            # all enabled versions
+./gradlew :26.3:build      # just 26.3
+./gradlew :26.2:build      # just 26.2
+./gradlew :26.1.2:build    # just 26.1.2
+./gradlew :1.21.11:build   # just 1.21.11
+./gradlew :1.21:build      # the oldest of the series
 ```
 
 The build is run by GitHub Actions (`.github/workflows/gradle.yml`) on every push that touches the
