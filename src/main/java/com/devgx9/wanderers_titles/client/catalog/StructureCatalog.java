@@ -350,7 +350,11 @@ public final class StructureCatalog
 //#else
 //$$ 			ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, ResourceLocation.parse(id));
 //#endif
+			//#if MC >= 1.21.2
 			structures.get(key).ifPresent(listed::add);
+			//#else
+//$$ 			structures.getHolder(key).ifPresent(listed::add);
+			//#endif
 		}
 
 		if (listed.isEmpty())

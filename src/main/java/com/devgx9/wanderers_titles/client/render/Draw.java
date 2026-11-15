@@ -229,6 +229,7 @@ public final class Draw
 //$$ 		graphics.setTooltipForNextFrame(text, mouseX, mouseY);
 //$$ 	}
 //#else
+//#if MC >= 1.21.2
 //$$ 	/** The mod's own id, e.g. {@code immersive_titles:icons/up}. */
 //$$ 	public static ResourceLocation id(String path) {
 //$$ 		return ResourceLocation.fromNamespaceAndPath(com.devgx9.wanderers_titles.WandererTitles.MOD_ID, path);
@@ -271,6 +272,21 @@ public final class Draw
 //$$ 	public static void tooltip(GuiGraphics graphics, Component text, int mouseX, int mouseY) {
 //$$ 		graphics.renderTooltip(net.minecraft.client.Minecraft.getInstance().font, text, mouseX, mouseY);
 //$$ 	}
+//#else
+//$$ 	/** One sprite of the gui atlas, at its own size. */
+//$$ 	public static void sprite(GuiGraphics graphics, ResourceLocation sprite, int x, int y, int width,
+//$$ 			int height) {
+//$$ 		graphics.blitSprite(sprite, x, y, width, height);
+//$$ 	}
+//$$
+//$$ 	/** A picture out of a texture file, drawn at a size of its own. */
+//$$ 	public static void picture(GuiGraphics graphics, ResourceLocation texture, int x, int y, float u,
+//$$ 			float v, int width, int height, int sampleWidth, int sampleHeight, int textureWidth,
+//$$ 			int textureHeight) {
+//$$ 		graphics.blit(texture, x, y, width, height, u, v, sampleWidth, sampleHeight, textureWidth,
+//$$ 				textureHeight);
+//$$ 	}
+//#endif
 //#endif
 //#endif
 }

@@ -1258,7 +1258,11 @@ public final class TitleOverlay
 	private static void playRevealSound()
 	{
 		Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(
+				//#if MC >= 1.21.2
 				REVEAL_SOUND.location(),
+				//#else
+//$$ 				REVEAL_SOUND.getLocation(),
+				//#endif
 				SoundSource.MASTER,
 				1.0F,
 				1.0F,
